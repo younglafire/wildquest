@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["ws"],
+  serverExternalPackages: ["onnxruntime-node", "sharp", "ws"],
+  outputFileTracingIncludes: {
+    "/api/identify": ["./models/Xenova/resnet-50/**/*"],
+  },
   turbopack: {
     root: __dirname,
     resolveAlias: {

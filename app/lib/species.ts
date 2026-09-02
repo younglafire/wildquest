@@ -64,7 +64,7 @@ function parseQuiz(value: Json | undefined): SpeciesQuiz | null {
   return { question, options: options as string[], correctOptionIndex };
 }
 
-function parseRarity(value: string): Rarity {
+export function parseRarity(value: string): Rarity {
   const normalized = value.trim().toLowerCase();
   const rarity = RARITIES.find(
     (candidate) => candidate.toLowerCase() === normalized,
