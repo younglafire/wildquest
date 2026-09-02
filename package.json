@@ -11,7 +11,9 @@
     "format:check": "prettier --check .",
     "lint": "eslint",
     "setup": "npm run anchor-build && npm run codama:js",
-    "start": "next start"
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "description": "WildQuest Solana dApp with an Anchor program and generated client",
   "keywords": [
@@ -26,6 +28,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
+    "@huggingface/transformers": "3.8.1",
     "@solana/kit": "^6.3.0",
     "@solana/kit-client-rpc": "^0.7.0",
     "@solana/kit-plugin-rpc": "^0.7.0",
@@ -41,7 +44,8 @@
     "react-dom": "19.2.3",
     "sonner": "^2.0.7",
     "swr": "^2.2.0",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@codama/nodes-from-anchor": "1.5.3",
@@ -56,6 +60,7 @@
     "prettier": "^3.6.2",
     "supabase": "^2.116.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }
