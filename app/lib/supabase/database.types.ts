@@ -19,6 +19,7 @@ export type Database = {
           discovered_at: string | null;
           grade: number;
           id: number;
+          perceptual_hash: unknown;
           proof_hash: string | null;
           rarity: string;
           species_id: number;
@@ -28,6 +29,7 @@ export type Database = {
           discovered_at?: string | null;
           grade: number;
           id?: number;
+          perceptual_hash?: unknown;
           proof_hash?: string | null;
           rarity: string;
           species_id: number;
@@ -37,6 +39,7 @@ export type Database = {
           discovered_at?: string | null;
           grade?: number;
           id?: number;
+          perceptual_hash?: unknown;
           proof_hash?: string | null;
           rarity?: string;
           species_id?: number;
@@ -106,7 +109,21 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      reserve_discovery_image: {
+        Args: {
+          p_grade: number;
+          p_max_distance: number;
+          p_perceptual_hash: unknown;
+          p_proof_hash: string;
+          p_rarity: string;
+          p_species_id: number;
+          p_wallet: string;
+        };
+        Returns: Array<{
+          accepted: boolean;
+          distance: number | null;
+        }>;
+      };
     };
     Enums: {
       [_ in never]: never;

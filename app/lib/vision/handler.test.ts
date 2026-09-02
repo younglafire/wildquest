@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { DuplicateCheckUnavailableError } from "./duplicate";
 import { InvalidImageError, ModelUnavailableError } from "./errors";
 import { createIdentifyHandler, MAX_IMAGE_BYTES } from "./handler";
 import {
@@ -16,6 +17,8 @@ const classification: MappedClassification = {
 
 const PROOF_HASH =
   "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81";
+const PERCEPTUAL_HASH = "01".repeat(32);
+const WALLET = "11111111111111111111111111111111";
 
 const species = {
   catalogueId: "8",
@@ -48,9 +51,14 @@ const expectedIdentification = {
   proof_hash: PROOF_HASH,
 };
 
-function multipartRequest(files: File[] = [], fieldName = "image") {
+function multipartRequest(
+  files: Array<File> = [],
+  fieldName = "image",
+  wallets: Array<FormDataEntryValue> = [WALLET],
+) {
   const formData = new FormData();
   for (const file of files) formData.append(fieldName, file);
+  for (const wallet of wallets) formData.append("wallet", wallet);
 
   return new Request("http://localhost/api/identify", {
     method: "POST",
@@ -70,6 +78,8 @@ function dependencies() {
     classify: vi.fn().mockResolvedValue(classification),
     getSpecies: vi.fn().mockResolvedValue(species),
     createProofHash: vi.fn().mockResolvedValue(PROOF_HASH),
+    createPerceptualHash: vi.fn().mockResolvedValue(PERCEPTUAL_HASH),
+    reserveDiscovery: vi.fn().mockResolvedValue({ duplicate: false }),
   };
 }
 
@@ -96,6 +106,15 @@ describe("POST /api/identify", () => {
     expect(deps.classify).toHaveBeenCalledOnce();
     expect(deps.getSpecies).toHaveBeenCalledWith("butterfly");
     expect(deps.createProofHash).toHaveBeenCalledOnce();
+    expect(deps.createPerceptualHash).toHaveBeenCalledOnce();
+    expect(deps.reserveDiscovery).toHaveBeenCalledWith({
+      wallet: WALLET,
+      catalogueId: "8",
+      gradeCode: 3,
+      rarity: "Common",
+      proofHash: PROOF_HASH,
+      perceptualHash: PERCEPTUAL_HASH,
+    });
   });
 
   it("rejects extra fields in the response schema", () => {
@@ -167,6 +186,25 @@ describe("POST /api/identify", () => {
     expect(deps.classify).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["missing", []],
+    ["empty", [""]],
+    ["malformed", ["not-a-solana-address"]],
+    ["multiple", [WALLET, WALLET]],
+    ["file", [imageFile()]],
+  ] as const)("returns 400 for a %s wallet", async (_name, wallets) => {
+    const deps = dependencies();
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()], "image", [...wallets]),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await responseBody(response)).toMatchObject({
+      error: { code: "INVALID_WALLET" },
+    });
+    expect(deps.classify).not.toHaveBeenCalled();
+  });
+
   it("returns 422 before catalogue lookup when confidence is too low", async () => {
     const deps = dependencies();
     deps.classify.mockResolvedValue({
@@ -189,6 +227,8 @@ describe("POST /api/identify", () => {
     });
     expect(deps.getSpecies).not.toHaveBeenCalled();
     expect(deps.createProofHash).not.toHaveBeenCalled();
+    expect(deps.createPerceptualHash).not.toHaveBeenCalled();
+    expect(deps.reserveDiscovery).not.toHaveBeenCalled();
   });
 
   it("accepts the minimum confidence as a Bronze identification", async () => {
@@ -214,6 +254,7 @@ describe("POST /api/identify", () => {
     });
     expect(deps.getSpecies).toHaveBeenCalledWith("butterfly");
     expect(deps.createProofHash).toHaveBeenCalledOnce();
+    expect(deps.reserveDiscovery).toHaveBeenCalledOnce();
   });
 
   it("returns 422 before hashing for a quest-ineligible species", async () => {
@@ -232,6 +273,46 @@ describe("POST /api/identify", () => {
       error: { code: "QUEST_INELIGIBLE" },
     });
     expect(deps.createProofHash).not.toHaveBeenCalled();
+    expect(deps.createPerceptualHash).not.toHaveBeenCalled();
+    expect(deps.reserveDiscovery).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 without identification data for a global duplicate", async () => {
+    const deps = dependencies();
+    deps.reserveDiscovery.mockResolvedValue({ duplicate: true, distance: 3 });
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await responseBody(response)).toEqual({
+      error: {
+        code: "DUPLICATE_IMAGE",
+        message: "This photo has already been used for a discovery.",
+        distance: 3,
+      },
+    });
+    expect(deps.reserveDiscovery).toHaveBeenCalledOnce();
+  });
+
+  it("fails closed when the duplicate reservation is unavailable", async () => {
+    const deps = dependencies();
+    deps.reserveDiscovery.mockRejectedValue(
+      new DuplicateCheckUnavailableError(),
+    );
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await responseBody(response)).toEqual({
+      error: {
+        code: "DUPLICATE_CHECK_UNAVAILABLE",
+        message: "The duplicate-image check is temporarily unavailable.",
+      },
+    });
   });
 
   it.each([
@@ -305,5 +386,7 @@ describe("POST /api/identify", () => {
       error: { code: "INTERNAL_ERROR" },
     });
     expect(deps.createProofHash).not.toHaveBeenCalled();
+    expect(deps.createPerceptualHash).not.toHaveBeenCalled();
+    expect(deps.reserveDiscovery).not.toHaveBeenCalled();
   });
 });

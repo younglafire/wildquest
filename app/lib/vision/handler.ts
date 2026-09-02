@@ -1,5 +1,11 @@
 import { z } from "zod";
+import { isAddress } from "@solana/kit";
 import type { IdentificationSpecies } from "./catalogue";
+import {
+  DuplicateCheckUnavailableError,
+  type DiscoveryReservation,
+  type DiscoveryReservationResult,
+} from "./duplicate";
 import {
   InvalidCatalogueMetadataError,
   InvalidImageError,
@@ -33,17 +39,24 @@ type IdentifyDependencies = {
   classify: (image: Blob) => Promise<MappedClassification>;
   getSpecies: (speciesId: string) => Promise<IdentificationSpecies | null>;
   createProofHash: (image: Blob) => Promise<string>;
+  createPerceptualHash: (image: Blob) => Promise<string>;
+  reserveDiscovery: (
+    reservation: DiscoveryReservation,
+  ) => Promise<DiscoveryReservationResult>;
 };
 
 type ErrorCode =
   | "INVALID_MULTIPART"
   | "IMAGE_REQUIRED"
+  | "INVALID_WALLET"
   | "INVALID_IMAGE"
   | "IMAGE_TOO_LARGE"
   | "UNSUPPORTED_MEDIA_TYPE"
   | "UNSUPPORTED_SPECIES"
   | "LOW_CONFIDENCE"
   | "QUEST_INELIGIBLE"
+  | "DUPLICATE_IMAGE"
+  | "DUPLICATE_CHECK_UNAVAILABLE"
   | "MODEL_UNAVAILABLE"
   | "INTERNAL_OUTPUT_INVALID"
   | "INTERNAL_ERROR";
@@ -117,6 +130,21 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
     }
 
     const image = images[0];
+
+    const wallets = formData.getAll("wallet");
+    if (
+      wallets.length !== 1 ||
+      typeof wallets[0] !== "string" ||
+      !isAddress(wallets[0])
+    ) {
+      return errorResponse(
+        "INVALID_WALLET",
+        "Provide exactly one valid Solana wallet address.",
+        400,
+      );
+    }
+    const wallet = wallets[0];
+
     if (image.size === 0) {
       return errorResponse("INVALID_IMAGE", "The image file is empty.", 400);
     }
@@ -180,6 +208,30 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
           proofHash,
         ),
       });
+
+      const perceptualHash = await dependencies.createPerceptualHash(image);
+      const reservation = await dependencies.reserveDiscovery({
+        wallet,
+        catalogueId: response.identification.catalogue_id,
+        gradeCode: response.identification.grade_code,
+        rarity: response.identification.rarity,
+        proofHash: response.identification.proof_hash,
+        perceptualHash,
+      });
+
+      if (reservation.duplicate) {
+        return Response.json(
+          {
+            error: {
+              code: "DUPLICATE_IMAGE",
+              message: "This photo has already been used for a discovery.",
+              distance: reservation.distance,
+            },
+          },
+          { status: 409 },
+        );
+      }
+
       return Response.json(response);
     } catch (error) {
       if (error instanceof InvalidImageError) {
@@ -204,6 +256,10 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
 
       if (error instanceof ModelUnavailableError) {
         return errorResponse("MODEL_UNAVAILABLE", error.message, 503);
+      }
+
+      if (error instanceof DuplicateCheckUnavailableError) {
+        return errorResponse("DUPLICATE_CHECK_UNAVAILABLE", error.message, 503);
       }
 
       if (
