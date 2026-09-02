@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { InvalidImageError, ModelUnavailableError } from "./errors";
+import type { IdentificationSpecies } from "./catalogue";
+import {
+  InvalidCatalogueMetadataError,
+  InvalidImageError,
+  ModelUnavailableError,
+} from "./errors";
 import {
   InvalidModelOutputError,
   UnsupportedSpeciesError,
@@ -10,7 +15,12 @@ import {
   identifySuccessSchema,
   type Identification,
 } from "./schema";
-import type { IdentificationSpecies } from "./species";
+import {
+  getCaptureReward,
+  getRarityCode,
+  MIN_IDENTIFICATION_CONFIDENCE,
+  type CaptureReward,
+} from "./rules";
 
 export const MAX_IMAGE_BYTES = 4_000_000;
 export const SUPPORTED_IMAGE_TYPES = new Set([
@@ -22,6 +32,7 @@ export const SUPPORTED_IMAGE_TYPES = new Set([
 type IdentifyDependencies = {
   classify: (image: Blob) => Promise<MappedClassification>;
   getSpecies: (speciesId: string) => Promise<IdentificationSpecies | null>;
+  createProofHash: (image: Blob) => Promise<string>;
 };
 
 type ErrorCode =
@@ -31,6 +42,8 @@ type ErrorCode =
   | "IMAGE_TOO_LARGE"
   | "UNSUPPORTED_MEDIA_TYPE"
   | "UNSUPPORTED_SPECIES"
+  | "LOW_CONFIDENCE"
+  | "QUEST_INELIGIBLE"
   | "MODEL_UNAVAILABLE"
   | "INTERNAL_OUTPUT_INVALID"
   | "INTERNAL_ERROR";
@@ -42,13 +55,33 @@ function errorResponse(code: ErrorCode, message: string, status: number) {
 function createIdentification(
   classification: MappedClassification,
   species: IdentificationSpecies,
+  proofHash: string,
 ): Identification {
+  let reward: CaptureReward;
+  try {
+    reward = getCaptureReward(classification.confidence, species.baseXp);
+  } catch (error) {
+    throw new InvalidCatalogueMetadataError(
+      "The species catalogue contains invalid reward metadata.",
+      { cause: error },
+    );
+  }
+
   return identificationSchema.parse({
+    catalogue_id: species.catalogueId,
     species_id: species.speciesId,
     common_name: species.commonName,
     confidence: classification.confidence,
     explanation: `ResNet-50 matched the ImageNet label "${classification.label}".`,
     rarity: species.rarity,
+    rarity_code: getRarityCode(species.rarity),
+    base_xp: species.baseXp,
+    facts: species.facts,
+    target_for_quest: species.targetForQuest,
+    grade: reward.grade,
+    grade_code: reward.gradeCode,
+    awarded_xp: reward.awardedXp,
+    proof_hash: proofHash,
   });
 }
 
@@ -106,6 +139,20 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
 
     try {
       const classification = await dependencies.classify(image);
+      if (classification.confidence < MIN_IDENTIFICATION_CONFIDENCE) {
+        return Response.json(
+          {
+            error: {
+              code: "LOW_CONFIDENCE",
+              message: "The identification confidence is too low to claim.",
+              confidence: classification.confidence,
+              minimum_confidence: MIN_IDENTIFICATION_CONFIDENCE,
+            },
+          },
+          { status: 422 },
+        );
+      }
+
       const species = await dependencies.getSpecies(classification.speciesId);
 
       if (!species) {
@@ -116,8 +163,22 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
         );
       }
 
+      if (!species.targetForQuest) {
+        return errorResponse(
+          "QUEST_INELIGIBLE",
+          "The identified species is not eligible for the current quest.",
+          422,
+        );
+      }
+
+      const proofHash = await dependencies.createProofHash(image);
+
       const response = identifySuccessSchema.parse({
-        identification: createIdentification(classification, species),
+        identification: createIdentification(
+          classification,
+          species,
+          proofHash,
+        ),
       });
       return Response.json(response);
     } catch (error) {
@@ -147,11 +208,12 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
 
       if (
         error instanceof InvalidModelOutputError ||
+        error instanceof InvalidCatalogueMetadataError ||
         error instanceof z.ZodError
       ) {
         return errorResponse(
           "INTERNAL_OUTPUT_INVALID",
-          "The classifier produced an invalid result.",
+          "The identification result could not be validated.",
           500,
         );
       }

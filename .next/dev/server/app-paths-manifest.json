@@ -1,6 +1,0 @@
-{
-  "/api/health/supabase/route": "app/api/health/supabase/route.js",
-  "/api/species/[speciesId]/route": "app/api/species/[speciesId]/route.js",
-  "/api/species/route": "app/api/species/route.js",
-  "/page": "app/page.js"
-}

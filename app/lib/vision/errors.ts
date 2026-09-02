@@ -11,3 +11,10 @@ export class ModelUnavailableError extends Error {
     this.name = "ModelUnavailableError";
   }
 }
+
+export class InvalidCatalogueMetadataError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "InvalidCatalogueMetadataError";
+  }
+}

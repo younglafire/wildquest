@@ -1,11 +1,8 @@
 import { createSupabaseServerClient } from "@/app/lib/supabase/server";
-import { parseRarity, type Rarity } from "@/app/lib/species";
-
-export type IdentificationSpecies = {
-  speciesId: string;
-  commonName: string;
-  rarity: Rarity;
-};
+import {
+  mapIdentificationSpecies,
+  type IdentificationSpecies,
+} from "./catalogue";
 
 export async function getIdentificationSpecies(
   speciesId: string,
@@ -13,7 +10,7 @@ export async function getIdentificationSpecies(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("species")
-    .select("species_id, name, rarity")
+    .select("id, species_id, name, rarity, base_xp, facts, target_for_quest")
     .eq("species_id", speciesId)
     .eq("is_active", true)
     .maybeSingle();
@@ -25,10 +22,5 @@ export async function getIdentificationSpecies(
   }
 
   if (!data) return null;
-
-  return {
-    speciesId: data.species_id,
-    commonName: data.name,
-    rarity: parseRarity(data.rarity),
-  };
+  return mapIdentificationSpecies(data);
 }

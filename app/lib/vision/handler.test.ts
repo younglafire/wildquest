@@ -14,10 +14,38 @@ const classification: MappedClassification = {
   label: "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus",
 };
 
+const PROOF_HASH =
+  "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81";
+
 const species = {
+  catalogueId: "8",
   speciesId: "butterfly",
   commonName: "Butterfly",
   rarity: "Common",
+  baseXp: 50,
+  facts: [
+    "Butterfly wings are covered with thousands of tiny scales.",
+    "Butterflies undergo complete metamorphosis.",
+  ],
+  targetForQuest: true,
+};
+
+const expectedIdentification = {
+  catalogue_id: "8",
+  species_id: "butterfly",
+  common_name: "Butterfly",
+  confidence: 0.91,
+  explanation:
+    'ResNet-50 matched the ImageNet label "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus".',
+  rarity: "Common",
+  rarity_code: 0,
+  base_xp: 50,
+  facts: species.facts,
+  target_for_quest: true,
+  grade: "Gold",
+  grade_code: 3,
+  awarded_xp: 100,
+  proof_hash: PROOF_HASH,
 };
 
 function multipartRequest(files: File[] = [], fieldName = "image") {
@@ -41,6 +69,7 @@ function dependencies() {
   return {
     classify: vi.fn().mockResolvedValue(classification),
     getSpecies: vi.fn().mockResolvedValue(species),
+    createProofHash: vi.fn().mockResolvedValue(PROOF_HASH),
   };
 }
 
@@ -58,14 +87,7 @@ describe("POST /api/identify", () => {
 
     expect(response.status).toBe(200);
     expect(body).toEqual({
-      identification: {
-        species_id: "butterfly",
-        common_name: "Butterfly",
-        confidence: 0.91,
-        explanation:
-          'ResNet-50 matched the ImageNet label "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus".',
-        rarity: "Common",
-      },
+      identification: expectedIdentification,
     });
     expect(identificationSchema.safeParse(body.identification).success).toBe(
       true,
@@ -73,29 +95,20 @@ describe("POST /api/identify", () => {
     expect(identifySuccessSchema.safeParse(body).success).toBe(true);
     expect(deps.classify).toHaveBeenCalledOnce();
     expect(deps.getSpecies).toHaveBeenCalledWith("butterfly");
+    expect(deps.createProofHash).toHaveBeenCalledOnce();
   });
 
   it("rejects extra fields in the response schema", () => {
     expect(
       identificationSchema.safeParse({
-        species_id: "bee",
-        common_name: "Bee",
-        confidence: 0.8,
-        explanation: 'ResNet-50 matched the ImageNet label "bee".',
-        rarity: "Common",
+        ...expectedIdentification,
         extra: true,
       }).success,
     ).toBe(false);
 
     expect(
       identifySuccessSchema.safeParse({
-        identification: {
-          species_id: "bee",
-          common_name: "Bee",
-          confidence: 0.8,
-          explanation: 'ResNet-50 matched the ImageNet label "bee".',
-          rarity: "Common",
-        },
+        identification: expectedIdentification,
         extra: true,
       }).success,
     ).toBe(false);
@@ -154,6 +167,73 @@ describe("POST /api/identify", () => {
     expect(deps.classify).not.toHaveBeenCalled();
   });
 
+  it("returns 422 before catalogue lookup when confidence is too low", async () => {
+    const deps = dependencies();
+    deps.classify.mockResolvedValue({
+      ...classification,
+      confidence: 0.699999,
+    });
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(422);
+    expect(await responseBody(response)).toEqual({
+      error: {
+        code: "LOW_CONFIDENCE",
+        message: "The identification confidence is too low to claim.",
+        confidence: 0.699999,
+        minimum_confidence: 0.7,
+      },
+    });
+    expect(deps.getSpecies).not.toHaveBeenCalled();
+    expect(deps.createProofHash).not.toHaveBeenCalled();
+  });
+
+  it("accepts the minimum confidence as a Bronze identification", async () => {
+    const deps = dependencies();
+    deps.classify.mockResolvedValue({
+      ...classification,
+      confidence: 0.7,
+    });
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await responseBody(response)).toMatchObject({
+      identification: {
+        confidence: 0.7,
+        target_for_quest: true,
+        grade: "Bronze",
+        grade_code: 1,
+        awarded_xp: 50,
+      },
+    });
+    expect(deps.getSpecies).toHaveBeenCalledWith("butterfly");
+    expect(deps.createProofHash).toHaveBeenCalledOnce();
+  });
+
+  it("returns 422 before hashing for a quest-ineligible species", async () => {
+    const deps = dependencies();
+    deps.getSpecies.mockResolvedValue({
+      ...species,
+      targetForQuest: false,
+    });
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(422);
+    expect(await responseBody(response)).toMatchObject({
+      error: { code: "QUEST_INELIGIBLE" },
+    });
+    expect(deps.createProofHash).not.toHaveBeenCalled();
+  });
+
   it.each([
     [new InvalidImageError(), 400, "INVALID_IMAGE"],
     [
@@ -177,9 +257,32 @@ describe("POST /api/identify", () => {
     },
   );
 
-  it("returns 500 when catalogue metadata cannot satisfy the response schema", async () => {
+  it.each([
+    ["catalogue ID", { catalogueId: "0" }],
+    ["rarity", { rarity: "Mythic" }],
+    ["base XP", { baseXp: 0 }],
+    ["facts", { facts: [42] }],
+  ])(
+    "returns 500 when catalogue %s cannot satisfy the response schema",
+    async (_field, metadata) => {
+      const deps = dependencies();
+      deps.getSpecies.mockResolvedValue({ ...species, ...metadata });
+
+      const response = await createIdentifyHandler(deps)(
+        multipartRequest([imageFile()]),
+      );
+
+      expect(response.status).toBe(500);
+      expect(await responseBody(response)).toMatchObject({
+        error: { code: "INTERNAL_OUTPUT_INVALID" },
+      });
+    },
+  );
+
+  it("returns 500 when the proof hash is invalid", async () => {
     const deps = dependencies();
-    deps.getSpecies.mockResolvedValue({ ...species, rarity: "Mythic" });
+    deps.createProofHash.mockResolvedValue("not-a-proof-hash");
+
     const response = await createIdentifyHandler(deps)(
       multipartRequest([imageFile()]),
     );
@@ -201,5 +304,6 @@ describe("POST /api/identify", () => {
     expect(await responseBody(response)).toMatchObject({
       error: { code: "INTERNAL_ERROR" },
     });
+    expect(deps.createProofHash).not.toHaveBeenCalled();
   });
 });

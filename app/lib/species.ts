@@ -40,9 +40,22 @@ function isRecord(
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseFacts(value: Json | undefined): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((fact): fact is string => typeof fact === "string");
+export function parseFacts(value: Json | undefined): Array<string> {
+  if (
+    !Array.isArray(value) ||
+    !value.every(
+      (fact) =>
+        typeof fact === "string" &&
+        fact.trim().length > 0 &&
+        fact.trim().length <= 300,
+    )
+  ) {
+    throw new Error("Species facts must be an array of non-empty strings.");
+  }
+
+  return value
+    .filter((fact): fact is string => typeof fact === "string")
+    .map((fact) => fact.trim());
 }
 
 function parseQuiz(value: Json | undefined): SpeciesQuiz | null {
