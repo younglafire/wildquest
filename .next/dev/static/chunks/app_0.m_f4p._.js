@@ -12,6 +12,7 @@ __turbopack_context__.s([
     "getClusterWsConfig",
     ()=>getClusterWsConfig
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$solana$2f$plugin$2d$core$2f$dist$2f$index$2e$browser$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@solana/plugin-core/dist/index.browser.mjs [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$solana$2f$kit$2d$plugin$2d$rpc$2f$dist$2f$index$2e$browser$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@solana/kit-plugin-rpc/dist/index.browser.mjs [app-client] (ecmascript)");
 ;
@@ -22,14 +23,16 @@ const CLUSTERS = [
     "mainnet",
     "localnet"
 ];
+const DEVNET_RPC_URL = ("TURBOPACK compile-time value", "https://devnet.helius-rpc.com/?api-key=6949a0d2-fea6-4aae-ad94-7a75676c86d0") || "https://api.devnet.solana.com";
+const DEVNET_WS_URL = ("TURBOPACK compile-time value", "wss://devnet.helius-rpc.com/?api-key=6949a0d2-fea6-4aae-ad94-7a75676c86d0") || "wss://api.devnet.solana.com";
 const CLUSTER_URLS = {
-    devnet: "https://api.devnet.solana.com",
+    devnet: DEVNET_RPC_URL,
     testnet: "https://api.testnet.solana.com",
     mainnet: "https://api.mainnet-beta.solana.com",
     localnet: "http://localhost:8899"
 };
 const WS_URLS = {
-    devnet: "wss://api.devnet.solana.com",
+    devnet: DEVNET_WS_URL,
     testnet: "wss://api.testnet.solana.com",
     mainnet: "wss://api.mainnet-beta.solana.com",
     localnet: "ws://localhost:8900"
