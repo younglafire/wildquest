@@ -6,11 +6,11 @@ skip_local_validator = true
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-wildquest = "DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo"
-
 [programs.devnet]
 wildquest = "DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo"
+
+[programs.localnet]
+wildquest = "3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF"
 
 [provider]
 cluster = "localnet"

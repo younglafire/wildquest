@@ -1,6 +1,7 @@
 pub mod constants;
 pub mod error;
 pub mod instructions;
+pub mod progression;
 pub mod state;
 
 use anchor_lang::prelude::*;
@@ -9,7 +10,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo");
+declare_id!("3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF");
 
 #[program]
 pub mod wildquest {
@@ -37,5 +38,19 @@ pub mod wildquest {
         crate::instructions::discover_species::handle_discover_species(
             context, species_id, grade, rarity, proof_hash,
         )
+    }
+
+    pub fn initialize_quest(
+        context: Context<InitializeQuestAccountConstraints>,
+        quest_id: u64,
+    ) -> Result<()> {
+        crate::instructions::initialize_quest::handle_initialize_quest(context, quest_id)
+    }
+
+    pub fn complete_quest(
+        context: Context<CompleteQuestAccountConstraints>,
+        quest_id: u64,
+    ) -> Result<()> {
+        crate::instructions::complete_quest::handle_complete_quest(context, quest_id)
     }
 }

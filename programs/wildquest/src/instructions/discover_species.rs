@@ -3,9 +3,10 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::{
         BRONZE_GRADE, BRONZE_XP, DISCOVERY_SEED, GOLD_GRADE, GOLD_XP, MAX_RARITY, PLAYER_SEED,
-        SILVER_GRADE, SILVER_XP, STARTING_LEVEL, XP_PER_LEVEL,
+        SILVER_GRADE, SILVER_XP,
     },
     error::ErrorCode,
+    progression::calculate_discovery_progression,
     state::{Discovery, Player},
 };
 
@@ -53,7 +54,7 @@ pub fn handle_discover_species(
 
     let player = &mut context.accounts.player;
     let (next_xp, next_level, next_discovery_count) =
-        calculate_player_progression(player.xp, player.discovery_count, awarded_xp)?;
+        calculate_discovery_progression(player.xp, player.discovery_count, awarded_xp)?;
 
     player.xp = next_xp;
     player.level = next_level;
@@ -74,37 +75,4 @@ pub fn handle_discover_species(
         discovery.timestamp
     );
     Ok(())
-}
-
-fn calculate_player_progression(
-    current_xp: u64,
-    current_discovery_count: u64,
-    awarded_xp: u64,
-) -> Result<(u64, u64, u64)> {
-    let next_xp = current_xp
-        .checked_add(awarded_xp)
-        .ok_or(ErrorCode::ProgressionOverflow)?;
-    let next_discovery_count = current_discovery_count
-        .checked_add(1)
-        .ok_or(ErrorCode::ProgressionOverflow)?;
-    let next_level = next_xp
-        .checked_div(XP_PER_LEVEL)
-        .and_then(|completed_levels| completed_levels.checked_add(STARTING_LEVEL))
-        .ok_or(ErrorCode::ProgressionOverflow)?;
-    Ok((next_xp, next_level, next_discovery_count))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn progression_rejects_xp_overflow() {
-        assert!(calculate_player_progression(u64::MAX, 0, BRONZE_XP).is_err());
-    }
-
-    #[test]
-    fn progression_rejects_discovery_count_overflow() {
-        assert!(calculate_player_progression(0, u64::MAX, BRONZE_XP).is_err());
-    }
 }

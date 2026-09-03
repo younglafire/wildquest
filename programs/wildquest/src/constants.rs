@@ -10,6 +10,12 @@ pub const PLAYER_SEED: &[u8] = b"player";
 pub const DISCOVERY_SEED: &[u8] = b"discovery";
 
 #[constant]
+pub const QUEST_SEED: &[u8] = b"quest";
+
+#[constant]
+pub const QUEST_COMPLETION_SEED: &[u8] = b"quest_completion";
+
+#[constant]
 pub const HELLO_WORLD_LAMPORTS: u64 = 1;
 
 #[constant]
@@ -41,3 +47,12 @@ pub const GOLD_XP: u64 = 100;
 
 #[constant]
 pub const MAX_RARITY: u8 = 4;
+
+#[constant]
+pub const DEMO_QUEST_ID: u64 = 1;
+
+#[constant]
+pub const DEMO_QUEST_TARGETS: [u64; 5] = [3, 5, 8, 9, 11];
+
+#[constant]
+pub const DEMO_QUEST_REWARD_XP: u64 = 100;

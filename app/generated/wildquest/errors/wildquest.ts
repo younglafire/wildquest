@@ -26,24 +26,52 @@ export const WILDQUEST_ERROR__INVALID_RARITY = 0x1773; // 6003
 export const WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH = 0x1774; // 6004
 /** ProgressionOverflow: Player progression arithmetic overflowed */
 export const WILDQUEST_ERROR__PROGRESSION_OVERFLOW = 0x1775; // 6005
+/** UnsupportedQuest: The requested quest is not defined by this program */
+export const WILDQUEST_ERROR__UNSUPPORTED_QUEST = 0x1776; // 6006
+/** QuestIdMismatch: The quest account does not match the requested quest ID */
+export const WILDQUEST_ERROR__QUEST_ID_MISMATCH = 0x1777; // 6007
+/** InvalidQuestDefinition: The quest definition is invalid */
+export const WILDQUEST_ERROR__INVALID_QUEST_DEFINITION = 0x1778; // 6008
+/** InvalidQuestDiscoveryCount: The number of submitted discoveries does not match the quest target count */
+export const WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY_COUNT = 0x1779; // 6009
+/** InvalidQuestDiscovery: A submitted discovery account is invalid */
+export const WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY = 0x177a; // 6010
+/** QuestDiscoveryPlayerMismatch: A submitted discovery belongs to another player */
+export const WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH = 0x177b; // 6011
+/** QuestTargetsIncomplete: The player has not discovered every quest target */
+export const WILDQUEST_ERROR__QUEST_TARGETS_INCOMPLETE = 0x177c; // 6012
 
 export type WildquestError =
   | typeof WILDQUEST_ERROR__COUNTER_OVERFLOW
   | typeof WILDQUEST_ERROR__INVALID_CAPTURE_GRADE
+  | typeof WILDQUEST_ERROR__INVALID_QUEST_DEFINITION
+  | typeof WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY
+  | typeof WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY_COUNT
   | typeof WILDQUEST_ERROR__INVALID_RARITY
   | typeof WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH
   | typeof WILDQUEST_ERROR__PROGRESSION_OVERFLOW
-  | typeof WILDQUEST_ERROR__UNAUTHORIZED;
+  | typeof WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH
+  | typeof WILDQUEST_ERROR__QUEST_ID_MISMATCH
+  | typeof WILDQUEST_ERROR__QUEST_TARGETS_INCOMPLETE
+  | typeof WILDQUEST_ERROR__UNAUTHORIZED
+  | typeof WILDQUEST_ERROR__UNSUPPORTED_QUEST;
 
 let wildquestErrorMessages: Record<WildquestError, string> | undefined;
 if (process.env.NODE_ENV !== "production") {
   wildquestErrorMessages = {
     [WILDQUEST_ERROR__COUNTER_OVERFLOW]: `Counter has reached the maximum value`,
     [WILDQUEST_ERROR__INVALID_CAPTURE_GRADE]: `Capture grade must be Bronze, Silver, or Gold`,
+    [WILDQUEST_ERROR__INVALID_QUEST_DEFINITION]: `The quest definition is invalid`,
+    [WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY]: `A submitted discovery account is invalid`,
+    [WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY_COUNT]: `The number of submitted discoveries does not match the quest target count`,
     [WILDQUEST_ERROR__INVALID_RARITY]: `Species rarity must be between Common and Legendary`,
     [WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH]: `Player account does not belong to the transaction signer`,
     [WILDQUEST_ERROR__PROGRESSION_OVERFLOW]: `Player progression arithmetic overflowed`,
+    [WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH]: `A submitted discovery belongs to another player`,
+    [WILDQUEST_ERROR__QUEST_ID_MISMATCH]: `The quest account does not match the requested quest ID`,
+    [WILDQUEST_ERROR__QUEST_TARGETS_INCOMPLETE]: `The player has not discovered every quest target`,
     [WILDQUEST_ERROR__UNAUTHORIZED]: `Only the counter authority can update this counter`,
+    [WILDQUEST_ERROR__UNSUPPORTED_QUEST]: `The requested quest is not defined by this program`,
   };
 }
 

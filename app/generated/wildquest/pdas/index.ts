@@ -9,3 +9,5 @@
 export * from "./counter";
 export * from "./discovery";
 export * from "./player";
+export * from "./quest";
+export * from "./questCompletion";

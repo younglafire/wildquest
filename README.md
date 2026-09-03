@@ -145,6 +145,31 @@ for each recorded capture. Discovery PDAs use the payer and proof hash, so
 different photos of the same species create separate collection records while
 replaying the same proof for that wallet cannot award XP twice.
 
+## Quest progression
+
+The program defines one VHU/HCMC demo quest with ID `1`. Its Quest PDA uses
+`["quest", quest_id_le_bytes]` and stores five catalogue targets: bee (`3`),
+chicken (`5`), butterfly (`8`), dragonfly (`9`), and frog (`11`). Completing
+the quest awards 100 XP and one badge. The level is recalculated with the same
+`1 + floor(total_xp / 100)` rule used after a discovery.
+
+`initialize_quest(1)` creates the global Quest account from constants compiled
+into the program. Initialization is permissionless because a caller cannot
+select or alter its targets or reward. The account only needs to be initialized
+once on a cluster.
+
+`complete_quest(1)` receives the five Discovery accounts as read-only remaining
+accounts. The program checks their owner and discriminator, verifies each
+Discovery belongs to the signing wallet, and requires all five target catalogue
+IDs. A QuestCompletion PDA at
+`["quest_completion", quest_pda, wallet]` records the claim, reward, timestamp,
+and canonical bump. Its one-account-per-wallet derivation prevents the same
+player from receiving the quest reward twice.
+
+Quest initialization and completion change the program interface. Rebuild and
+redeploy the program before using these instructions on Devnet, then regenerate
+the client with `npm run codama:js`.
+
 The local Microsoft ResNet-50 weights support the catalogue IDs `dog`, `cat`,
 `bee`, `chicken`, `butterfly`, `dragonfly`, `frog`, and `ant`. The endpoint
 returns `422 UNSUPPORTED_SPECIES` when the model's highest raw ImageNet class is
@@ -163,6 +188,46 @@ with `npm test`, or include the bundled real-image fixtures with:
 RUN_RESNET_INTEGRATION=1 npx vitest run app/lib/vision/classifier.integration.test.ts
 ```
 
+## Devnet loop verification
+
+`npm run test:devnet` executes the WQ-28 flow through the real Next.js identify
+route, Supabase reservation, deployed Devnet program, Player and Discovery
+accounts, and collection query. It runs ten different public-domain Golden
+Retriever photos sequentially and fails unless at least nine runs succeed.
+Each successful photo is permanently consumed by the duplicate gate, so use a
+fresh fixture set before repeating the ten-run test.
+
+The latest recorded Devnet run and transaction links are in
+[`docs/WQ-28-29-DEVNET-RESULTS.md`](docs/WQ-28-29-DEVNET-RESULTS.md).
+
+Use a dedicated funded Devnet keypair. The runner never prints or copies its
+secret bytes. It starts a local Next.js server on port 3000 when one is not
+already available there.
+
+```bash
+WQ_E2E_KEYPAIR_PATH=/absolute/path/to/devnet-test-keypair.json \
+  npm run test:devnet
+```
+
+Set `WQ_E2E_BASE_URL` to exercise an already-running deployment. Use
+`npm run test:devnet -- --runs 1` for the single-loop WQ-28 check. The pinned
+`tsx` development dependency runs the TypeScript harness without producing a
+separate JavaScript copy.
+
+The remote fixtures come from these Wikimedia Commons file pages. Confirm each
+page's public-domain or CC0 declaration before replacing a fixture:
+
+- [Shara golden retriever](https://commons.wikimedia.org/wiki/File:Shara.golden.retriever.jpg)
+- [Sitting golden retriever](https://commons.wikimedia.org/wiki/File:Sitting_golden_retriever.jpg)
+- [Golden retriever dog](https://commons.wikimedia.org/wiki/File:Golden-retriever-dog.jpg)
+- [Golden Retriever adult](https://commons.wikimedia.org/wiki/File:Golden_Retriever_adult.jpg)
+- [Image of golden retriever](https://commons.wikimedia.org/wiki/File:Image_of_golden_retriever.jpg)
+- [Golden Retriever Pet Dog](<https://commons.wikimedia.org/wiki/File:Golden_Retriever_(Pet_Dog).jpg>)
+- [Golden Retriever lying](https://commons.wikimedia.org/wiki/File:Golden_Retriever_-.jpg)
+- [Guide dog golden retriever](https://commons.wikimedia.org/wiki/File:Guide_dog_golden_retriever.jpg)
+- [Golden Retriever Yardie](https://commons.wikimedia.org/wiki/File:Golden_Retriever_Yardie.jpg)
+- [Golden Retriever 7 weeks](https://commons.wikimedia.org/wiki/File:Golden_Retriever_-_7_weeks.jpg)
+
 ## What this repo contains
 
 - Next.js app in the root `app/` directory
@@ -177,6 +242,7 @@ npm run anchor-build
 npm run anchor-test
 npm run codama:js
 npm run build
+npm run test:devnet
 ```
 
 ## Notes

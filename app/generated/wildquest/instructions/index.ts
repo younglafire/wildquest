@@ -6,7 +6,9 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./completeQuest";
 export * from "./discoverSpecies";
 export * from "./increment";
 export * from "./initialize";
 export * from "./initializePlayer";
+export * from "./initializeQuest";

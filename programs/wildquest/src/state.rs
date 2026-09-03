@@ -27,3 +27,24 @@ pub struct Discovery {
     pub rarity: u8,
     pub proof_hash: [u8; 32],
 }
+
+#[account]
+#[derive(InitSpace)]
+pub struct Quest {
+    pub quest_id: u64,
+    pub species_count: u8,
+    #[max_len(5)]
+    pub targets: Vec<u64>,
+    pub reward_xp: u64,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct QuestCompletion {
+    pub quest: Pubkey,
+    pub player: Pubkey,
+    pub completed_at: i64,
+    pub reward_xp: u64,
+    pub bump: u8,
+}

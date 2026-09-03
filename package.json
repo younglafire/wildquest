@@ -13,6 +13,7 @@
     "setup": "npm run anchor-build && npm run codama:js",
     "start": "next start",
     "test": "vitest run",
+    "test:devnet": "tsx --env-file=.env.local scripts/wq-devnet-loop.ts",
     "test:watch": "vitest"
   },
   "description": "WildQuest Solana dApp with an Anchor program and generated client",
@@ -66,6 +67,7 @@
     "prettier": "^3.6.2",
     "supabase": "^2.116.0",
     "tailwindcss": "^4",
+    "tsx": "4.23.1",
     "typescript": "^5",
     "vitest": "^4.1.11"
   }

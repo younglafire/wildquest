@@ -1,7 +1,10 @@
 use {
     anchor_lang::{
         prelude::Pubkey,
-        solana_program::{instruction::Instruction, system_program},
+        solana_program::{
+            instruction::{AccountMeta, Instruction},
+            system_program,
+        },
         AccountDeserialize, AccountSerialize, InstructionData, ToAccountMetas,
     },
     litesvm::LiteSVM,
@@ -98,6 +101,100 @@ fn read_player(svm: &LiteSVM, player: &Pubkey) -> wildquest::state::Player {
     let player_account = svm.get_account(player).unwrap();
     let mut data: &[u8] = &player_account.data;
     wildquest::state::Player::try_deserialize(&mut data).unwrap()
+}
+
+fn find_quest_pda(quest_id: u64) -> Pubkey {
+    Pubkey::find_program_address(
+        &[
+            wildquest::constants::QUEST_SEED,
+            quest_id.to_le_bytes().as_ref(),
+        ],
+        &wildquest::id(),
+    )
+    .0
+}
+
+fn initialize_quest(svm: &mut LiteSVM, payer: &Keypair, quest_id: u64) -> Pubkey {
+    let quest = find_quest_pda(quest_id);
+    let instruction = Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::InitializeQuest { quest_id }.data(),
+        wildquest::accounts::InitializeQuestAccountConstraints {
+            payer: payer.pubkey(),
+            quest,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+    );
+    assert!(send_instruction(svm, payer, instruction));
+    quest
+}
+
+fn read_quest(svm: &LiteSVM, quest: &Pubkey) -> wildquest::state::Quest {
+    let quest_account = svm.get_account(quest).unwrap();
+    let mut data: &[u8] = &quest_account.data;
+    wildquest::state::Quest::try_deserialize(&mut data).unwrap()
+}
+
+fn find_quest_completion_pda(quest: &Pubkey, payer: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(
+        &[
+            wildquest::constants::QUEST_COMPLETION_SEED,
+            quest.as_ref(),
+            payer.as_ref(),
+        ],
+        &wildquest::id(),
+    )
+    .0
+}
+
+fn complete_quest_instruction(
+    payer: &Keypair,
+    player: Pubkey,
+    quest: Pubkey,
+    quest_id: u64,
+    discoveries: &[Pubkey],
+) -> (Instruction, Pubkey) {
+    let quest_completion = find_quest_completion_pda(&quest, &payer.pubkey());
+    let mut account_metas = wildquest::accounts::CompleteQuestAccountConstraints {
+        payer: payer.pubkey(),
+        player,
+        quest,
+        quest_completion,
+        system_program: system_program::ID,
+    }
+    .to_account_metas(None);
+    account_metas.extend(
+        discoveries
+            .iter()
+            .map(|discovery| AccountMeta::new_readonly(*discovery, false)),
+    );
+    let instruction = Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::CompleteQuest { quest_id }.data(),
+        account_metas,
+    );
+    (instruction, quest_completion)
+}
+
+fn create_discoveries(
+    svm: &mut LiteSVM,
+    payer: &Keypair,
+    player: Pubkey,
+    species_ids: &[u64],
+) -> Vec<Pubkey> {
+    species_ids
+        .iter()
+        .enumerate()
+        .map(|(index, species_id)| {
+            let mut proof_hash = [0u8; 32];
+            proof_hash[0] = u8::try_from(index).unwrap().checked_add(20).unwrap();
+            let (instruction, discovery) =
+                discovery_instruction(payer, player, *species_id, 1, 0, proof_hash);
+            assert!(send_instruction(svm, payer, instruction));
+            discovery
+        })
+        .collect()
 }
 
 fn write_player(svm: &mut LiteSVM, player: Pubkey, state: &wildquest::state::Player) {
@@ -324,4 +421,222 @@ fn test_discover_species_rolls_back_progression_overflow() {
     assert_eq!(unchanged_player.xp, u64::MAX);
     assert_eq!(unchanged_player.level, 1);
     assert_eq!(unchanged_player.discovery_count, 7);
+}
+
+#[test]
+fn test_initialize_demo_quest() {
+    let payer = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&payer.pubkey(), 1_000_000_000).unwrap();
+    let balance_before = svm.get_balance(&payer.pubkey()).unwrap();
+
+    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
+    let quest_state = read_quest(&svm, &quest);
+
+    assert_eq!(quest_state.quest_id, wildquest::constants::DEMO_QUEST_ID);
+    assert_eq!(
+        usize::from(quest_state.species_count),
+        wildquest::constants::DEMO_QUEST_TARGETS.len()
+    );
+    assert_eq!(
+        quest_state.targets,
+        wildquest::constants::DEMO_QUEST_TARGETS
+    );
+    assert_eq!(
+        quest_state.reward_xp,
+        wildquest::constants::DEMO_QUEST_REWARD_XP
+    );
+    assert_eq!(
+        quest_state.bump,
+        Pubkey::find_program_address(
+            &[
+                wildquest::constants::QUEST_SEED,
+                wildquest::constants::DEMO_QUEST_ID.to_le_bytes().as_ref(),
+            ],
+            &wildquest::id(),
+        )
+        .1
+    );
+    assert!(svm.get_balance(&payer.pubkey()).unwrap() < balance_before);
+}
+
+#[test]
+fn test_initialize_quest_rejects_unknown_definition() {
+    let payer = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&payer.pubkey(), 1_000_000_000).unwrap();
+    let unknown_quest_id = 77;
+    let quest = find_quest_pda(unknown_quest_id);
+    let instruction = Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::InitializeQuest {
+            quest_id: unknown_quest_id,
+        }
+        .data(),
+        wildquest::accounts::InitializeQuestAccountConstraints {
+            payer: payer.pubkey(),
+            quest,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+    );
+
+    assert!(!send_instruction(&mut svm, &payer, instruction));
+    assert!(svm.get_account(&quest).is_none());
+}
+
+#[test]
+fn test_complete_quest_awards_xp_level_and_badge_once() {
+    let payer = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
+    let player = initialize_player(&mut svm, &payer);
+    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
+    let discoveries = create_discoveries(
+        &mut svm,
+        &payer,
+        player,
+        &wildquest::constants::DEMO_QUEST_TARGETS,
+    );
+    let balance_before = svm.get_balance(&payer.pubkey()).unwrap();
+    let expected_timestamp = svm
+        .get_sysvar::<anchor_lang::prelude::Clock>()
+        .unix_timestamp;
+
+    let (instruction, quest_completion) = complete_quest_instruction(
+        &payer,
+        player,
+        quest,
+        wildquest::constants::DEMO_QUEST_ID,
+        &discoveries,
+    );
+    assert!(send_instruction(&mut svm, &payer, instruction));
+
+    let player_state = read_player(&svm, &player);
+    assert_eq!(player_state.xp, 350);
+    assert_eq!(player_state.level, 4);
+    assert_eq!(player_state.discovery_count, 5);
+    assert_eq!(player_state.badge_count, 1);
+
+    let completion_account = svm.get_account(&quest_completion).unwrap();
+    let mut data: &[u8] = &completion_account.data;
+    let completion = wildquest::state::QuestCompletion::try_deserialize(&mut data).unwrap();
+    assert_eq!(completion.quest, quest);
+    assert_eq!(completion.player, payer.pubkey());
+    assert_eq!(
+        completion.reward_xp,
+        wildquest::constants::DEMO_QUEST_REWARD_XP
+    );
+    assert_eq!(completion.completed_at, expected_timestamp);
+    assert!(svm.get_balance(&payer.pubkey()).unwrap() < balance_before);
+
+    let (duplicate_instruction, _) = complete_quest_instruction(
+        &payer,
+        player,
+        quest,
+        wildquest::constants::DEMO_QUEST_ID,
+        &discoveries,
+    );
+    assert!(!send_instruction(&mut svm, &payer, duplicate_instruction));
+    let unchanged_player = read_player(&svm, &player);
+    assert_eq!(unchanged_player.xp, 350);
+    assert_eq!(unchanged_player.badge_count, 1);
+}
+
+#[test]
+fn test_complete_quest_rejects_missing_or_wrong_targets() {
+    let payer = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
+    let player = initialize_player(&mut svm, &payer);
+    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
+    let wrong_species = [3, 5, 8, 9, 12];
+    let discoveries = create_discoveries(&mut svm, &payer, player, &wrong_species);
+
+    let (short_instruction, completion) = complete_quest_instruction(
+        &payer,
+        player,
+        quest,
+        wildquest::constants::DEMO_QUEST_ID,
+        &discoveries[..4],
+    );
+    assert!(!send_instruction(&mut svm, &payer, short_instruction));
+    assert!(svm.get_account(&completion).is_none());
+
+    let (wrong_instruction, completion) = complete_quest_instruction(
+        &payer,
+        player,
+        quest,
+        wildquest::constants::DEMO_QUEST_ID,
+        &discoveries,
+    );
+    assert!(!send_instruction(&mut svm, &payer, wrong_instruction));
+    assert!(svm.get_account(&completion).is_none());
+    let player_state = read_player(&svm, &player);
+    assert_eq!(player_state.xp, 250);
+    assert_eq!(player_state.badge_count, 0);
+}
+
+#[test]
+fn test_complete_quest_rejects_another_players_discovery() {
+    let payer = Keypair::new();
+    let other_payer = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
+    svm.airdrop(&other_payer.pubkey(), 1_000_000_000).unwrap();
+    let player = initialize_player(&mut svm, &payer);
+    let other_player = initialize_player(&mut svm, &other_payer);
+    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
+    let mut discoveries = create_discoveries(
+        &mut svm,
+        &payer,
+        player,
+        &wildquest::constants::DEMO_QUEST_TARGETS,
+    );
+    let other_discovery = create_discoveries(&mut svm, &other_payer, other_player, &[11])[0];
+    discoveries[4] = other_discovery;
+
+    let (instruction, completion) = complete_quest_instruction(
+        &payer,
+        player,
+        quest,
+        wildquest::constants::DEMO_QUEST_ID,
+        &discoveries,
+    );
+    assert!(!send_instruction(&mut svm, &payer, instruction));
+    assert!(svm.get_account(&completion).is_none());
+    let player_state = read_player(&svm, &player);
+    assert_eq!(player_state.xp, 250);
+    assert_eq!(player_state.badge_count, 0);
+}
+
+#[test]
+fn test_complete_quest_rolls_back_progression_overflow() {
+    let payer = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
+    let player = initialize_player(&mut svm, &payer);
+    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
+    let discoveries = create_discoveries(
+        &mut svm,
+        &payer,
+        player,
+        &wildquest::constants::DEMO_QUEST_TARGETS,
+    );
+    let mut player_state = read_player(&svm, &player);
+    player_state.xp = u64::MAX;
+    write_player(&mut svm, player, &player_state);
+
+    let (instruction, completion) = complete_quest_instruction(
+        &payer,
+        player,
+        quest,
+        wildquest::constants::DEMO_QUEST_ID,
+        &discoveries,
+    );
+    assert!(!send_instruction(&mut svm, &payer, instruction));
+    assert!(svm.get_account(&completion).is_none());
+    let unchanged_player = read_player(&svm, &player);
+    assert_eq!(unchanged_player.xp, u64::MAX);
+    assert_eq!(unchanged_player.badge_count, 0);
 }

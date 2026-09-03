@@ -14,4 +14,18 @@ pub enum ErrorCode {
     PlayerWalletMismatch,
     #[msg("Player progression arithmetic overflowed")]
     ProgressionOverflow,
+    #[msg("The requested quest is not defined by this program")]
+    UnsupportedQuest,
+    #[msg("The quest account does not match the requested quest ID")]
+    QuestIdMismatch,
+    #[msg("The quest definition is invalid")]
+    InvalidQuestDefinition,
+    #[msg("The number of submitted discoveries does not match the quest target count")]
+    InvalidQuestDiscoveryCount,
+    #[msg("A submitted discovery account is invalid")]
+    InvalidQuestDiscovery,
+    #[msg("A submitted discovery belongs to another player")]
+    QuestDiscoveryPlayerMismatch,
+    #[msg("The player has not discovered every quest target")]
+    QuestTargetsIncomplete,
 }
