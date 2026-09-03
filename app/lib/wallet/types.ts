@@ -18,11 +18,11 @@ export type WalletSession = {
   disconnect: () => Promise<void>;
   signTransaction?: (
     transaction: Uint8Array,
-    chain: string
+    chain: string,
   ) => Promise<Uint8Array>;
   sendTransaction?: (
     transaction: Uint8Array,
-    chain: string
+    chain: string,
   ) => Promise<Uint8Array>;
 };
 

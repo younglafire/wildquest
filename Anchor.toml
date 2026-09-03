@@ -9,6 +9,9 @@ skip-lint = false
 [programs.localnet]
 wildquest = "DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo"
 
+[programs.devnet]
+wildquest = "DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo"
+
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"

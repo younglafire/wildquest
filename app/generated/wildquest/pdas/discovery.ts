@@ -7,17 +7,18 @@
  */
 
 import {
+  fixEncoderSize,
   getAddressEncoder,
   getBytesEncoder,
   getProgramDerivedAddress,
-  getU64Encoder,
   type Address,
   type ProgramDerivedAddress,
+  type ReadonlyUint8Array,
 } from "@solana/kit";
 
 export type DiscoverySeeds = {
   payer: Address;
-  speciesId: number | bigint;
+  proofHash: ReadonlyUint8Array;
 };
 
 export async function findDiscoveryPda(
@@ -34,7 +35,7 @@ export async function findDiscoveryPda(
         new Uint8Array([100, 105, 115, 99, 111, 118, 101, 114, 121]),
       ),
       getAddressEncoder().encode(seeds.payer),
-      getU64Encoder().encode(seeds.speciesId),
+      fixEncoderSize(getBytesEncoder(), 32).encode(seeds.proofHash),
     ],
   });
 }

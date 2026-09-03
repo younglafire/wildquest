@@ -10,7 +10,7 @@ import type { WalletSession } from "./types";
 
 function createSendingSigner(
   session: WalletSession,
-  chain: string
+  chain: string,
 ): TransactionSendingSigner {
   return {
     address: session.account.address,
@@ -19,11 +19,11 @@ function createSendingSigner(
       return Promise.all(
         transactions.map(async (tx) => {
           const wireBytes = new Uint8Array(
-            encoder.encode(tx as Parameters<(typeof encoder)["encode"]>[0])
+            encoder.encode(tx as Parameters<(typeof encoder)["encode"]>[0]),
           );
           const sigBytes = await session.sendTransaction!(wireBytes, chain);
           return signatureBytes(sigBytes);
-        })
+        }),
       );
     },
   };
@@ -38,18 +38,17 @@ function createSendingSigner(
  */
 function createModifyingSigner(
   session: WalletSession,
-  chain: string
+  chain: string,
 ): TransactionModifyingSigner {
   return {
     address: session.account.address,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     modifyAndSignTransactions: (async (transactions: readonly unknown[]) => {
       const encoder = getTransactionEncoder();
       const decoder = getTransactionDecoder();
       return Promise.all(
         transactions.map(async (tx) => {
           const wireBytes = new Uint8Array(
-            encoder.encode(tx as Parameters<(typeof encoder)["encode"]>[0])
+            encoder.encode(tx as Parameters<(typeof encoder)["encode"]>[0]),
           );
           const signedBytes = await session.signTransaction!(wireBytes, chain);
           const signedTx = decoder.decode(signedBytes);
@@ -66,7 +65,7 @@ function createModifyingSigner(
                 }
               : {}),
           });
-        })
+        }),
       );
     }) as unknown as TransactionModifyingSigner["modifyAndSignTransactions"],
   };
@@ -74,7 +73,7 @@ function createModifyingSigner(
 
 export function createWalletSigner(
   session: WalletSession,
-  chain: string
+  chain: string,
 ): TransactionSigner {
   if (session.signTransaction) {
     return createModifyingSigner(session, chain);

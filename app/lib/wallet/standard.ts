@@ -40,7 +40,7 @@ function createConnector(wallet: StandardWallet): WalletConnector {
         StandardConnect
       ] as StandardConnectFeature[typeof StandardConnect];
       const { accounts } = await connectFeature.connect(
-        options?.silent ? { silent: true } : undefined
+        options?.silent ? { silent: true } : undefined,
       );
 
       const account = accounts[0] ?? wallet.accounts[0];
@@ -105,7 +105,7 @@ export function discoverWallets(): WalletConnector[] {
 }
 
 export function watchWallets(
-  onChange: (connectors: WalletConnector[]) => void
+  onChange: (connectors: WalletConnector[]) => void,
 ): () => void {
   const wallets = getWallets();
 

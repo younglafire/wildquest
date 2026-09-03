@@ -10,16 +10,29 @@ npm run setup
 npm run dev
 ```
 
-## Capture screen
+## Discovery flow
 
-Open `http://localhost:3000/capture` or use **Capture a discovery** on the
-dashboard. The screen accepts one JPEG, PNG, or WebP photo up to 4,000,000
-bytes, previews it in memory, and does not call `/api/identify` yet.
+Open `http://localhost:3000`, connect a Wallet Standard compatible Solana
+wallet, and choose **Start Expedition**. The `/capture` screen accepts one JPEG,
+PNG, or WebP photo up to 4,000,000 bytes and previews it in memory. Choosing
+**Identify discovery** sends the photo directly to `/api/identify` with the
+connected wallet address.
 
 On supported mobile browsers, the file input requests the outward-facing
 camera with `capture="environment"`. Desktop browsers, and mobile browsers that
 ignore the capture hint, show their normal file or media picker instead. HEIC
-conversion and image resizing are not part of WQ-17.
+conversion and image resizing are not supported.
+
+The verified-result screen displays the species, confidence, rarity, grade,
+XP, and a catalogue fact. Only the validated result metadata is retained in
+the current tab so a rejected wallet transaction can be retried. The photo is
+released after identification and is never written to browser storage.
+
+**Record on Solana** creates the Player PDA when necessary and records the
+Discovery in one confirmed Devnet transaction. The confirmation screen links
+to that exact transaction on Solana Explorer. `/collection` reads the wallet's
+Discovery accounts from Devnet and joins them with the Supabase catalogue to
+show capture count and best grade per species.
 
 ## Supabase species API
 
@@ -128,8 +141,9 @@ also requires the mutable Player PDA at `["player", payer]`. It derives the XP
 award from the grade code instead of accepting client-provided XP, then updates
 the Player PDA and creates the Discovery PDA in the same transaction. Level is
 calculated as `1 + floor(total_xp / 100)`, and `discovery_count` increments once
-for each newly discovered species. The payer-and-species Discovery PDA prevents
-the same player from receiving XP twice for the same species.
+for each recorded capture. Discovery PDAs use the payer and proof hash, so
+different photos of the same species create separate collection records while
+replaying the same proof for that wallet cannot award XP twice.
 
 The local Microsoft ResNet-50 weights support the catalogue IDs `dog`, `cat`,
 `bee`, `chicken`, `butterfly`, `dragonfly`, `frog`, and `ant`. The endpoint

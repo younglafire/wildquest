@@ -196,7 +196,7 @@ export async function getDiscoverSpeciesInstructionAsync<
   if (!accounts.discovery.value) {
     accounts.discovery.value = await findDiscoveryPda({
       payer: expectAddress(accounts.payer.value),
-      speciesId: expectSome(args.speciesId),
+      proofHash: expectSome(args.proofHash),
     });
   }
   if (!accounts.systemProgram.value) {

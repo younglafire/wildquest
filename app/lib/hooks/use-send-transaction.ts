@@ -23,7 +23,7 @@ export function useSendTransaction() {
             payer: signer,
           })
         : null,
-    [cluster, signer]
+    [cluster, signer],
   );
 
   const send = useCallback(
@@ -39,7 +39,7 @@ export function useSendTransaction() {
         setIsSending(false);
       }
     },
-    [txClient, mutate]
+    [txClient, mutate],
   );
 
   return { send, isSending };

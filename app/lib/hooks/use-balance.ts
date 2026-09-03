@@ -16,7 +16,7 @@ export function useBalance(address?: Address) {
       const { value } = await client.rpc.getBalance(addr).send();
       return value;
     },
-    { refreshInterval: 60_000, revalidateOnFocus: true }
+    { refreshInterval: 60_000, revalidateOnFocus: true },
   );
 
   useEffect(() => {

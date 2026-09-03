@@ -53,12 +53,12 @@ fn initialize_player(svm: &mut LiteSVM, payer: &Keypair) -> Pubkey {
     player
 }
 
-fn find_discovery_pda(payer: &Pubkey, species_id: u64) -> Pubkey {
+fn find_discovery_pda(payer: &Pubkey, proof_hash: &[u8; 32]) -> Pubkey {
     Pubkey::find_program_address(
         &[
             wildquest::constants::DISCOVERY_SEED,
             payer.as_ref(),
-            species_id.to_le_bytes().as_ref(),
+            proof_hash.as_ref(),
         ],
         &wildquest::id(),
     )
@@ -73,7 +73,7 @@ fn discovery_instruction(
     rarity: u8,
     proof_hash: [u8; 32],
 ) -> (Instruction, Pubkey) {
-    let discovery = find_discovery_pda(&payer.pubkey(), species_id);
+    let discovery = find_discovery_pda(&payer.pubkey(), &proof_hash);
     let instruction = Instruction::new_with_bytes(
         wildquest::id(),
         &wildquest::instruction::DiscoverSpecies {
@@ -221,7 +221,7 @@ fn test_discover_species() {
 
     let captures = [
         (41, 1, 0, [1u8; 32], 50, 1, 1),
-        (42, 2, 2, [2u8; 32], 125, 2, 2),
+        (41, 2, 0, [2u8; 32], 125, 2, 2),
         (43, 3, 4, [3u8; 32], 225, 3, 3),
     ];
 
@@ -245,7 +245,7 @@ fn test_discover_species() {
         assert_eq!(player_state.discovery_count, discovery_count);
     }
 
-    let (duplicate_instruction, _) = discovery_instruction(&payer, player, 41, 3, 0, [9u8; 32]);
+    let (duplicate_instruction, _) = discovery_instruction(&payer, player, 99, 3, 4, [1u8; 32]);
     assert!(!send_instruction(&mut svm, &payer, duplicate_instruction));
     let player_state = read_player(&svm, &player);
     assert_eq!(player_state.xp, 225);

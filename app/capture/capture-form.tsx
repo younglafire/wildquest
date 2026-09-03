@@ -29,7 +29,15 @@ function formatFileSize(size: number) {
   return `${(size / 1_000_000).toFixed(1)} MB`;
 }
 
-export function CaptureForm() {
+type CaptureFormProps = {
+  onIdentify?: (file: File) => void;
+  isIdentifying?: boolean;
+};
+
+export function CaptureForm({
+  onIdentify,
+  isIdentifying = false,
+}: CaptureFormProps = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<CaptureState>({
     status: "empty",
@@ -141,6 +149,16 @@ export function CaptureForm() {
                 </button>
               </div>
             </div>
+            {onIdentify && (
+              <button
+                type="button"
+                disabled={isIdentifying}
+                onClick={() => onIdentify(state.file)}
+                className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {isIdentifying ? "Verifying discovery…" : "Identify discovery"}
+              </button>
+            )}
           </div>
         ) : (
           <label

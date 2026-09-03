@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(species_id: u64)]
+#[instruction(species_id: u64, grade: u8, rarity: u8, proof_hash: [u8; 32])]
 pub struct DiscoverSpeciesAccountConstraints<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -27,7 +27,7 @@ pub struct DiscoverSpeciesAccountConstraints<'info> {
         init,
         payer = payer,
         space = Discovery::DISCRIMINATOR.len() + Discovery::INIT_SPACE,
-        seeds = [DISCOVERY_SEED, payer.key().as_ref(), species_id.to_le_bytes().as_ref()],
+        seeds = [DISCOVERY_SEED, payer.key().as_ref(), proof_hash.as_ref()],
         bump
     )]
     pub discovery: Account<'info, Discovery>,

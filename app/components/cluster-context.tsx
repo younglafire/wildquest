@@ -42,7 +42,7 @@ export function ClusterProvider({ children }: { children: ReactNode }) {
 
   const explorerUrl = useCallback(
     (path: string) => getExplorerUrl(path, cluster),
-    [cluster]
+    [cluster],
   );
 
   return (

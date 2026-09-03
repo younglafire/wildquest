@@ -6,10 +6,10 @@ import { useBalance } from "../lib/hooks/use-balance";
 import { lamportsToSolString } from "../lib/lamports";
 import { ellipsify } from "../lib/explorer";
 import { useCluster } from "./cluster-context";
+import { WalletChooser } from "./wallet-chooser";
 
 export function WalletButton() {
-  const { connectors, connect, disconnect, wallet, status, error } =
-    useWallet();
+  const { disconnect, wallet, status } = useWallet();
 
   const { getExplorerUrl } = useCluster();
   const [isOpen, setIsOpen] = useState(false);
@@ -41,55 +41,14 @@ export function WalletButton() {
 
   if (status !== "connected") {
     return (
-      <div className="relative" ref={ref}>
+      <div className="relative">
         <button
           onClick={() => (isOpen ? close() : open())}
           className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90"
         >
           Connect Wallet
         </button>
-
-        {isOpen && (
-          <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-border-low bg-card p-3 shadow-lg">
-            <p className="mb-2 text-xs font-medium text-muted">
-              Choose a wallet
-            </p>
-            <div className="space-y-1">
-              {connectors.map((connector) => (
-                <button
-                  key={connector.id}
-                  onClick={async () => {
-                    try {
-                      await connect(connector.id);
-                      close();
-                    } catch {
-                      // connection errors are surfaced through context state
-                    }
-                  }}
-                  disabled={status === "connecting"}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  {connector.icon && (
-                    <img
-                      src={connector.icon}
-                      alt=""
-                      className="h-5 w-5 rounded"
-                    />
-                  )}
-                  <span>{connector.name}</span>
-                </button>
-              ))}
-            </div>
-            {status === "connecting" && (
-              <p className="mt-2 text-xs text-muted">Connecting...</p>
-            )}
-            {error != null && (
-              <p className="mt-2 text-xs text-destructive">
-                {error instanceof Error ? error.message : String(error)}
-              </p>
-            )}
-          </div>
-        )}
+        <WalletChooser open={isOpen} onOpenChange={setIsOpen} />
       </div>
     );
   }

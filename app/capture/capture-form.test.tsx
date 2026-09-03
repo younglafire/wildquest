@@ -158,4 +158,22 @@ describe("CaptureForm", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(storageSpy).not.toHaveBeenCalled();
   });
+
+  it("submits the selected file only after the identify action", async () => {
+    const user = userEvent.setup();
+    const onIdentify = vi.fn();
+    const image = new File([new Uint8Array([1, 2, 3])], "bee.jpg", {
+      type: "image/jpeg",
+    });
+    render(<CaptureForm onIdentify={onIdentify} />);
+
+    await user.upload(getPhotoInput(), image);
+    expect(onIdentify).not.toHaveBeenCalled();
+
+    await user.click(
+      screen.getByRole("button", { name: "Identify discovery" }),
+    );
+    expect(onIdentify).toHaveBeenCalledOnce();
+    expect(onIdentify).toHaveBeenCalledWith(image);
+  });
 });
