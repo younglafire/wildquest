@@ -28,15 +28,25 @@ afterEach(() => {
   cleanup();
   mocks.push.mockReset();
   mocks.status = "connected";
+  window.history.replaceState({}, "", "/");
 });
 
 describe("StartExpeditionButton", () => {
-  it("routes a connected player to capture", async () => {
+  it("routes a connected player to the expedition home", async () => {
     const user = userEvent.setup();
     render(<StartExpeditionButton />);
 
     await user.click(screen.getByRole("button", { name: "Start Expedition" }));
-    expect(mocks.push).toHaveBeenCalledWith("/capture");
+    expect(mocks.push).toHaveBeenCalledWith("/home");
+  });
+
+  it("returns a connected player to a requested game route", async () => {
+    window.history.replaceState({}, "", "/?next=%2Fquest");
+    const user = userEvent.setup();
+    render(<StartExpeditionButton />);
+
+    await user.click(screen.getByRole("button", { name: "Start Expedition" }));
+    expect(mocks.push).toHaveBeenCalledWith("/quest");
   });
 
   it("opens wallet selection when disconnected", async () => {
@@ -49,5 +59,8 @@ describe("StartExpeditionButton", () => {
       screen.getByRole("dialog", { name: "Choose your wallet" }),
     ).toBeVisible();
     expect(mocks.push).not.toHaveBeenCalled();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

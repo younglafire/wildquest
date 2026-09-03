@@ -13,7 +13,16 @@ npm run dev
 ## Discovery flow
 
 Open `http://localhost:3000`, connect a Wallet Standard compatible Solana
-wallet, and choose **Start Expedition**. The `/capture` screen accepts one JPEG,
+wallet, and choose **Start Expedition**. WildQuest routes the connected wallet
+to `/home`, where the player creates an Explorer Passport with one explicit
+Devnet transaction. The dashboard reads the Player PDA to show level, XP,
+captures, badges, active quest progress, and the latest discovery.
+
+The desktop header and mobile bottom navigation connect Home, Quest, Capture,
+Collection, and Passport. Gameplay routes return disconnected visitors to the
+landing screen and restore the requested destination after wallet connection.
+
+The `/capture` screen accepts one JPEG,
 PNG, or WebP photo up to 4,000,000 bytes and previews it in memory. Choosing
 **Identify discovery** sends the photo directly to `/api/identify` with the
 connected wallet address.
@@ -24,15 +33,17 @@ ignore the capture hint, show their normal file or media picker instead. HEIC
 conversion and image resizing are not supported.
 
 The verified-result screen displays the species, confidence, rarity, grade,
-XP, and a catalogue fact. Only the validated result metadata is retained in
+XP, model explanation, and a catalogue fact. Only the validated result metadata is retained in
 the current tab so a rejected wallet transaction can be retried. The photo is
 released after identification and is never written to browser storage.
 
-**Record on Solana** creates the Player PDA when necessary and records the
+**Record on Solana** requires the initialized Player PDA and records the
 Discovery in one confirmed Devnet transaction. The confirmation screen links
 to that exact transaction on Solana Explorer. `/collection` reads the wallet's
 Discovery accounts from Devnet and joins them with the Supabase catalogue to
-show capture count and best grade per species.
+show capture count and best grade per species. Species detail pages use the
+catalogue habitat, description, facts, source, base XP, quest eligibility, and
+practice quiz. Practice answers do not award XP.
 
 ## Supabase species API
 
@@ -169,6 +180,12 @@ player from receiving the quest reward twice.
 Quest initialization and completion change the program interface. Rebuild and
 redeploy the program before using these instructions on Devnet, then regenerate
 the client with `npm run codama:js`.
+
+The `/quest` screen reads Quest ID `1`, joins its catalogue targets with the
+connected wallet's Discovery accounts, and enables the reward claim only after
+all five targets are present. `/profile` displays confirmed Player and
+QuestCompletion account data. The quest UI uses a target list because the
+catalogue has no geographic coordinates.
 
 The local Microsoft ResNet-50 weights support the catalogue IDs `dog`, `cat`,
 `bee`, `chicken`, `butterfly`, `dragonfly`, `frog`, and `ant`. The endpoint

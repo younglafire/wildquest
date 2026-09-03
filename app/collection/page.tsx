@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { AppHeader } from "../components/app-header";
-import { GridBackground } from "../components/grid-background";
+import { GameShell } from "../components/game-shell";
 import { CollectionContent } from "./collection-content";
 
 export const metadata: Metadata = {
@@ -10,12 +9,8 @@ export const metadata: Metadata = {
 
 export default function CollectionPage() {
   return (
-    <div className="relative min-h-screen bg-background text-foreground">
-      <GridBackground />
-      <div className="relative z-10">
-        <AppHeader />
-        <CollectionContent />
-      </div>
-    </div>
+    <GameShell>
+      <CollectionContent />
+    </GameShell>
   );
 }

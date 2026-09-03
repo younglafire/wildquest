@@ -1,12 +1,11 @@
-import Link from "next/link";
 import { AppHeader } from "./components/app-header";
 import { GridBackground } from "./components/grid-background";
 import { StartExpeditionButton } from "./components/start-expedition-button";
 
 const STEPS = [
-  ["01", "Find", "Photograph wildlife around you."],
-  ["02", "Verify", "Local AI identifies and scores the capture."],
-  ["03", "Collect", "Record the discovery as portable Solana progress."],
+  ["01", "Photograph", "Capture wildlife around you."],
+  ["02", "Identify", "Local AI identifies and scores the photo."],
+  ["03", "Record", "Add the discovery to your Solana Passport."],
 ] as const;
 
 export default function Home() {
@@ -14,7 +13,7 @@ export default function Home() {
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <GridBackground />
       <div className="relative z-10">
-        <AppHeader />
+        <AppHeader landing />
 
         <main className="mx-auto max-w-6xl px-5 pb-20 pt-14 sm:px-6 sm:pt-24">
           <section className="grid items-end gap-10 lg:grid-cols-[1.15fr_0.85fr]">
@@ -40,15 +39,13 @@ export default function Home() {
                 Connect a wallet to own your discoveries, XP, and collection.
                 Photos are analyzed in memory and are never stored.
               </p>
-              <div className="mt-7 flex flex-wrap items-center gap-3">
+              <div className="mt-7">
                 <StartExpeditionButton />
-                <Link
-                  href="/collection"
-                  className="inline-flex min-h-12 items-center rounded-xl border border-border px-5 py-3 text-sm font-semibold transition hover:bg-cream"
-                >
-                  View Collection
-                </Link>
               </div>
+              <p className="mt-5 text-xs leading-relaxed text-muted">
+                Runs on Solana Devnet. Photos are processed in memory and are
+                never stored.
+              </p>
             </div>
           </section>
 

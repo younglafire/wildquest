@@ -15,7 +15,17 @@ export const catalogueSpeciesSchema = z
     isActive: z.boolean(),
     baseXp: z.number().int().positive(),
     facts: z.array(z.string().min(1)),
-    quiz: z.unknown().nullable(),
+    quiz: z
+      .object({
+        question: z.string().trim().min(1),
+        options: z.array(z.string().trim().min(1)).min(2),
+        correctOptionIndex: z.number().int().nonnegative(),
+      })
+      .refine(
+        (quiz) => quiz.correctOptionIndex < quiz.options.length,
+        "The correct quiz option must exist.",
+      )
+      .nullable(),
     targetForQuest: z.boolean(),
     sourceUrl: z.string().url().nullable(),
   })
