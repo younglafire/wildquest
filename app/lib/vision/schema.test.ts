@@ -55,4 +55,16 @@ describe("identification response schema", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("allows image quality to downgrade a high-confidence capture", () => {
+    expect(
+      identificationSchema.safeParse({
+        ...validIdentification,
+        confidence: 0.95,
+        grade: "Bronze",
+        grade_code: 1,
+        awarded_xp: 50,
+      }).success,
+    ).toBe(true);
+  });
 });

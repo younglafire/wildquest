@@ -1,5 +1,5 @@
 [toolchain]
 channel = "1.89.0"
-components = ["rustfmt","clippy"]
-components = ["rust-analyzer"]
+# Keep editor analysis and the program validation tools on the pinned compiler.
+components = ["rustfmt", "clippy", "rust-analyzer"]
 profile = "minimal"

@@ -28,18 +28,14 @@ pub mod wildquest {
     }
 
     pub fn discover_species(
-        ctx: Context<DiscoverSpecies>,
+        context: Context<DiscoverSpeciesAccountConstraints>,
         species_id: u64,
         grade: u8,
         rarity: u8,
         proof_hash: [u8; 32],
     ) -> Result<()> {
         crate::instructions::discover_species::handle_discover_species(
-            ctx,
-            species_id,
-            grade,
-            rarity,
-            proof_hash,
+            context, species_id, grade, rarity, proof_hash,
         )
     }
 }

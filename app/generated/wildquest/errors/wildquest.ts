@@ -18,15 +18,31 @@ import { WILDQUEST_PROGRAM_ADDRESS } from "../programs";
 export const WILDQUEST_ERROR__UNAUTHORIZED = 0x1770; // 6000
 /** CounterOverflow: Counter has reached the maximum value */
 export const WILDQUEST_ERROR__COUNTER_OVERFLOW = 0x1771; // 6001
+/** InvalidCaptureGrade: Capture grade must be Bronze, Silver, or Gold */
+export const WILDQUEST_ERROR__INVALID_CAPTURE_GRADE = 0x1772; // 6002
+/** InvalidRarity: Species rarity must be between Common and Legendary */
+export const WILDQUEST_ERROR__INVALID_RARITY = 0x1773; // 6003
+/** PlayerWalletMismatch: Player account does not belong to the transaction signer */
+export const WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH = 0x1774; // 6004
+/** ProgressionOverflow: Player progression arithmetic overflowed */
+export const WILDQUEST_ERROR__PROGRESSION_OVERFLOW = 0x1775; // 6005
 
 export type WildquestError =
   | typeof WILDQUEST_ERROR__COUNTER_OVERFLOW
+  | typeof WILDQUEST_ERROR__INVALID_CAPTURE_GRADE
+  | typeof WILDQUEST_ERROR__INVALID_RARITY
+  | typeof WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH
+  | typeof WILDQUEST_ERROR__PROGRESSION_OVERFLOW
   | typeof WILDQUEST_ERROR__UNAUTHORIZED;
 
 let wildquestErrorMessages: Record<WildquestError, string> | undefined;
 if (process.env.NODE_ENV !== "production") {
   wildquestErrorMessages = {
     [WILDQUEST_ERROR__COUNTER_OVERFLOW]: `Counter has reached the maximum value`,
+    [WILDQUEST_ERROR__INVALID_CAPTURE_GRADE]: `Capture grade must be Bronze, Silver, or Gold`,
+    [WILDQUEST_ERROR__INVALID_RARITY]: `Species rarity must be between Common and Legendary`,
+    [WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH]: `Player account does not belong to the transaction signer`,
+    [WILDQUEST_ERROR__PROGRESSION_OVERFLOW]: `Player progression arithmetic overflowed`,
     [WILDQUEST_ERROR__UNAUTHORIZED]: `Only the counter authority can update this counter`,
   };
 }

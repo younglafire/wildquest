@@ -38,6 +38,7 @@ describe("identification species mapping", () => {
     ["fractional catalogue ID", { id: 1.5 }],
     ["zero base XP", { base_xp: 0 }],
     ["fractional base XP", { base_xp: 50.5 }],
+    ["non-standard quest base XP", { base_xp: 75 }],
     ["unsupported rarity", { rarity: "Mythic" }],
     ["non-array facts", { facts: { fact: "invalid" } }],
     ["non-string fact", { facts: ["valid", 42] }],

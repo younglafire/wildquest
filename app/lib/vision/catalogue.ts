@@ -1,6 +1,7 @@
 import type { SpeciesRow } from "@/app/lib/supabase/database.types";
 import { parseFacts, parseRarity, type Rarity } from "@/app/lib/species";
 import { InvalidCatalogueMetadataError } from "./errors";
+import { QUEST_BASE_XP } from "./rules";
 
 export type IdentificationSpecies = {
   catalogueId: string;
@@ -33,6 +34,9 @@ export function mapIdentificationSpecies(
 
     if (!Number.isSafeInteger(row.base_xp) || row.base_xp <= 0) {
       throw new Error("Base XP must be a positive safe integer.");
+    }
+    if (row.target_for_quest && row.base_xp !== QUEST_BASE_XP) {
+      throw new Error(`Quest base XP must be ${QUEST_BASE_XP}.`);
     }
 
     return {

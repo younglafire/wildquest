@@ -34,7 +34,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from "@solana/kit";
-import { findDiscoveryPda } from "../pdas";
+import { findDiscoveryPda, findPlayerPda } from "../pdas";
 import { WILDQUEST_PROGRAM_ADDRESS } from "../programs";
 import {
   expectAddress,
@@ -56,6 +56,7 @@ export function getDiscoverSpeciesDiscriminatorBytes() {
 export type DiscoverSpeciesInstruction<
   TProgram extends string = typeof WILDQUEST_PROGRAM_ADDRESS,
   TAccountPayer extends string | AccountMeta<string> = string,
+  TAccountPlayer extends string | AccountMeta<string> = string,
   TAccountDiscovery extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends string | AccountMeta<string> =
     "11111111111111111111111111111111",
@@ -68,6 +69,9 @@ export type DiscoverSpeciesInstruction<
         ? WritableSignerAccount<TAccountPayer> &
             AccountSignerMeta<TAccountPayer>
         : TAccountPayer,
+      TAccountPlayer extends string
+        ? WritableAccount<TAccountPlayer>
+        : TAccountPlayer,
       TAccountDiscovery extends string
         ? WritableAccount<TAccountDiscovery>
         : TAccountDiscovery,
@@ -128,10 +132,12 @@ export function getDiscoverSpeciesInstructionDataCodec(): FixedSizeCodec<
 
 export type DiscoverSpeciesAsyncInput<
   TAccountPayer extends string = string,
+  TAccountPlayer extends string = string,
   TAccountDiscovery extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   payer: TransactionSigner<TAccountPayer>;
+  player?: Address<TAccountPlayer>;
   discovery?: Address<TAccountDiscovery>;
   systemProgram?: Address<TAccountSystemProgram>;
   speciesId: DiscoverSpeciesInstructionDataArgs["speciesId"];
@@ -142,12 +148,14 @@ export type DiscoverSpeciesAsyncInput<
 
 export async function getDiscoverSpeciesInstructionAsync<
   TAccountPayer extends string,
+  TAccountPlayer extends string,
   TAccountDiscovery extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof WILDQUEST_PROGRAM_ADDRESS,
 >(
   input: DiscoverSpeciesAsyncInput<
     TAccountPayer,
+    TAccountPlayer,
     TAccountDiscovery,
     TAccountSystemProgram
   >,
@@ -156,6 +164,7 @@ export async function getDiscoverSpeciesInstructionAsync<
   DiscoverSpeciesInstruction<
     TProgramAddress,
     TAccountPayer,
+    TAccountPlayer,
     TAccountDiscovery,
     TAccountSystemProgram
   >
@@ -166,6 +175,7 @@ export async function getDiscoverSpeciesInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     payer: { value: input.payer ?? null, isWritable: true },
+    player: { value: input.player ?? null, isWritable: true },
     discovery: { value: input.discovery ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
@@ -178,6 +188,11 @@ export async function getDiscoverSpeciesInstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.player.value) {
+    accounts.player.value = await findPlayerPda({
+      payer: expectAddress(accounts.payer.value),
+    });
+  }
   if (!accounts.discovery.value) {
     accounts.discovery.value = await findDiscoveryPda({
       payer: expectAddress(accounts.payer.value),
@@ -193,6 +208,7 @@ export async function getDiscoverSpeciesInstructionAsync<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.player),
       getAccountMeta(accounts.discovery),
       getAccountMeta(accounts.systemProgram),
     ],
@@ -203,6 +219,7 @@ export async function getDiscoverSpeciesInstructionAsync<
   } as DiscoverSpeciesInstruction<
     TProgramAddress,
     TAccountPayer,
+    TAccountPlayer,
     TAccountDiscovery,
     TAccountSystemProgram
   >);
@@ -210,10 +227,12 @@ export async function getDiscoverSpeciesInstructionAsync<
 
 export type DiscoverSpeciesInput<
   TAccountPayer extends string = string,
+  TAccountPlayer extends string = string,
   TAccountDiscovery extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   payer: TransactionSigner<TAccountPayer>;
+  player: Address<TAccountPlayer>;
   discovery: Address<TAccountDiscovery>;
   systemProgram?: Address<TAccountSystemProgram>;
   speciesId: DiscoverSpeciesInstructionDataArgs["speciesId"];
@@ -224,12 +243,14 @@ export type DiscoverSpeciesInput<
 
 export function getDiscoverSpeciesInstruction<
   TAccountPayer extends string,
+  TAccountPlayer extends string,
   TAccountDiscovery extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof WILDQUEST_PROGRAM_ADDRESS,
 >(
   input: DiscoverSpeciesInput<
     TAccountPayer,
+    TAccountPlayer,
     TAccountDiscovery,
     TAccountSystemProgram
   >,
@@ -237,6 +258,7 @@ export function getDiscoverSpeciesInstruction<
 ): DiscoverSpeciesInstruction<
   TProgramAddress,
   TAccountPayer,
+  TAccountPlayer,
   TAccountDiscovery,
   TAccountSystemProgram
 > {
@@ -246,6 +268,7 @@ export function getDiscoverSpeciesInstruction<
   // Original accounts.
   const originalAccounts = {
     payer: { value: input.payer ?? null, isWritable: true },
+    player: { value: input.player ?? null, isWritable: true },
     discovery: { value: input.discovery ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
@@ -267,6 +290,7 @@ export function getDiscoverSpeciesInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.player),
       getAccountMeta(accounts.discovery),
       getAccountMeta(accounts.systemProgram),
     ],
@@ -277,6 +301,7 @@ export function getDiscoverSpeciesInstruction<
   } as DiscoverSpeciesInstruction<
     TProgramAddress,
     TAccountPayer,
+    TAccountPlayer,
     TAccountDiscovery,
     TAccountSystemProgram
   >);
@@ -289,8 +314,9 @@ export type ParsedDiscoverSpeciesInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     payer: TAccountMetas[0];
-    discovery: TAccountMetas[1];
-    systemProgram: TAccountMetas[2];
+    player: TAccountMetas[1];
+    discovery: TAccountMetas[2];
+    systemProgram: TAccountMetas[3];
   };
   data: DiscoverSpeciesInstructionData;
 };
@@ -303,7 +329,7 @@ export function parseDiscoverSpeciesInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedDiscoverSpeciesInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 3) {
+  if (instruction.accounts.length < 4) {
     // TODO: Coded error.
     throw new Error("Not enough accounts");
   }
@@ -317,6 +343,7 @@ export function parseDiscoverSpeciesInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       payer: getNextAccount(),
+      player: getNextAccount(),
       discovery: getNextAccount(),
       systemProgram: getNextAccount(),
     },

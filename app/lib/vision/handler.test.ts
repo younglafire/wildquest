@@ -19,6 +19,11 @@ const PROOF_HASH =
   "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81";
 const PERCEPTUAL_HASH = "01".repeat(32);
 const WALLET = "11111111111111111111111111111111";
+const GOLD_QUALITY = {
+  sharpnessVariance: 200,
+  centerLuminance: 128,
+  centerEntropy: 6,
+};
 
 const species = {
   catalogueId: "8",
@@ -77,6 +82,7 @@ function dependencies() {
   return {
     classify: vi.fn().mockResolvedValue(classification),
     getSpecies: vi.fn().mockResolvedValue(species),
+    analyzeQuality: vi.fn().mockResolvedValue(GOLD_QUALITY),
     createProofHash: vi.fn().mockResolvedValue(PROOF_HASH),
     createPerceptualHash: vi.fn().mockResolvedValue(PERCEPTUAL_HASH),
     reserveDiscovery: vi.fn().mockResolvedValue({ duplicate: false }),
@@ -105,6 +111,7 @@ describe("POST /api/identify", () => {
     expect(identifySuccessSchema.safeParse(body).success).toBe(true);
     expect(deps.classify).toHaveBeenCalledOnce();
     expect(deps.getSpecies).toHaveBeenCalledWith("butterfly");
+    expect(deps.analyzeQuality).toHaveBeenCalledOnce();
     expect(deps.createProofHash).toHaveBeenCalledOnce();
     expect(deps.createPerceptualHash).toHaveBeenCalledOnce();
     expect(deps.reserveDiscovery).toHaveBeenCalledWith({
@@ -226,6 +233,7 @@ describe("POST /api/identify", () => {
       },
     });
     expect(deps.getSpecies).not.toHaveBeenCalled();
+    expect(deps.analyzeQuality).not.toHaveBeenCalled();
     expect(deps.createProofHash).not.toHaveBeenCalled();
     expect(deps.createPerceptualHash).not.toHaveBeenCalled();
     expect(deps.reserveDiscovery).not.toHaveBeenCalled();
@@ -257,6 +265,32 @@ describe("POST /api/identify", () => {
     expect(deps.reserveDiscovery).toHaveBeenCalledOnce();
   });
 
+  it("downgrades a high-confidence low-quality capture to Bronze", async () => {
+    const deps = dependencies();
+    deps.analyzeQuality.mockResolvedValue({
+      sharpnessVariance: 29.999,
+      centerLuminance: 128,
+      centerEntropy: 8,
+    });
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await responseBody(response)).toMatchObject({
+      identification: {
+        confidence: 0.91,
+        grade: "Bronze",
+        grade_code: 1,
+        awarded_xp: 50,
+      },
+    });
+    expect(deps.reserveDiscovery).toHaveBeenCalledWith(
+      expect.objectContaining({ gradeCode: 1 }),
+    );
+  });
+
   it("returns 422 before hashing for a quest-ineligible species", async () => {
     const deps = dependencies();
     deps.getSpecies.mockResolvedValue({
@@ -272,6 +306,7 @@ describe("POST /api/identify", () => {
     expect(await responseBody(response)).toMatchObject({
       error: { code: "QUEST_INELIGIBLE" },
     });
+    expect(deps.analyzeQuality).not.toHaveBeenCalled();
     expect(deps.createProofHash).not.toHaveBeenCalled();
     expect(deps.createPerceptualHash).not.toHaveBeenCalled();
     expect(deps.reserveDiscovery).not.toHaveBeenCalled();
@@ -313,6 +348,23 @@ describe("POST /api/identify", () => {
         message: "The duplicate-image check is temporarily unavailable.",
       },
     });
+  });
+
+  it("returns 400 before proof generation when quality analysis fails", async () => {
+    const deps = dependencies();
+    deps.analyzeQuality.mockRejectedValue(new InvalidImageError());
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await responseBody(response)).toMatchObject({
+      error: { code: "INVALID_IMAGE" },
+    });
+    expect(deps.createProofHash).not.toHaveBeenCalled();
+    expect(deps.createPerceptualHash).not.toHaveBeenCalled();
+    expect(deps.reserveDiscovery).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -385,6 +437,7 @@ describe("POST /api/identify", () => {
     expect(await responseBody(response)).toMatchObject({
       error: { code: "INTERNAL_ERROR" },
     });
+    expect(deps.analyzeQuality).not.toHaveBeenCalled();
     expect(deps.createProofHash).not.toHaveBeenCalled();
     expect(deps.createPerceptualHash).not.toHaveBeenCalled();
     expect(deps.reserveDiscovery).not.toHaveBeenCalled();

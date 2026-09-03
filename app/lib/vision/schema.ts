@@ -3,7 +3,7 @@ import { RARITIES } from "@/app/lib/species";
 import {
   calculateAwardedXp,
   CAPTURE_GRADES,
-  getCaptureGrade,
+  getConfidenceGrade,
   GRADE_CODES,
   MIN_IDENTIFICATION_CONFIDENCE,
   RARITY_CODES,
@@ -59,12 +59,12 @@ export const identificationSchema = z
       return;
     }
 
-    const expectedGrade = getCaptureGrade(identification.confidence);
-    if (identification.grade !== expectedGrade) {
+    const maximumGrade = getConfidenceGrade(identification.confidence);
+    if (GRADE_CODES[identification.grade] > GRADE_CODES[maximumGrade]) {
       context.addIssue({
         code: "custom",
         path: ["grade"],
-        message: "Grade does not match confidence.",
+        message: "Grade exceeds the confidence tier.",
       });
     }
 

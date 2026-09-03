@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { classifyImage } from "./classifier";
 import { createImageProofHash } from "./proof";
+import { analyzeCaptureQuality } from "./quality";
 import { getCaptureReward, getRarityCode } from "./rules";
 import { identificationSchema } from "./schema";
 
@@ -29,7 +30,8 @@ describe.runIf(process.env.RUN_RESNET_INTEGRATION === "1")(
           type: "image/jpeg",
         });
         const result = await classifyImage(image);
-        const reward = getCaptureReward(result.confidence, 50);
+        const quality = await analyzeCaptureQuality(image);
+        const reward = getCaptureReward(result.confidence, quality, 50);
         const proofHash = await createImageProofHash(image);
 
         console.info(

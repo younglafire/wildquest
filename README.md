@@ -77,12 +77,20 @@ catalogue data and values prepared for the future `discover_species()` call:
 }
 ```
 
-The endpoint requires confidence of at least `0.70`. Confidence below `0.80`
-earns Bronze, confidence from `0.80` through `0.899999` earns Silver, and
-confidence of at least `0.90` earns Gold. Bronze, Silver, and Gold multiply the
-catalogue's base XP by `1`, `1.5`, and `2`. The endpoint returns
-`422 LOW_CONFIDENCE` below the minimum and `422 QUEST_INELIGIBLE` when the
-catalogue row is not a quest target.
+The endpoint requires confidence of at least `0.70`. Its confidence tier is
+Bronze below `0.80`, Silver from `0.80` through `0.899999`, and Gold from
+`0.90`. It also analyzes an auto-oriented, maximum 256 by 256 grayscale copy in
+memory. Capture quality is Silver when Laplacian variance is at least `30`,
+center luminance is from `40` through `220`, and center entropy is at least
+`4.5`. Quality is Gold at variance `200`, luminance `55` through `205`, and
+entropy `5.5`; all other images receive Bronze quality. The final grade is the
+lower of the confidence and quality tiers, so image quality may downgrade a
+high-confidence match but can never upgrade it.
+
+Quest catalogue rows must use `base_xp=50`. Bronze awards 50 XP, Silver awards
+75 XP, and Gold awards 100 XP. The endpoint returns `422 LOW_CONFIDENCE` below
+the minimum and `422 QUEST_INELIGIBLE` when the catalogue row is not a quest
+target. Quality measurements are internal and are not returned or persisted.
 
 `catalogue_id` is a decimal string that can be converted to the program's
 `u64` species ID. `rarity_code` uses Common `0`, Uncommon `1`, Rare `2`, Epic
@@ -99,9 +107,18 @@ complete.
 A successful response permanently consumes that image for the MVP, even when
 the user abandons or fails the later Solana transaction. Supabase stores only
 the two hashes and identification metadata, never the uploaded photo. This gate
-protects the official offchain app flow; callers can still invoke the public
-onchain instruction directly with an arbitrary proof until backend attestation
-is implemented.
+protects the official offchain app flow. Callers can still invoke the public
+onchain instruction directly with an arbitrary grade or proof until backend
+attestation is implemented.
+
+The app converts `catalogue_id`, `grade_code`, `rarity_code`, and `proof_hash`
+into the existing `discover_species` instruction arguments. The instruction
+also requires the mutable Player PDA at `["player", payer]`. It derives the XP
+award from the grade code instead of accepting client-provided XP, then updates
+the Player PDA and creates the Discovery PDA in the same transaction. Level is
+calculated as `1 + floor(total_xp / 100)`, and `discovery_count` increments once
+for each newly discovered species. The payer-and-species Discovery PDA prevents
+the same player from receiving XP twice for the same species.
 
 The local Microsoft ResNet-50 weights support the catalogue IDs `dog`, `cat`,
 `bee`, `chicken`, `butterfly`, `dragonfly`, `frog`, and `ant`. The endpoint

@@ -27,6 +27,7 @@ import {
   MIN_IDENTIFICATION_CONFIDENCE,
   type CaptureReward,
 } from "./rules";
+import type { CaptureQualityMeasurements } from "./quality";
 
 export const MAX_IMAGE_BYTES = 4_000_000;
 export const SUPPORTED_IMAGE_TYPES = new Set([
@@ -39,6 +40,7 @@ type IdentifyDependencies = {
   classify: (image: Blob) => Promise<MappedClassification>;
   getSpecies: (speciesId: string) => Promise<IdentificationSpecies | null>;
   createProofHash: (image: Blob) => Promise<string>;
+  analyzeQuality: (image: Blob) => Promise<CaptureQualityMeasurements>;
   createPerceptualHash: (image: Blob) => Promise<string>;
   reserveDiscovery: (
     reservation: DiscoveryReservation,
@@ -68,11 +70,16 @@ function errorResponse(code: ErrorCode, message: string, status: number) {
 function createIdentification(
   classification: MappedClassification,
   species: IdentificationSpecies,
+  quality: CaptureQualityMeasurements,
   proofHash: string,
 ): Identification {
   let reward: CaptureReward;
   try {
-    reward = getCaptureReward(classification.confidence, species.baseXp);
+    reward = getCaptureReward(
+      classification.confidence,
+      quality,
+      species.baseXp,
+    );
   } catch (error) {
     throw new InvalidCatalogueMetadataError(
       "The species catalogue contains invalid reward metadata.",
@@ -199,12 +206,14 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
         );
       }
 
+      const quality = await dependencies.analyzeQuality(image);
       const proofHash = await dependencies.createProofHash(image);
 
       const response = identifySuccessSchema.parse({
         identification: createIdentification(
           classification,
           species,
+          quality,
           proofHash,
         ),
       });
