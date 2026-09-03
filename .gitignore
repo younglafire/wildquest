@@ -3,6 +3,7 @@
 .vscode/
 
 # Environment files and local secrets
+.env.local
 .env
 .env.*
 !.env.example
