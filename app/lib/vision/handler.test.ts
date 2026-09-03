@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { DuplicateCheckUnavailableError } from "./duplicate";
 import { InvalidImageError, ModelUnavailableError } from "./errors";
-import { createIdentifyHandler, MAX_IMAGE_BYTES } from "./handler";
+import { createIdentifyHandler } from "./handler";
 import {
   InvalidModelOutputError,
   type MappedClassification,
   UnsupportedSpeciesError,
 } from "./mapping";
 import { identificationSchema, identifySuccessSchema } from "./schema";
+import { MAX_IMAGE_BYTES } from "./upload";
 
 const classification: MappedClassification = {
   speciesId: "butterfly",

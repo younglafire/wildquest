@@ -28,13 +28,7 @@ import {
   type CaptureReward,
 } from "./rules";
 import type { CaptureQualityMeasurements } from "./quality";
-
-export const MAX_IMAGE_BYTES = 4_000_000;
-export const SUPPORTED_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+import { validateImageUpload } from "./upload";
 
 type IdentifyDependencies = {
   classify: (image: Blob) => Promise<MappedClassification>;
@@ -152,11 +146,15 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
     }
     const wallet = wallets[0];
 
-    if (image.size === 0) {
+    const uploadValidation = validateImageUpload(image);
+    if (!uploadValidation.valid && uploadValidation.code === "EMPTY_IMAGE") {
       return errorResponse("INVALID_IMAGE", "The image file is empty.", 400);
     }
 
-    if (image.size > MAX_IMAGE_BYTES) {
+    if (
+      !uploadValidation.valid &&
+      uploadValidation.code === "IMAGE_TOO_LARGE"
+    ) {
       return errorResponse(
         "IMAGE_TOO_LARGE",
         "The image must be 4,000,000 bytes or smaller.",
@@ -164,7 +162,10 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
       );
     }
 
-    if (!SUPPORTED_IMAGE_TYPES.has(image.type.toLowerCase())) {
+    if (
+      !uploadValidation.valid &&
+      uploadValidation.code === "UNSUPPORTED_MEDIA_TYPE"
+    ) {
       return errorResponse(
         "UNSUPPORTED_MEDIA_TYPE",
         "Supported image types are JPEG, PNG, and WebP.",

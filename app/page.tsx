@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { lamports as sol } from "@solana/kit";
 import { toast } from "sonner";
@@ -27,6 +28,11 @@ type PlayerStats = {
   badgeCount: bigint;
 };
 
+type PlayerSnapshot = {
+  address: string;
+  stats: PlayerStats;
+};
+
 export default function Home() {
   const { wallet, status, signer } = useWallet();
   const { cluster, getExplorerUrl } = useCluster();
@@ -36,14 +42,17 @@ export default function Home() {
   const address = wallet?.account.address;
   const balance = useBalance(address);
   const [copied, setCopied] = useState(false);
-  const [player, setPlayer] = useState<PlayerStats | null>(null);
+  const [playerSnapshot, setPlayerSnapshot] = useState<PlayerSnapshot | null>(
+    null,
+  );
   const [isCreatingPlayer, setIsCreatingPlayer] = useState(false);
+  const player =
+    playerSnapshot && playerSnapshot.address === address
+      ? playerSnapshot.stats
+      : null;
 
   useEffect(() => {
-    if (!address || !client || status !== "connected") {
-      setPlayer(null);
-      return;
-    }
+    if (!address || !client || status !== "connected") return;
 
     let cancelled = false;
 
@@ -55,20 +64,23 @@ export default function Home() {
         if (cancelled) return;
 
         if (!maybePlayer.exists) {
-          setPlayer(null);
+          setPlayerSnapshot(null);
           return;
         }
 
-        setPlayer({
-          xp: maybePlayer.data.xp,
-          level: maybePlayer.data.level,
-          discoveryCount: maybePlayer.data.discoveryCount,
-          badgeCount: maybePlayer.data.badgeCount,
+        setPlayerSnapshot({
+          address,
+          stats: {
+            xp: maybePlayer.data.xp,
+            level: maybePlayer.data.level,
+            discoveryCount: maybePlayer.data.discoveryCount,
+            badgeCount: maybePlayer.data.badgeCount,
+          },
         });
       } catch (err) {
         console.error("Failed to fetch player:", err);
         if (!cancelled) {
-          setPlayer(null);
+          setPlayerSnapshot(null);
         }
       }
     };
@@ -93,11 +105,14 @@ export default function Home() {
         if (cancelled) return;
 
         if (maybePlayer.exists) {
-          setPlayer({
-            xp: maybePlayer.data.xp,
-            level: maybePlayer.data.level,
-            discoveryCount: maybePlayer.data.discoveryCount,
-            badgeCount: maybePlayer.data.badgeCount,
+          setPlayerSnapshot({
+            address,
+            stats: {
+              xp: maybePlayer.data.xp,
+              level: maybePlayer.data.level,
+              discoveryCount: maybePlayer.data.discoveryCount,
+              badgeCount: maybePlayer.data.badgeCount,
+            },
           });
           return;
         }
@@ -112,11 +127,14 @@ export default function Home() {
 
         const createdPlayer = await fetchMaybePlayer(client.rpc, playerAddress);
         if (createdPlayer.exists) {
-          setPlayer({
-            xp: createdPlayer.data.xp,
-            level: createdPlayer.data.level,
-            discoveryCount: createdPlayer.data.discoveryCount,
-            badgeCount: createdPlayer.data.badgeCount,
+          setPlayerSnapshot({
+            address,
+            stats: {
+              xp: createdPlayer.data.xp,
+              level: createdPlayer.data.level,
+              discoveryCount: createdPlayer.data.discoveryCount,
+              badgeCount: createdPlayer.data.badgeCount,
+            },
           });
         }
 
@@ -135,7 +153,7 @@ export default function Home() {
       } catch (err) {
         console.error("Failed to initialize player:", err);
         toast.error(
-          err instanceof Error ? err.message : "Failed to create the player."
+          err instanceof Error ? err.message : "Failed to create the player.",
         );
       } finally {
         if (!cancelled) {
@@ -197,7 +215,7 @@ export default function Home() {
                 </a>
               ),
             }
-          : undefined
+          : undefined,
       );
     }
   };
@@ -218,11 +236,14 @@ export default function Home() {
       const createdPlayer = await fetchMaybePlayer(client.rpc, playerAddress);
 
       if (createdPlayer.exists) {
-        setPlayer({
-          xp: createdPlayer.data.xp,
-          level: createdPlayer.data.level,
-          discoveryCount: createdPlayer.data.discoveryCount,
-          badgeCount: createdPlayer.data.badgeCount,
+        setPlayerSnapshot({
+          address: address!,
+          stats: {
+            xp: createdPlayer.data.xp,
+            level: createdPlayer.data.level,
+            discoveryCount: createdPlayer.data.discoveryCount,
+            badgeCount: createdPlayer.data.badgeCount,
+          },
         });
       }
 
@@ -241,7 +262,7 @@ export default function Home() {
     } catch (err) {
       console.error("WildQuest call failed:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to initialize the player."
+        err instanceof Error ? err.message : "Failed to initialize the player.",
       );
     }
   };
@@ -284,6 +305,14 @@ export default function Home() {
                   Your player is stored in a Program Derived Address (PDA) owned
                   by your wallet, so the game state is persistent on Solana.
                 </p>
+                <div className="pt-2">
+                  <Link
+                    href="/capture"
+                    className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90"
+                  >
+                    Capture a discovery
+                  </Link>
+                </div>
               </div>
             </div>
           </section>
@@ -398,8 +427,8 @@ export default function Home() {
                 <div className="space-y-3">
                   <p className="text-lg font-semibold">Player status</p>
                   <p className="text-sm text-muted">
-                    Your wallet is automatically registered as a WildQuest player
-                    on first connect.
+                    Your wallet is automatically registered as a WildQuest
+                    player on first connect.
                   </p>
                 </div>
 
@@ -461,7 +490,8 @@ export default function Home() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted">
-                    Connect a wallet to create your player PDA and load the stats.
+                    Connect a wallet to create your player PDA and load the
+                    stats.
                   </p>
                 )}
               </div>

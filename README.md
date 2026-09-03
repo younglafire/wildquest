@@ -10,6 +10,17 @@ npm run setup
 npm run dev
 ```
 
+## Capture screen
+
+Open `http://localhost:3000/capture` or use **Capture a discovery** on the
+dashboard. The screen accepts one JPEG, PNG, or WebP photo up to 4,000,000
+bytes, previews it in memory, and does not call `/api/identify` yet.
+
+On supported mobile browsers, the file input requests the outward-facing
+camera with `capture="environment"`. Desktop browsers, and mobile browsers that
+ignore the capture hint, show their normal file or media picker instead. HEIC
+conversion and image resizing are not part of WQ-17.
+
 ## Supabase species API
 
 WildQuest reads its offchain species catalogue through Next.js Route Handlers.
