@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { playChimeSound, playTactileClick } from "../lib/sfx";
 import { useWallet } from "../lib/wallet/context";
 
 type WalletChooserProps = {
@@ -107,8 +108,10 @@ export function WalletChooser({
               type="button"
               disabled={status === "connecting"}
               onClick={async () => {
+                playTactileClick();
                 try {
                   await connect(connector.id);
+                  playChimeSound();
                   onOpenChange(false);
                   onConnected?.();
                 } catch {

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { playTactileClick } from "../lib/sfx";
 import { useWallet } from "../lib/wallet/context";
 import { WalletChooser } from "./wallet-chooser";
 
@@ -28,6 +29,7 @@ export function StartExpeditionButton() {
   };
 
   const start = () => {
+    playTactileClick();
     if (status === "connected") {
       router.push(destination());
     } else {

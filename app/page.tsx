@@ -1,5 +1,6 @@
 import { AppHeader } from "./components/app-header";
 import { GridBackground } from "./components/grid-background";
+import { HeroSceneDeck } from "./components/hero-scene-deck";
 import { StartExpeditionButton } from "./components/start-expedition-button";
 
 const OBJECTIVES = [
@@ -100,99 +101,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Column: Hero Visual - 3D Collectible Cards Showcase */}
-            <div className="relative mx-auto flex w-full max-w-md items-center justify-center py-8 lg:py-0">
-              {/* Ambient Glow behind cards */}
-              <div className="absolute h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl" aria-hidden="true" />
-
-              {/* Card Fan Container */}
-              <div className="relative h-[420px] w-[310px]">
-                {/* Background Card Left - Butterfly (Epic) */}
-                <div
-                  className="animate-float-reverse absolute -left-6 top-6 h-[340px] w-[240px] -rotate-6 rounded-2xl border-2 border-purple-500/40 bg-gradient-to-b from-card to-background p-4 shadow-xl backdrop-blur transition-transform hover:rotate-0 hover:scale-105"
-                  style={{ animationDuration: "7s" }}
-                >
-                  <div className="flex items-center justify-between text-[11px] font-black uppercase">
-                    <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-600 dark:text-purple-300">
-                      Epic
-                    </span>
-                    <span className="text-amber-500 font-mono">+100 XP</span>
-                  </div>
-                  <div className="mt-3 flex h-36 items-center justify-center rounded-xl bg-gradient-to-br from-purple-950/20 to-purple-500/10 text-6xl">
-                    🦋
-                  </div>
-                  <div className="mt-3">
-                    <p className="text-sm font-black">Swallowtail</p>
-                    <p className="text-[11px] italic text-muted">Papilio machaon</p>
-                    <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-[10px] text-muted">
-                      <span>Canopy Habitat</span>
-                      <span className="font-bold text-emerald-500">Quest Target</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Background Card Right - Frog (Rare) */}
-                <div
-                  className="animate-float-slow absolute -right-6 top-8 h-[340px] w-[240px] rotate-6 rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-b from-card to-background p-4 shadow-xl backdrop-blur transition-transform hover:rotate-0 hover:scale-105"
-                  style={{ animationDuration: "6s", animationDelay: "1s" }}
-                >
-                  <div className="flex items-center justify-between text-[11px] font-black uppercase">
-                    <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-emerald-700 dark:text-emerald-300">
-                      Rare
-                    </span>
-                    <span className="text-amber-500 font-mono">+75 XP</span>
-                  </div>
-                  <div className="mt-3 flex h-36 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-950/20 to-emerald-500/10 text-6xl">
-                    🐸
-                  </div>
-                  <div className="mt-3">
-                    <p className="text-sm font-black">Tree Frog</p>
-                    <p className="text-[11px] italic text-muted">Hyla arborea</p>
-                    <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-[10px] text-muted">
-                      <span>Wetlands Biome</span>
-                      <span className="font-bold text-emerald-500">Quest Target</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Center Foreground Card - Golden Retriever (Gold Tier Hero) */}
-                <div className="animate-float-slow absolute inset-x-0 top-0 z-20 h-[390px] w-[270px] rounded-3xl border-2 border-amber-500/60 bg-card p-5 shadow-[0_20px_60px_-15px_rgba(245,158,11,0.35)] backdrop-blur transition-transform hover:scale-105">
-                  <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider">
-                    <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-amber-700 dark:text-amber-300">
-                      🥇 Gold Tier
-                    </span>
-                    <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                      +100 XP
-                    </span>
-                  </div>
-
-                  {/* Creature Artwork Frame */}
-                  <div className="relative mt-3.5 flex h-44 items-center justify-center overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-emerald-500/10 to-teal-500/15 text-7xl shadow-inner">
-                    <span className="drop-shadow-lg">🐕</span>
-                    <div className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold text-amber-300 backdrop-blur">
-                      Laplacian 320
-                    </div>
-                  </div>
-
-                  <div className="mt-3.5">
-                    <div className="flex items-baseline justify-between">
-                      <h3 className="text-lg font-black tracking-tight">Golden Retriever</h3>
-                      <span className="text-[10px] font-bold uppercase text-muted">Canis lupus</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted">
-                      ResNet-50 matched label with 96.4% confidence.
-                    </p>
-
-                    <div className="mt-3.5 flex items-center justify-between rounded-xl bg-cream/70 p-2 text-[11px] font-semibold dark:bg-card/70">
-                      <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Verified Onchain
-                      </span>
-                      <span className="font-mono text-muted">Solana Devnet</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Right Column: Hero Visual - Interactive PPT-Style Game Deck */}
+            <div className="w-full py-4 lg:py-0">
+              <HeroSceneDeck />
             </div>
           </section>
 
