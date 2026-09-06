@@ -74,14 +74,15 @@ export function WalletChooser({
         role="dialog"
         aria-modal="true"
         aria-labelledby="wallet-dialog-title"
-        className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl"
+        className="w-full max-w-sm rounded-3xl border-2 border-emerald-900/20 bg-card p-6 shadow-[0_25px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md dark:border-emerald-500/20"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-              Solana Devnet
-            </p>
-            <h2 id="wallet-dialog-title" className="mt-1 text-2xl font-black">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Explorer Comm-Link
+            </div>
+            <h2 id="wallet-dialog-title" className="mt-2 text-2xl font-black tracking-tight">
               Choose your wallet
             </h2>
           </div>
@@ -89,14 +90,14 @@ export function WalletChooser({
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Close wallet chooser"
-            className="rounded-full border border-border px-3 py-1.5 text-sm text-muted transition hover:text-foreground"
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-bold text-muted transition hover:border-foreground/40 hover:text-foreground"
           >
-            Close
+            ✕
           </button>
         </div>
 
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Your wallet owns your onchain discoveries, XP, and collection.
+        <p className="mt-2 text-xs leading-relaxed text-muted">
+          Connect your Solana wallet to load your onchain Passport, discoveries, and expedition progression.
         </p>
 
         <div className="mt-5 space-y-2">
