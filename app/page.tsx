@@ -1,34 +1,13 @@
 import { AppHeader } from "./components/app-header";
+import { BackToTopButton } from "./components/back-to-top-button";
+import { FieldDispatches } from "./components/field-dispatches";
+import { GameFooter } from "./components/game-footer";
+import { GameMetricsCounter } from "./components/game-metrics-counter";
+import { GameSystemsGrid } from "./components/game-systems-grid";
 import { GridBackground } from "./components/grid-background";
-import { HeroSceneDeck } from "./components/hero-scene-deck";
+import { HeroCardsShowcase } from "./components/hero-cards-showcase";
+import { SpeciesMarquee } from "./components/species-marquee";
 import { StartExpeditionButton } from "./components/start-expedition-button";
-
-const OBJECTIVES = [
-  {
-    step: "01",
-    tag: "FIELD SCOUTING",
-    title: "Track & Photograph",
-    description:
-      "Venture outdoors into parks, yards, or nature reserves. Spot supported wildlife and take a live photo with your mobile camera.",
-    icon: "📸",
-  },
-  {
-    step: "02",
-    tag: "NEURAL ANALYSIS",
-    title: "AI Bio-Classification",
-    description:
-      "On-device ResNet-50 computer vision validates species anatomy, framing, and light to grade your capture Bronze, Silver, or Gold.",
-    icon: "🔬",
-  },
-  {
-    step: "03",
-    tag: "ONCHAIN PROOF",
-    title: "Mint Explorer Legend",
-    description:
-      "Record permanent Discovery accounts on Solana. Level up your Explorer Passport, unlock species lore, and claim bounty quests.",
-    icon: "📜",
-  },
-] as const;
 
 export default function Home() {
   return (
@@ -36,7 +15,10 @@ export default function Home() {
       <GridBackground />
 
       <div className="relative z-10">
-        <AppHeader landing />
+        {/* Sticky App Header with backdrop blur */}
+        <div className="sticky top-0 z-30 border-b border-border/40 bg-background/80 backdrop-blur-md">
+          <AppHeader landing />
+        </div>
 
         <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-16">
           {/* Hero Section */}
@@ -101,59 +83,23 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Column: Hero Visual - Interactive PPT-Style Game Deck */}
+            {/* Right Column: Hero Visual - 3D Interactive Collectible Cards Showcase */}
             <div className="w-full py-4 lg:py-0">
-              <HeroSceneDeck />
+              <HeroCardsShowcase />
             </div>
           </section>
 
-          {/* Section: How WildQuest Works (Field Objectives) */}
-          <section
-            aria-label="Field expedition workflow"
-            className="mt-28 space-y-6"
-          >
-            <div className="flex flex-col items-center text-center">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-400">
-                Explorer Handbook
-              </p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-                How Your Expedition Works
-              </h2>
-              <p className="mt-2 max-w-md text-sm text-muted">
-                Three seamless steps from spotting wildlife outside to immortalizing your catch on Solana.
-              </p>
-            </div>
+          {/* Section: Live Telemetry Metrics Counters */}
+          <GameMetricsCounter />
 
-            <div className="grid gap-6 md:grid-cols-3">
-              {OBJECTIVES.map((item) => (
-                <article
-                  key={item.step}
-                  className="group relative overflow-hidden rounded-3xl border border-border bg-card/80 p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-xl"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cream text-2xl dark:bg-card">
-                      {item.icon}
-                    </span>
-                    <span className="font-mono text-xs font-bold text-muted">
-                      PHASE {item.step}
-                    </span>
-                  </div>
-                  <p className="mt-5 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-                    {item.tag}
-                  </p>
-                  <h3 className="mt-1 text-xl font-black tracking-tight">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2.5 text-sm leading-relaxed text-muted">
-                    {item.description}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
+          {/* Section: Continuous Supported Species Marquee */}
+          <SpeciesMarquee />
 
-          {/* Active Bounty Quest Banner */}
-          <section className="mt-16 overflow-hidden rounded-3xl border-2 border-emerald-900/30 bg-gradient-to-r from-emerald-950/20 via-card to-background p-6 shadow-xl sm:p-8 dark:border-emerald-500/30">
+          {/* Section: 6 Core Gameplay Systems Grid */}
+          <GameSystemsGrid />
+
+          {/* Section: Active Bounty Quest Highlight */}
+          <section className="mt-28 overflow-hidden rounded-3xl border-2 border-emerald-900/30 bg-gradient-to-r from-emerald-950/20 via-card to-background p-6 shadow-xl sm:p-8 dark:border-emerald-500/30">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
@@ -171,7 +117,37 @@ export default function Home() {
               </div>
             </div>
           </section>
+
+          {/* Section: Explorer Dispatches & Field Logs */}
+          <FieldDispatches />
+
+          {/* Pre-Footer Call to Action Banner */}
+          <section className="mt-28 relative overflow-hidden rounded-3xl border-2 border-emerald-500/30 bg-gradient-to-b from-card via-card to-background p-8 text-center shadow-[0_20px_80px_-20px_rgba(16,185,129,0.25)] sm:p-12">
+            {/* Ambient Background Glow */}
+            <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full bg-emerald-500/20 blur-3xl" aria-hidden="true" />
+
+            <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                <span>⚡ SEASON 01 IS LIVE</span>
+              </div>
+              <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
+                Ready to Step Into the Wild?
+              </h2>
+              <p className="text-sm text-muted sm:text-base leading-relaxed">
+                Your mobile phone is your neural scanner. Solana is your immutable ledger. Begin tracking local wildlife, level up your Explorer Passport, and mint your discoveries today.
+              </p>
+              <div className="pt-4 flex justify-center">
+                <StartExpeditionButton />
+              </div>
+            </div>
+          </section>
         </main>
+
+        {/* Tactical Gaming Footer */}
+        <GameFooter />
+
+        {/* Floating Tactical Back to Top Button */}
+        <BackToTopButton />
       </div>
     </div>
   );
