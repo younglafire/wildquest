@@ -5,11 +5,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { playSlideTransitionSound, playTactileClick } from "../lib/sfx";
 
-type CreatureType = "fox" | "parrot";
-
 export function Creature3DStage() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeCreature, setActiveCreature] = useState<CreatureType>("fox");
   const [wireframeMode, setWireframeMode] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
@@ -19,7 +16,6 @@ export function Creature3DStage() {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const creatureGroupRef = useRef<THREE.Group | null>(null);
   const wireframeMaterialsRef = useRef<THREE.Material[]>([]);
-  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const scanRingRef = useRef<THREE.Mesh | null>(null);
   const isDraggingRef = useRef(false);
   const prevMouseRef = useRef({ x: 0, y: 0 });
@@ -48,8 +44,8 @@ export function Creature3DStage() {
     const height = container.clientHeight || 480;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    // Adjusted camera so the entire pedestal and creature are 100% visible inside frustum
-    camera.position.set(0, 0.85, 4.9);
+    // Framed specifically so the entire pedestal and the dog are 100% visible inside frustum
+    camera.position.set(0, 0.65, 4.4);
     camera.lookAt(0, -0.05, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -67,12 +63,12 @@ export function Creature3DStage() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0x34d399, 4.0); // Emerald Green Key
+    const keyLight = new THREE.DirectionalLight(0x34d399, 4.2); // Emerald Green Key
     keyLight.position.set(5, 8, 5);
     keyLight.castShadow = true;
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0xf59e0b, 3.2); // Amber Gold Rim
+    const rimLight = new THREE.DirectionalLight(0xf59e0b, 3.5); // Amber Gold Rim
     rimLight.position.set(-5, -1, -4);
     scene.add(rimLight);
 
@@ -80,12 +76,12 @@ export function Creature3DStage() {
     topCyanLight.position.set(0, 4, 0);
     scene.add(topCyanLight);
 
-    // --- 3. Bio-Scanner Pedestal (Positioned to fit 100% inside view) ---
+    // --- 3. Bio-Scanner Pedestal (Positioned to be completely visible) ---
     const pedestalGroup = new THREE.Group();
-    // Move up to -0.75 so the bottom of the base (-0.95) has ample breathing room at the bottom of the screen
+    // Positioned at Y = -0.75 so the bottom base (-0.93) has clear breathing room above canvas bottom
     pedestalGroup.position.set(0, -0.75, 0);
 
-    const baseGeo = new THREE.CylinderGeometry(2.0, 2.2, 0.2, 36);
+    const baseGeo = new THREE.CylinderGeometry(2.0, 2.2, 0.18, 36);
     const baseMat = new THREE.MeshStandardMaterial({
       color: 0x0c1219,
       metalness: 0.85,
@@ -102,18 +98,18 @@ export function Creature3DStage() {
     });
     const edgeRing = new THREE.Mesh(edgeRingGeo, edgeRingMat);
     edgeRing.rotation.x = Math.PI / 2;
-    edgeRing.position.y = 0.11;
+    edgeRing.position.y = 0.1;
     pedestalGroup.add(edgeRing);
 
     // Holographic Polar Grid Disc
     const gridHelper = new THREE.PolarGridHelper(1.95, 10, 8, 36, 0x10b981, 0x064e3b);
-    gridHelper.position.y = 0.12;
+    gridHelper.position.y = 0.11;
     pedestalGroup.add(gridHelper);
 
     scene.add(pedestalGroup);
 
     // --- 4. Scanning Laser Plane & Ring ---
-    const scanRingGeo = new THREE.TorusGeometry(1.85, 0.03, 16, 48);
+    const scanRingGeo = new THREE.TorusGeometry(1.9, 0.03, 16, 48);
     const scanRingMat = new THREE.MeshBasicMaterial({
       color: 0x34d399,
       transparent: true,
@@ -145,32 +141,22 @@ export function Creature3DStage() {
     const fireflyPoints = new THREE.Points(particleGeo, particleMat);
     scene.add(fireflyPoints);
 
-    // --- 6. Load Authentic Animated 3D Animal via GLTFLoader ---
+    // --- 6. Load Authentic 3D Dog (Canis lupus - Supported Species #1) ---
     const creatureGroup = new THREE.Group();
     scene.add(creatureGroup);
     creatureGroupRef.current = creatureGroup;
     wireframeMaterialsRef.current = [];
 
     const loader = new GLTFLoader();
-    const modelPath = activeCreature === "fox" ? "/models/fox.glb" : "/models/parrot.glb";
-
     loader.load(
-      modelPath,
+      "/models/dog.glb",
       (gltf) => {
         const model = gltf.scene;
 
-        if (activeCreature === "fox") {
-          // Authentic Fox (Canid / Wild Dog)
-          // Standing on top surface of pedestal (Y = -0.65)
-          model.scale.set(0.022, 0.022, 0.022);
-          model.position.set(0, -0.65, 0);
-          model.rotation.set(0, Math.PI / 5, 0); // Natural 3/4 angle
-        } else {
-          // Exotic Flying Bird (Parrot)
-          model.scale.set(0.026, 0.026, 0.026);
-          model.position.set(0, 0.35, 0);
-          model.rotation.set(0, Math.PI / 4, 0);
-        }
+        // Paws stand on pedestal top (Y = -0.66)
+        model.scale.set(2.1, 2.1, 2.1);
+        model.position.set(0, -0.66, 0.1);
+        model.rotation.set(0, Math.PI / 4.5, 0); // Heroic 3/4 perspective
 
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
@@ -193,22 +179,11 @@ export function Creature3DStage() {
         }
 
         creatureGroup.add(model);
-
-        // Setup Skeletal Animation
-        if (gltf.animations && gltf.animations.length > 0) {
-          const mixer = new THREE.AnimationMixer(model);
-          // Play Survey/Idle animation for Fox, or flight animation for Parrot
-          const action = mixer.clipAction(gltf.animations[0]);
-          action.timeScale = 0.85;
-          action.play();
-          mixerRef.current = mixer;
-        }
-
         setLoading(false);
       },
       undefined,
       (error) => {
-        console.error("Failed to load 3D animal model:", error);
+        console.error("Failed to load 3D dog model:", error);
         setLoading(false);
       },
     );
@@ -261,13 +236,7 @@ export function Creature3DStage() {
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const delta = clock.getDelta();
       const elapsedTime = clock.getElapsedTime();
-
-      // Update skeletal animation mixer (Fox breathing/tail/head, bird flapping)
-      if (mixerRef.current) {
-        mixerRef.current.update(delta);
-      }
 
       // Auto-rotation if enabled and not currently dragging
       if (autoRotate && !isDraggingRef.current && creatureGroupRef.current) {
@@ -324,11 +293,8 @@ export function Creature3DStage() {
 
       renderer.dispose();
       scene.clear();
-      if (mixerRef.current) {
-        mixerRef.current.stopAllAction();
-      }
     };
-  }, [activeCreature, autoRotate, wireframeMode]);
+  }, [autoRotate, wireframeMode]);
 
   const triggerPulseScan = () => {
     setIsScanning(true);
@@ -336,11 +302,17 @@ export function Creature3DStage() {
     setTimeout(() => setIsScanning(false), 800);
   };
 
+  const setViewAngle = (yAngle: number) => {
+    if (!creatureGroupRef.current) return;
+    creatureGroupRef.current.rotation.set(0, yAngle, 0);
+    playSlideTransitionSound();
+  };
+
   return (
     <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center">
-      {/* Main 3D Canvas Stage: Completely Frameless & Seamless on Page Background */}
+      {/* Main 3D Canvas Stage: Frameless on Page Background with full pedestal view */}
       <div className="relative h-[380px] sm:h-[440px] md:h-[480px] w-full flex items-center justify-center">
-        {/* Soft Ambient Radial Glow behind the 3D creature */}
+        {/* Soft Ambient Radial Glow behind the 3D dog */}
         <div
           className="pointer-events-none absolute h-64 w-64 sm:h-80 sm:w-80 rounded-full bg-emerald-500/15 blur-3xl animate-pulse"
           aria-hidden="true"
@@ -355,7 +327,7 @@ export function Creature3DStage() {
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
             <span className="font-mono text-xs text-emerald-400 font-bold animate-pulse">
-              INITIALIZING 3D NEURAL SPECIMEN…
+              INITIALIZING 3D CANIS LUPUS (DOG)…
             </span>
           </div>
         )}
@@ -367,51 +339,42 @@ export function Creature3DStage() {
           title="Click and drag to rotate creature in 3D"
         />
 
-        {/* Floating Specimen Telemetry Pill (Sits cleanly in top right corner to not obscure pedestal) */}
-        <div className="pointer-events-none absolute top-2 right-2 sm:right-4 z-10 flex items-center gap-2.5 rounded-full bg-black/60 px-3.5 py-1 font-mono text-[11px] backdrop-blur border border-emerald-500/30 shadow-lg">
+        {/* Floating Specimen Telemetry Pill in Top Right Corner */}
+        <div className="pointer-events-none absolute top-2 right-2 sm:right-4 z-10 flex items-center gap-2.5 rounded-full bg-black/60 px-3.5 py-1.5 font-mono text-[11px] backdrop-blur border border-emerald-500/30 shadow-lg">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <p className="font-bold text-white">
-            {activeCreature === "fox" ? "Canis lupus (Wild Canid)" : "Psittaciformes (Falcon / Bird)"}
+            Canis lupus (Dog · German Shepherd)
           </p>
           <span className="text-muted">·</span>
-          <span className="text-emerald-400 font-bold">96.4% MATCH</span>
+          <span className="text-emerald-400 font-bold">98.4% MATCH</span>
         </div>
       </div>
 
       {/* 3D Control Strip (Sleek floating glass pills) */}
       <div className="mt-1 flex w-full flex-wrap items-center justify-center gap-3 px-1 text-xs">
-        {/* Creature Selector */}
-        <div className="flex items-center gap-1.5 rounded-2xl border border-border bg-card/85 p-1 backdrop-blur shadow-sm">
+        {/* Camera Angle Presets */}
+        <div className="flex items-center gap-1.5 rounded-2xl border border-border bg-card/85 p-1 backdrop-blur shadow-sm font-mono text-[11px]">
+          <span className="px-2 text-muted font-bold">ANGLE:</span>
           <button
             type="button"
-            onClick={() => {
-              setActiveCreature("fox");
-              playSlideTransitionSound();
-            }}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-1 font-black transition-all ${
-              activeCreature === "fox"
-                ? "bg-amber-600 text-white shadow"
-                : "text-muted hover:text-foreground"
-            }`}
+            onClick={() => setViewAngle(Math.PI / 4.5)}
+            className="rounded-xl px-2.5 py-1 font-bold text-muted hover:bg-cream hover:text-foreground dark:hover:bg-black/40 transition"
           >
-            <span>🦊</span>
-            <span>Wild Canid</span>
+            3/4 VIEW
           </button>
-
           <button
             type="button"
-            onClick={() => {
-              setActiveCreature("parrot");
-              playSlideTransitionSound();
-            }}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-1 font-black transition-all ${
-              activeCreature === "parrot"
-                ? "bg-emerald-600 text-white shadow"
-                : "text-muted hover:text-foreground"
-            }`}
+            onClick={() => setViewAngle(0)}
+            className="rounded-xl px-2.5 py-1 font-bold text-muted hover:bg-cream hover:text-foreground dark:hover:bg-black/40 transition"
           >
-            <span>🦜</span>
-            <span>Winged Fauna</span>
+            FRONT
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewAngle(Math.PI / 2)}
+            className="rounded-xl px-2.5 py-1 font-bold text-muted hover:bg-cream hover:text-foreground dark:hover:bg-black/40 transition"
+          >
+            PROFILE
           </button>
         </div>
 
@@ -458,7 +421,7 @@ export function Creature3DStage() {
       </div>
 
       <p className="mt-2 text-[10px] font-mono text-muted text-center">
-        CLICK & DRAG TO ROTATE 360° · REAL-TIME SKELETAL IDLE ANIMATION
+        SUPPORTED SPECIES: CANIS LUPUS (DOG) · CLICK & DRAG TO ROTATE 360°
       </p>
     </div>
   );
