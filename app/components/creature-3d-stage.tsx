@@ -2,23 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { playSlideTransitionSound, playTactileClick } from "../lib/sfx";
 
-type CreatureType = "butterfly" | "frog";
+type CreatureType = "fox" | "parrot";
 
 export function Creature3DStage() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeCreature, setActiveCreature] = useState<CreatureType>("butterfly");
+  const [activeCreature, setActiveCreature] = useState<CreatureType>("fox");
   const [wireframeMode, setWireframeMode] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // References to keep track of mutable Three.js objects
   const sceneRef = useRef<THREE.Scene | null>(null);
   const creatureGroupRef = useRef<THREE.Group | null>(null);
   const wireframeMaterialsRef = useRef<THREE.Material[]>([]);
-  const wingsRef = useRef<{ left: THREE.Group; right: THREE.Group } | null>(null);
-  const frogRef = useRef<{ throat: THREE.Mesh } | null>(null);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const scanRingRef = useRef<THREE.Mesh | null>(null);
   const isDraggingRef = useRef(false);
   const prevMouseRef = useRef({ x: 0, y: 0 });
@@ -37,15 +38,19 @@ export function Creature3DStage() {
     const container = containerRef.current;
     if (!container) return;
 
+    setLoading(true);
+
     // --- 1. Scene, Camera, Renderer Setup ---
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
     const width = container.clientWidth || 600;
-    const height = container.clientHeight || 580;
+    const height = container.clientHeight || 480;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 1.3, 4.3);
+    // Adjusted camera so the entire pedestal and creature are 100% visible inside frustum
+    camera.position.set(0, 0.85, 4.9);
+    camera.lookAt(0, -0.05, 0);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -58,30 +63,31 @@ export function Creature3DStage() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.replaceChildren(renderer.domElement);
 
-    // --- 2. Lighting ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
+    // --- 2. Studio & Cinematic Cyber Lighting ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0x34d399, 4.0); // Emerald Green
-    keyLight.position.set(5, 7, 5);
+    const keyLight = new THREE.DirectionalLight(0x34d399, 4.0); // Emerald Green Key
+    keyLight.position.set(5, 8, 5);
     keyLight.castShadow = true;
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0xf59e0b, 3.0); // Amber Gold
-    rimLight.position.set(-5, -2, -4);
+    const rimLight = new THREE.DirectionalLight(0xf59e0b, 3.2); // Amber Gold Rim
+    rimLight.position.set(-5, -1, -4);
     scene.add(rimLight);
 
-    const topCyanLight = new THREE.PointLight(0x38bdf8, 2.5, 10);
-    topCyanLight.position.set(0, 3.5, 0);
+    const topCyanLight = new THREE.PointLight(0x38bdf8, 2.5, 12);
+    topCyanLight.position.set(0, 4, 0);
     scene.add(topCyanLight);
 
-    // --- 3. Bio-Scanner Cybernetic Pedestal ---
+    // --- 3. Bio-Scanner Pedestal (Positioned to fit 100% inside view) ---
     const pedestalGroup = new THREE.Group();
-    pedestalGroup.position.set(0, -1.35, 0);
+    // Move up to -0.75 so the bottom of the base (-0.95) has ample breathing room at the bottom of the screen
+    pedestalGroup.position.set(0, -0.75, 0);
 
-    const baseGeo = new THREE.CylinderGeometry(2.3, 2.5, 0.28, 36);
+    const baseGeo = new THREE.CylinderGeometry(2.0, 2.2, 0.2, 36);
     const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0f14,
+      color: 0x0c1219,
       metalness: 0.85,
       roughness: 0.25,
     });
@@ -90,25 +96,24 @@ export function Creature3DStage() {
     pedestalGroup.add(baseMesh);
 
     // Glowing Neon Edge Ring
-    const edgeRingGeo = new THREE.TorusGeometry(2.35, 0.05, 16, 64);
+    const edgeRingGeo = new THREE.TorusGeometry(2.05, 0.045, 16, 64);
     const edgeRingMat = new THREE.MeshBasicMaterial({
       color: 0x10b981,
-      wireframe: false,
     });
     const edgeRing = new THREE.Mesh(edgeRingGeo, edgeRingMat);
     edgeRing.rotation.x = Math.PI / 2;
-    edgeRing.position.y = 0.15;
+    edgeRing.position.y = 0.11;
     pedestalGroup.add(edgeRing);
 
-    // Holographic Grid Disc
-    const gridHelper = new THREE.PolarGridHelper(2.2, 10, 8, 36, 0x10b981, 0x064e3b);
-    gridHelper.position.y = 0.16;
+    // Holographic Polar Grid Disc
+    const gridHelper = new THREE.PolarGridHelper(1.95, 10, 8, 36, 0x10b981, 0x064e3b);
+    gridHelper.position.y = 0.12;
     pedestalGroup.add(gridHelper);
 
     scene.add(pedestalGroup);
 
     // --- 4. Scanning Laser Plane & Ring ---
-    const scanRingGeo = new THREE.TorusGeometry(2.0, 0.035, 16, 48);
+    const scanRingGeo = new THREE.TorusGeometry(1.85, 0.03, 16, 48);
     const scanRingMat = new THREE.MeshBasicMaterial({
       color: 0x34d399,
       transparent: true,
@@ -121,12 +126,12 @@ export function Creature3DStage() {
     scanRingRef.current = scanRing;
 
     // --- 5. Depth Ambient Fireflies / Particle Dust ---
-    const particleCount = 110;
+    const particleCount = 100;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
       positions[i] = (Math.random() - 0.5) * 6;
-      positions[i + 1] = Math.random() * 5 - 1.5;
+      positions[i + 1] = Math.random() * 4 - 0.8;
       positions[i + 2] = (Math.random() - 0.5) * 6;
     }
     particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -140,156 +145,73 @@ export function Creature3DStage() {
     const fireflyPoints = new THREE.Points(particleGeo, particleMat);
     scene.add(fireflyPoints);
 
-    // --- 6. Build Procedural 3D Creature ---
+    // --- 6. Load Authentic Animated 3D Animal via GLTFLoader ---
     const creatureGroup = new THREE.Group();
     scene.add(creatureGroup);
     creatureGroupRef.current = creatureGroup;
     wireframeMaterialsRef.current = [];
 
-    if (activeCreature === "butterfly") {
-      // ===== 3D SWALLOWTAIL BUTTERFLY =====
-      creatureGroup.position.set(0, 0.4, 0);
-      creatureGroup.scale.set(1.4, 1.4, 1.4);
+    const loader = new GLTFLoader();
+    const modelPath = activeCreature === "fox" ? "/models/fox.glb" : "/models/parrot.glb";
 
-      // Body (Thorax & Abdomen)
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0x1c1917,
-        metalness: 0.6,
-        roughness: 0.3,
-      });
-      wireframeMaterialsRef.current.push(bodyMat);
+    loader.load(
+      modelPath,
+      (gltf) => {
+        const model = gltf.scene;
 
-      const thoraxGeo = new THREE.CapsuleGeometry(0.12, 0.7, 8, 16);
-      const thorax = new THREE.Mesh(thoraxGeo, bodyMat);
-      thorax.rotation.x = Math.PI / 3;
-      creatureGroup.add(thorax);
+        if (activeCreature === "fox") {
+          // Authentic Fox (Canid / Wild Dog)
+          // Standing on top surface of pedestal (Y = -0.65)
+          model.scale.set(0.022, 0.022, 0.022);
+          model.position.set(0, -0.65, 0);
+          model.rotation.set(0, Math.PI / 5, 0); // Natural 3/4 angle
+        } else {
+          // Exotic Flying Bird (Parrot)
+          model.scale.set(0.026, 0.026, 0.026);
+          model.position.set(0, 0.35, 0);
+          model.rotation.set(0, Math.PI / 4, 0);
+        }
 
-      // Head
-      const headGeo = new THREE.SphereGeometry(0.14, 16, 16);
-      const head = new THREE.Mesh(headGeo, bodyMat);
-      head.position.set(0, 0.28, 0.28);
-      creatureGroup.add(head);
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            const mesh = child as THREE.Mesh;
+            if (Array.isArray(mesh.material)) {
+              wireframeMaterialsRef.current.push(...mesh.material);
+            } else if (mesh.material) {
+              wireframeMaterialsRef.current.push(mesh.material);
+            }
+          }
+        });
 
-      // Antennae
-      const antMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
-      const leftAnt = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.02, 0.45, 6), antMat);
-      leftAnt.position.set(-0.08, 0.48, 0.35);
-      leftAnt.rotation.set(0.4, 0, -0.35);
-      creatureGroup.add(leftAnt);
+        // Apply wireframe if enabled
+        if (wireframeMode) {
+          wireframeMaterialsRef.current.forEach((mat) => {
+            if ("wireframe" in mat) (mat as THREE.MeshStandardMaterial).wireframe = true;
+          });
+        }
 
-      const rightAnt = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.02, 0.45, 6), antMat);
-      rightAnt.position.set(0.08, 0.48, 0.35);
-      rightAnt.rotation.set(0.4, 0, 0.35);
-      creatureGroup.add(rightAnt);
+        creatureGroup.add(model);
 
-      // Wings with Iridescent Shimmer Material
-      const wingMat = new THREE.MeshStandardMaterial({
-        color: 0x8b5cf6, // Violet / Purple Epic
-        emissive: 0x4c1d95,
-        emissiveIntensity: 0.3,
-        roughness: 0.2,
-        metalness: 0.4,
-        side: THREE.DoubleSide,
-      });
-      wireframeMaterialsRef.current.push(wingMat);
+        // Setup Skeletal Animation
+        if (gltf.animations && gltf.animations.length > 0) {
+          const mixer = new THREE.AnimationMixer(model);
+          // Play Survey/Idle animation for Fox, or flight animation for Parrot
+          const action = mixer.clipAction(gltf.animations[0]);
+          action.timeScale = 0.85;
+          action.play();
+          mixerRef.current = mixer;
+        }
 
-      // Custom Wing Shape
-      const forewingShape = new THREE.Shape();
-      forewingShape.moveTo(0, 0);
-      forewingShape.lineTo(0.5, 1.2);
-      forewingShape.lineTo(1.4, 1.4);
-      forewingShape.lineTo(1.6, 0.7);
-      forewingShape.lineTo(1.1, -0.2);
-      forewingShape.closePath();
-
-      const wingGeometry = new THREE.ShapeGeometry(forewingShape);
-
-      // Left Wing Group
-      const leftWingGroup = new THREE.Group();
-      leftWingGroup.position.set(-0.05, 0.1, 0);
-      const leftForewing = new THREE.Mesh(wingGeometry, wingMat);
-      leftForewing.scale.set(-0.9, 0.9, 0.9);
-      leftWingGroup.add(leftForewing);
-      creatureGroup.add(leftWingGroup);
-
-      // Right Wing Group
-      const rightWingGroup = new THREE.Group();
-      rightWingGroup.position.set(0.05, 0.1, 0);
-      const rightForewing = new THREE.Mesh(wingGeometry, wingMat);
-      rightForewing.scale.set(0.9, 0.9, 0.9);
-      rightWingGroup.add(rightForewing);
-      creatureGroup.add(rightWingGroup);
-
-      wingsRef.current = { left: leftWingGroup, right: rightWingGroup };
-    } else {
-      // ===== 3D CYBER TREE FROG =====
-      creatureGroup.position.set(0, -0.4, 0);
-      creatureGroup.scale.set(1.35, 1.35, 1.35);
-
-      const frogMat = new THREE.MeshStandardMaterial({
-        color: 0x10b981,
-        roughness: 0.3,
-        metalness: 0.5,
-        emissive: 0x064e3b,
-        emissiveIntensity: 0.25,
-      });
-      wireframeMaterialsRef.current.push(frogMat);
-
-      // Body
-      const bodyGeo = new THREE.DodecahedronGeometry(0.7, 1);
-      const body = new THREE.Mesh(bodyGeo, frogMat);
-      body.scale.set(1.1, 0.75, 1.25);
-      creatureGroup.add(body);
-
-      // Head & Eyes
-      const eyeGeo = new THREE.SphereGeometry(0.18, 16, 16);
-      const eyeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.1 });
-      const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-      leftEye.position.set(-0.4, 0.45, 0.45);
-      creatureGroup.add(leftEye);
-
-      const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-      rightEye.position.set(0.4, 0.45, 0.45);
-      creatureGroup.add(rightEye);
-
-      // Pupil
-      const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-      const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.05), pupilMat);
-      pupil.position.set(-0.4, 0.45, 0.6);
-      creatureGroup.add(pupil);
-
-      const pupilRight = pupil.clone();
-      pupilRight.position.set(0.4, 0.45, 0.6);
-      creatureGroup.add(pupilRight);
-
-      // Throat Sac for breathing animation
-      const throatGeo = new THREE.SphereGeometry(0.35, 16, 16);
-      const throatMat = new THREE.MeshStandardMaterial({ color: 0x34d399, roughness: 0.4 });
-      const throat = new THREE.Mesh(throatGeo, throatMat);
-      throat.position.set(0, -0.15, 0.65);
-      throat.scale.set(0.8, 0.6, 0.8);
-      creatureGroup.add(throat);
-      frogRef.current = { throat };
-
-      // Front Legs
-      const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8);
-      const leftLeg = new THREE.Mesh(legGeo, frogMat);
-      leftLeg.position.set(-0.6, -0.25, 0.35);
-      leftLeg.rotation.set(0, 0, 0.6);
-      creatureGroup.add(leftLeg);
-
-      const rightLeg = new THREE.Mesh(legGeo, frogMat);
-      rightLeg.position.set(0.6, -0.25, 0.35);
-      rightLeg.rotation.set(0, 0, -0.6);
-      creatureGroup.add(rightLeg);
-    }
-
-    // Apply wireframe state if active
-    if (wireframeMode) {
-      wireframeMaterialsRef.current.forEach((mat) => {
-        if ("wireframe" in mat) (mat as THREE.MeshStandardMaterial).wireframe = true;
-      });
-    }
+        setLoading(false);
+      },
+      undefined,
+      (error) => {
+        console.error("Failed to load 3D animal model:", error);
+        setLoading(false);
+      },
+    );
 
     // --- 7. Mouse & Touch Drag Controls ---
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
@@ -314,8 +236,8 @@ export function Creature3DStage() {
 
       creatureGroupRef.current.rotation.y += rotationVelocityRef.current.y;
       creatureGroupRef.current.rotation.x = Math.max(
-        -0.5,
-        Math.min(0.5, creatureGroupRef.current.rotation.x + rotationVelocityRef.current.x),
+        -0.3,
+        Math.min(0.4, creatureGroupRef.current.rotation.x + rotationVelocityRef.current.x),
       );
 
       prevMouseRef.current = { x: clientX, y: clientY };
@@ -339,42 +261,33 @@ export function Creature3DStage() {
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
+      const delta = clock.getDelta();
       const elapsedTime = clock.getElapsedTime();
+
+      // Update skeletal animation mixer (Fox breathing/tail/head, bird flapping)
+      if (mixerRef.current) {
+        mixerRef.current.update(delta);
+      }
 
       // Auto-rotation if enabled and not currently dragging
       if (autoRotate && !isDraggingRef.current && creatureGroupRef.current) {
-        creatureGroupRef.current.rotation.y += 0.007;
+        creatureGroupRef.current.rotation.y += 0.006;
       }
 
       // Scanner laser vertical sweep
       if (scanRingRef.current) {
-        scanRingRef.current.position.y = Math.sin(elapsedTime * 2.2) * 1.3 + 0.2;
-        scanRingRef.current.rotation.z += 0.02;
+        scanRingRef.current.position.y = Math.sin(elapsedTime * 2.0) * 1.0 + 0.15;
+        scanRingRef.current.rotation.z += 0.015;
       }
 
       // Pedestal slow rotation
-      pedestalGroup.rotation.y += 0.003;
-
-      // Creature specific animations
-      if (activeCreature === "butterfly" && wingsRef.current) {
-        const flapAngle = Math.sin(elapsedTime * 8) * 0.65;
-        wingsRef.current.left.rotation.y = flapAngle;
-        wingsRef.current.right.rotation.y = -flapAngle;
-        // Floating hovering motion
-        if (creatureGroupRef.current) {
-          creatureGroupRef.current.position.y = 0.4 + Math.sin(elapsedTime * 2.5) * 0.12;
-        }
-      } else if (activeCreature === "frog" && frogRef.current) {
-        // Frog throat breathing pulse
-        const breath = 0.8 + Math.sin(elapsedTime * 4) * 0.25;
-        frogRef.current.throat.scale.set(breath, breath * 0.7, breath);
-      }
+      pedestalGroup.rotation.y += 0.0025;
 
       // Ambient particle floating
       const posAttr = particleGeo.attributes.position;
       for (let i = 1; i < particleCount * 3; i += 3) {
-        posAttr.array[i] += 0.004;
-        if (posAttr.array[i] > 3) posAttr.array[i] = -1;
+        posAttr.array[i] += 0.003;
+        if (posAttr.array[i] > 3) posAttr.array[i] = -0.8;
       }
       posAttr.needsUpdate = true;
 
@@ -411,6 +324,9 @@ export function Creature3DStage() {
 
       renderer.dispose();
       scene.clear();
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+      }
     };
   }, [activeCreature, autoRotate, wireframeMode]);
 
@@ -422,14 +338,26 @@ export function Creature3DStage() {
 
   return (
     <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center">
-      {/* Main 3D Canvas Stage: Frameless & Seamless on Page Background */}
+      {/* Main 3D Canvas Stage: Completely Frameless & Seamless on Page Background */}
       <div className="relative h-[380px] sm:h-[440px] md:h-[480px] w-full flex items-center justify-center">
         {/* Soft Ambient Radial Glow behind the 3D creature */}
-        <div className="pointer-events-none absolute h-64 w-64 sm:h-80 sm:w-80 rounded-full bg-emerald-500/15 blur-3xl animate-pulse" aria-hidden="true" />
+        <div
+          className="pointer-events-none absolute h-64 w-64 sm:h-80 sm:w-80 rounded-full bg-emerald-500/15 blur-3xl animate-pulse"
+          aria-hidden="true"
+        />
 
         {/* Rapid Scan Flash Effect */}
         {isScanning && (
           <div className="pointer-events-none absolute inset-0 z-20 bg-emerald-500/15 animate-pulse rounded-full blur-2xl" />
+        )}
+
+        {/* Loading Indicator */}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+            <span className="font-mono text-xs text-emerald-400 font-bold animate-pulse">
+              INITIALIZING 3D NEURAL SPECIMEN…
+            </span>
+          </div>
         )}
 
         {/* Three.js Canvas Element mounts here (Completely transparent) */}
@@ -439,59 +367,55 @@ export function Creature3DStage() {
           title="Click and drag to rotate creature in 3D"
         />
 
-        {/* Floating Specimen Telemetry Pill */}
-        <div className="pointer-events-none absolute bottom-2 inset-x-auto z-10 flex items-center gap-3 rounded-full bg-black/60 px-4 py-1.5 font-mono text-[11px] backdrop-blur border border-emerald-500/30 shadow-lg">
+        {/* Floating Specimen Telemetry Pill (Sits cleanly in top right corner to not obscure pedestal) */}
+        <div className="pointer-events-none absolute top-2 right-2 sm:right-4 z-10 flex items-center gap-2.5 rounded-full bg-black/60 px-3.5 py-1 font-mono text-[11px] backdrop-blur border border-emerald-500/30 shadow-lg">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <p className="font-bold text-white">
-            {activeCreature === "butterfly"
-              ? "Papilio machaon (Swallowtail)"
-              : "Hyla arborea (Tree Frog)"}
+            {activeCreature === "fox" ? "Canis lupus (Wild Canid)" : "Psittaciformes (Falcon / Bird)"}
           </p>
           <span className="text-muted">·</span>
-          <span className="text-emerald-400 font-bold">
-            96.4% CONFIDENCE
-          </span>
+          <span className="text-emerald-400 font-bold">96.4% MATCH</span>
         </div>
       </div>
 
-      {/* 3D Control Strip */}
-      <div className="mt-3 flex w-full flex-wrap items-center justify-between gap-2 px-1 text-xs">
+      {/* 3D Control Strip (Sleek floating glass pills) */}
+      <div className="mt-1 flex w-full flex-wrap items-center justify-center gap-3 px-1 text-xs">
         {/* Creature Selector */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card/80 p-1">
+        <div className="flex items-center gap-1.5 rounded-2xl border border-border bg-card/85 p-1 backdrop-blur shadow-sm">
           <button
             type="button"
             onClick={() => {
-              setActiveCreature("butterfly");
+              setActiveCreature("fox");
               playSlideTransitionSound();
             }}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-black transition-all ${
-              activeCreature === "butterfly"
-                ? "bg-purple-600 text-white shadow"
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1 font-black transition-all ${
+              activeCreature === "fox"
+                ? "bg-amber-600 text-white shadow"
                 : "text-muted hover:text-foreground"
             }`}
           >
-            <span>🦋</span>
-            <span>Butterfly</span>
+            <span>🦊</span>
+            <span>Wild Canid</span>
           </button>
 
           <button
             type="button"
             onClick={() => {
-              setActiveCreature("frog");
+              setActiveCreature("parrot");
               playSlideTransitionSound();
             }}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-black transition-all ${
-              activeCreature === "frog"
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1 font-black transition-all ${
+              activeCreature === "parrot"
                 ? "bg-emerald-600 text-white shadow"
                 : "text-muted hover:text-foreground"
             }`}
           >
-            <span>🐸</span>
-            <span>Tree Frog</span>
+            <span>🦜</span>
+            <span>Winged Fauna</span>
           </button>
         </div>
 
-        {/* Action Buttons: Wireframe & Pulse Scan */}
+        {/* Action Buttons: Wireframe, Auto-Rotate & Pulse Scan */}
         <div className="flex items-center gap-1.5 font-mono text-[11px]">
           <button
             type="button"
@@ -499,7 +423,7 @@ export function Creature3DStage() {
               setWireframeMode(!wireframeMode);
               playTactileClick();
             }}
-            className={`rounded-xl border px-2.5 py-1.5 font-bold transition-all ${
+            className={`rounded-xl border px-3 py-1.5 font-bold transition-all ${
               wireframeMode
                 ? "border-emerald-400 bg-emerald-500/20 text-emerald-300"
                 : "border-border bg-card/80 text-muted hover:border-emerald-500 hover:text-foreground"
@@ -514,7 +438,7 @@ export function Creature3DStage() {
               setAutoRotate(!autoRotate);
               playTactileClick();
             }}
-            className={`rounded-xl border px-2.5 py-1.5 font-bold transition-all ${
+            className={`rounded-xl border px-3 py-1.5 font-bold transition-all ${
               autoRotate
                 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
                 : "border-border bg-card/80 text-muted hover:border-foreground/30"
@@ -526,15 +450,15 @@ export function Creature3DStage() {
           <button
             type="button"
             onClick={triggerPulseScan}
-            className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 font-bold text-emerald-400 transition hover:bg-emerald-500 hover:text-white"
+            className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-400 transition hover:bg-emerald-500 hover:text-white"
           >
             ✨ SCAN
           </button>
         </div>
       </div>
 
-      <p className="mt-2 text-[10px] font-mono text-muted">
-        DRAG TO ROTATE 360° · SCROLL TO ZOOM · TOGGLE AI X-RAY
+      <p className="mt-2 text-[10px] font-mono text-muted text-center">
+        CLICK & DRAG TO ROTATE 360° · REAL-TIME SKELETAL IDLE ANIMATION
       </p>
     </div>
   );
