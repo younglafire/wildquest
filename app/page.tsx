@@ -5,7 +5,7 @@ import { GameFooter } from "./components/game-footer";
 import { GameMetricsCounter } from "./components/game-metrics-counter";
 import { GameSystemsGrid } from "./components/game-systems-grid";
 import { GridBackground } from "./components/grid-background";
-import { HeroCardsShowcase } from "./components/hero-cards-showcase";
+import { HeroInteractiveDisplay } from "./components/hero-interactive-display";
 import { SpeciesMarquee } from "./components/species-marquee";
 import { StartExpeditionButton } from "./components/start-expedition-button";
 
@@ -83,9 +83,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Column: Hero Visual - 3D Interactive Collectible Cards Showcase */}
+            {/* Right Column: Hero Visual - Interactive 3D Bio-Scanner & Collectible Cards */}
             <div className="w-full py-4 lg:py-0">
-              <HeroCardsShowcase />
+              <HeroInteractiveDisplay />
             </div>
           </section>
 
