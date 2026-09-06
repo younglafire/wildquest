@@ -20,56 +20,56 @@ export default function Home() {
           <AppHeader landing />
         </div>
 
-        <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-16">
+        <main className="mx-auto max-w-6xl px-4 pb-20 pt-3 sm:px-6 sm:pt-6">
           {/* Hero Section: Centered Cinematic Layout */}
-          <section className="flex flex-col items-center text-center space-y-8">
+          <section className="flex flex-col items-center text-center space-y-4 sm:space-y-5">
             {/* Top Badge & Titles */}
-            <div className="space-y-4 max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.25em] text-emerald-700 dark:text-emerald-300">
+            <div className="space-y-2.5 max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700 dark:text-emerald-300">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 WildQuest · Season 01 // Solana Devnet
               </div>
 
-              <h1 className="text-6xl font-black leading-[0.95] tracking-[-0.06em] sm:text-7xl lg:text-8xl">
+              <h1 className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-6xl lg:text-7xl">
                 <span className="block bg-gradient-to-br from-amber-500 via-emerald-500 to-teal-600 bg-clip-text text-transparent dark:from-amber-200 dark:via-emerald-400 dark:to-teal-300">
                   WILDQUEST
                 </span>
-                <span className="mt-2 block text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl text-foreground">
+                <span className="mt-1.5 block text-xl font-black tracking-tight sm:text-2xl lg:text-3xl text-foreground">
                   The Real-World Wildlife RPG on Solana
                 </span>
               </h1>
 
-              <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-                Step outside, hunt real animals with your phone camera, and prove your finds with on-device AI vision. Every validated capture builds your onchain Explorer Passport.
+              <p className="mx-auto max-w-xl text-xs leading-relaxed text-muted sm:text-sm">
+                Step outside, hunt real animals with your phone camera, and prove your finds with on-device AI vision.
               </p>
 
               {/* Feature Tags */}
-              <div className="flex flex-wrap justify-center gap-2 pt-1 text-xs font-bold text-muted">
-                <span className="rounded-xl border border-border bg-card/60 px-3 py-1.5 backdrop-blur">
-                  🐾 8 Supported Species
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1 text-[11px] font-bold text-muted">
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
+                  🐾 8 Species
                 </span>
-                <span className="rounded-xl border border-border bg-card/60 px-3 py-1.5 backdrop-blur">
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
                   ⚡ ResNet-50 Vision
                 </span>
-                <span className="rounded-xl border border-border bg-card/60 px-3 py-1.5 backdrop-blur">
-                  🛡️ Anti-Cheat pHash Gate
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
+                  🛡️ Anti-Cheat pHash
                 </span>
-                <span className="rounded-xl border border-border bg-card/60 px-3 py-1.5 backdrop-blur">
-                  🏆 Onchain Quests & Badges
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
+                  🏆 Onchain Quests
                 </span>
               </div>
             </div>
 
-            {/* Centerpiece Visual: Massive 3D Bio-Scanner & Cards */}
+            {/* Centerpiece Visual: Frameless 3D Bio-Scanner & Cards */}
             <div className="w-full">
               <HeroInteractiveDisplay />
             </div>
 
             {/* Centered CTA & Trust Credentials */}
-            <div className="w-full max-w-md mx-auto space-y-3 pt-2">
-              <div className="flex flex-col items-center gap-3">
+            <div className="w-full max-w-md mx-auto space-y-2 pt-1">
+              <div className="flex flex-col items-center gap-2.5">
                 <StartExpeditionButton />
-                <div className="flex items-center justify-center gap-2 text-xs font-mono text-muted">
+                <div className="flex items-center justify-center gap-2 text-[11px] font-mono text-muted">
                   <span>✓ Solana Devnet</span>
                   <span>·</span>
                   <span>Zero real SOL spent</span>

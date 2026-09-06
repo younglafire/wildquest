@@ -422,56 +422,34 @@ export function Creature3DStage() {
 
   return (
     <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center">
-      {/* Top HUD Telemetry Bar */}
-      <div className="flex w-full items-center justify-between px-3 py-2 text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-          </span>
-          <span className="font-black text-emerald-600 dark:text-emerald-400">
-            3D NEURAL BIO-SCANNER
-          </span>
-        </div>
-        <span className="rounded bg-black/50 px-2 py-0.5 text-[10px] text-muted border border-border/60">
-          WEBGL LIVE // 60 FPS
-        </span>
-      </div>
-
-      {/* Main 3D Canvas Stage Container */}
-      <div className="relative h-[460px] sm:h-[560px] lg:h-[600px] w-full overflow-hidden rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-b from-card via-black/85 to-black p-2 shadow-[0_0_80px_-20px_rgba(16,185,129,0.4)] backdrop-blur-md">
-        {/* 4 Cyber Viewfinder Corner Brackets */}
-        <span className="absolute left-4 top-4 h-4 w-4 border-l-2 border-t-2 border-emerald-400 pointer-events-none z-10" />
-        <span className="absolute right-4 top-4 h-4 w-4 border-r-2 border-t-2 border-emerald-400 pointer-events-none z-10" />
-        <span className="absolute bottom-4 left-4 h-4 w-4 border-b-2 border-l-2 border-emerald-400 pointer-events-none z-10" />
-        <span className="absolute bottom-4 right-4 h-4 w-4 border-b-2 border-r-2 border-emerald-400 pointer-events-none z-10" />
+      {/* Main 3D Canvas Stage: Frameless & Seamless on Page Background */}
+      <div className="relative h-[380px] sm:h-[440px] md:h-[480px] w-full flex items-center justify-center">
+        {/* Soft Ambient Radial Glow behind the 3D creature */}
+        <div className="pointer-events-none absolute h-64 w-64 sm:h-80 sm:w-80 rounded-full bg-emerald-500/15 blur-3xl animate-pulse" aria-hidden="true" />
 
         {/* Rapid Scan Flash Effect */}
         {isScanning && (
-          <div className="pointer-events-none absolute inset-0 z-20 bg-emerald-500/20 animate-pulse" />
+          <div className="pointer-events-none absolute inset-0 z-20 bg-emerald-500/15 animate-pulse rounded-full blur-2xl" />
         )}
 
-        {/* Three.js Canvas Element mounts here */}
+        {/* Three.js Canvas Element mounts here (Completely transparent) */}
         <div
           ref={containerRef}
           className="h-full w-full cursor-grab active:cursor-grabbing"
           title="Click and drag to rotate creature in 3D"
         />
 
-        {/* Floating Specimen Telemetry Readout */}
-        <div className="pointer-events-none absolute bottom-4 inset-x-4 z-10 flex items-center justify-between rounded-xl bg-black/70 p-2.5 font-mono text-[11px] backdrop-blur border border-emerald-500/30">
-          <div>
-            <p className="font-black text-white">
-              {activeCreature === "butterfly"
-                ? "Papilio machaon (Swallowtail)"
-                : "Hyla arborea (Tree Frog)"}
-            </p>
-            <p className="text-[10px] text-emerald-400">
-              Confidence: 96.4% · ResNet-50 Validated
-            </p>
-          </div>
-          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300">
-            {activeCreature === "butterfly" ? "EPIC QUEST" : "RARE TIER"}
+        {/* Floating Specimen Telemetry Pill */}
+        <div className="pointer-events-none absolute bottom-2 inset-x-auto z-10 flex items-center gap-3 rounded-full bg-black/60 px-4 py-1.5 font-mono text-[11px] backdrop-blur border border-emerald-500/30 shadow-lg">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <p className="font-bold text-white">
+            {activeCreature === "butterfly"
+              ? "Papilio machaon (Swallowtail)"
+              : "Hyla arborea (Tree Frog)"}
+          </p>
+          <span className="text-muted">·</span>
+          <span className="text-emerald-400 font-bold">
+            96.4% CONFIDENCE
           </span>
         </div>
       </div>
