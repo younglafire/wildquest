@@ -41,11 +41,11 @@ export function Creature3DStage() {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const width = container.clientWidth || 380;
-    const height = container.clientHeight || 420;
+    const width = container.clientWidth || 600;
+    const height = container.clientHeight || 580;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 1.8, 5.2);
+    camera.position.set(0, 1.3, 4.3);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -59,27 +59,27 @@ export function Creature3DStage() {
     container.replaceChildren(renderer.domElement);
 
     // --- 2. Lighting ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0x34d399, 3.5); // Emerald Green
-    keyLight.position.set(4, 6, 4);
+    const keyLight = new THREE.DirectionalLight(0x34d399, 4.0); // Emerald Green
+    keyLight.position.set(5, 7, 5);
     keyLight.castShadow = true;
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0xf59e0b, 2.5); // Amber Gold
-    rimLight.position.set(-4, -2, -3);
+    const rimLight = new THREE.DirectionalLight(0xf59e0b, 3.0); // Amber Gold
+    rimLight.position.set(-5, -2, -4);
     scene.add(rimLight);
 
-    const topCyanLight = new THREE.PointLight(0x38bdf8, 2, 8);
-    topCyanLight.position.set(0, 3, 0);
+    const topCyanLight = new THREE.PointLight(0x38bdf8, 2.5, 10);
+    topCyanLight.position.set(0, 3.5, 0);
     scene.add(topCyanLight);
 
     // --- 3. Bio-Scanner Cybernetic Pedestal ---
     const pedestalGroup = new THREE.Group();
-    pedestalGroup.position.set(0, -1.2, 0);
+    pedestalGroup.position.set(0, -1.35, 0);
 
-    const baseGeo = new THREE.CylinderGeometry(1.9, 2.1, 0.25, 32);
+    const baseGeo = new THREE.CylinderGeometry(2.3, 2.5, 0.28, 36);
     const baseMat = new THREE.MeshStandardMaterial({
       color: 0x0a0f14,
       metalness: 0.85,
@@ -90,25 +90,25 @@ export function Creature3DStage() {
     pedestalGroup.add(baseMesh);
 
     // Glowing Neon Edge Ring
-    const edgeRingGeo = new THREE.TorusGeometry(1.95, 0.04, 16, 64);
+    const edgeRingGeo = new THREE.TorusGeometry(2.35, 0.05, 16, 64);
     const edgeRingMat = new THREE.MeshBasicMaterial({
       color: 0x10b981,
       wireframe: false,
     });
     const edgeRing = new THREE.Mesh(edgeRingGeo, edgeRingMat);
     edgeRing.rotation.x = Math.PI / 2;
-    edgeRing.position.y = 0.13;
+    edgeRing.position.y = 0.15;
     pedestalGroup.add(edgeRing);
 
     // Holographic Grid Disc
-    const gridHelper = new THREE.PolarGridHelper(1.8, 8, 8, 32, 0x10b981, 0x064e3b);
-    gridHelper.position.y = 0.14;
+    const gridHelper = new THREE.PolarGridHelper(2.2, 10, 8, 36, 0x10b981, 0x064e3b);
+    gridHelper.position.y = 0.16;
     pedestalGroup.add(gridHelper);
 
     scene.add(pedestalGroup);
 
     // --- 4. Scanning Laser Plane & Ring ---
-    const scanRingGeo = new THREE.TorusGeometry(1.6, 0.03, 16, 48);
+    const scanRingGeo = new THREE.TorusGeometry(2.0, 0.035, 16, 48);
     const scanRingMat = new THREE.MeshBasicMaterial({
       color: 0x34d399,
       transparent: true,
@@ -121,13 +121,13 @@ export function Creature3DStage() {
     scanRingRef.current = scanRing;
 
     // --- 5. Depth Ambient Fireflies / Particle Dust ---
-    const particleCount = 75;
+    const particleCount = 110;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 5;
-      positions[i + 1] = Math.random() * 4 - 1;
-      positions[i + 2] = (Math.random() - 0.5) * 5;
+      positions[i] = (Math.random() - 0.5) * 6;
+      positions[i + 1] = Math.random() * 5 - 1.5;
+      positions[i + 2] = (Math.random() - 0.5) * 6;
     }
     particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const particleMat = new THREE.PointsMaterial({
@@ -149,6 +149,7 @@ export function Creature3DStage() {
     if (activeCreature === "butterfly") {
       // ===== 3D SWALLOWTAIL BUTTERFLY =====
       creatureGroup.position.set(0, 0.4, 0);
+      creatureGroup.scale.set(1.4, 1.4, 1.4);
 
       // Body (Thorax & Abdomen)
       const bodyMat = new THREE.MeshStandardMaterial({
@@ -223,6 +224,7 @@ export function Creature3DStage() {
     } else {
       // ===== 3D CYBER TREE FROG =====
       creatureGroup.position.set(0, -0.4, 0);
+      creatureGroup.scale.set(1.35, 1.35, 1.35);
 
       const frogMat = new THREE.MeshStandardMaterial({
         color: 0x10b981,
@@ -419,7 +421,7 @@ export function Creature3DStage() {
   };
 
   return (
-    <div className="relative mx-auto flex w-full max-w-md flex-col items-center">
+    <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center">
       {/* Top HUD Telemetry Bar */}
       <div className="flex w-full items-center justify-between px-3 py-2 text-xs font-mono">
         <div className="flex items-center gap-2">
@@ -437,7 +439,7 @@ export function Creature3DStage() {
       </div>
 
       {/* Main 3D Canvas Stage Container */}
-      <div className="relative h-[410px] w-full overflow-hidden rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-b from-card via-black/80 to-black p-2 shadow-[0_0_60px_-15px_rgba(16,185,129,0.35)] backdrop-blur-md">
+      <div className="relative h-[460px] sm:h-[560px] lg:h-[600px] w-full overflow-hidden rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-b from-card via-black/85 to-black p-2 shadow-[0_0_80px_-20px_rgba(16,185,129,0.4)] backdrop-blur-md">
         {/* 4 Cyber Viewfinder Corner Brackets */}
         <span className="absolute left-4 top-4 h-4 w-4 border-l-2 border-t-2 border-emerald-400 pointer-events-none z-10" />
         <span className="absolute right-4 top-4 h-4 w-4 border-r-2 border-t-2 border-emerald-400 pointer-events-none z-10" />

@@ -15,7 +15,7 @@ export function HeroInteractiveDisplay() {
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex w-full max-w-4xl flex-col items-center mx-auto">
       {/* Top Selector Tabs: 3D Stage vs Cards Showcase */}
       <div className="mb-3 flex items-center gap-1.5 rounded-2xl border border-border bg-card/85 p-1 backdrop-blur-md shadow-sm">
         <button

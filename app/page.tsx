@@ -21,31 +21,30 @@ export default function Home() {
         </div>
 
         <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-16">
-          {/* Hero Section */}
-          <section className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-            {/* Left Column: Game Title & Mission */}
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+          {/* Hero Section: Centered Cinematic Layout */}
+          <section className="flex flex-col items-center text-center space-y-8">
+            {/* Top Badge & Titles */}
+            <div className="space-y-4 max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.25em] text-emerald-700 dark:text-emerald-300">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                WildQuest · Season 01
+                WildQuest · Season 01 // Solana Devnet
               </div>
 
-              <div>
-                <h1 className="text-6xl font-black leading-[0.9] tracking-[-0.06em] sm:text-7xl lg:text-8xl">
-                  <span className="block bg-gradient-to-br from-amber-500 via-emerald-600 to-teal-700 bg-clip-text text-transparent dark:from-amber-200 dark:via-emerald-400 dark:to-teal-300">
-                    WILDQUEST
-                  </span>
-                  <span className="mt-2 block text-3xl font-black tracking-tight sm:text-4xl text-foreground">
-                    The Real-World Wildlife RPG on Solana
-                  </span>
-                </h1>
-                <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-                  Step outside, hunt real animals with your phone camera, and prove your finds with on-device AI vision. Every validated capture builds your onchain Explorer Passport.
-                </p>
-              </div>
+              <h1 className="text-6xl font-black leading-[0.95] tracking-[-0.06em] sm:text-7xl lg:text-8xl">
+                <span className="block bg-gradient-to-br from-amber-500 via-emerald-500 to-teal-600 bg-clip-text text-transparent dark:from-amber-200 dark:via-emerald-400 dark:to-teal-300">
+                  WILDQUEST
+                </span>
+                <span className="mt-2 block text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl text-foreground">
+                  The Real-World Wildlife RPG on Solana
+                </span>
+              </h1>
+
+              <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+                Step outside, hunt real animals with your phone camera, and prove your finds with on-device AI vision. Every validated capture builds your onchain Explorer Passport.
+              </p>
 
               {/* Feature Tags */}
-              <div className="flex flex-wrap gap-2 pt-1 text-xs font-bold text-muted">
+              <div className="flex flex-wrap justify-center gap-2 pt-1 text-xs font-bold text-muted">
                 <span className="rounded-xl border border-border bg-card/60 px-3 py-1.5 backdrop-blur">
                   🐾 8 Supported Species
                 </span>
@@ -59,33 +58,25 @@ export default function Home() {
                   🏆 Onchain Quests & Badges
                 </span>
               </div>
+            </div>
 
-              {/* Start Expedition Box */}
-              <div className="rounded-3xl border-2 border-emerald-900/20 bg-card/90 p-6 shadow-[0_25px_80px_-25px_rgba(0,0,0,0.6)] backdrop-blur sm:p-7 dark:border-emerald-500/20">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-                      Ready for the wild?
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold text-foreground">
-                      Connect your wallet to begin your expedition.
-                    </p>
-                  </div>
-                  <StartExpeditionButton />
-                </div>
-                <div className="mt-4 flex items-center gap-3 border-t border-border pt-4 text-xs text-muted">
+            {/* Centerpiece Visual: Massive 3D Bio-Scanner & Cards */}
+            <div className="w-full">
+              <HeroInteractiveDisplay />
+            </div>
+
+            {/* Centered CTA & Trust Credentials */}
+            <div className="w-full max-w-md mx-auto space-y-3 pt-2">
+              <div className="flex flex-col items-center gap-3">
+                <StartExpeditionButton />
+                <div className="flex items-center justify-center gap-2 text-xs font-mono text-muted">
                   <span>✓ Solana Devnet</span>
                   <span>·</span>
                   <span>Zero real SOL spent</span>
                   <span>·</span>
-                  <span>Photos analyzed strictly in memory</span>
+                  <span>In-Memory Neural Scan</span>
                 </div>
               </div>
-            </div>
-
-            {/* Right Column: Hero Visual - Interactive 3D Bio-Scanner & Collectible Cards */}
-            <div className="w-full py-4 lg:py-0">
-              <HeroInteractiveDisplay />
             </div>
           </section>
 
