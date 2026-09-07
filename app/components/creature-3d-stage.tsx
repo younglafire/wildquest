@@ -121,27 +121,7 @@ export function Creature3DStage() {
     scene.add(scanRing);
     scanRingRef.current = scanRing;
 
-    // --- 5. Depth Ambient Fireflies / Particle Dust ---
-    const particleCount = 100;
-    const particleGeo = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 6;
-      positions[i + 1] = Math.random() * 4 - 0.8;
-      positions[i + 2] = (Math.random() - 0.5) * 6;
-    }
-    particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    const particleMat = new THREE.PointsMaterial({
-      color: 0x34d399,
-      size: 0.045,
-      transparent: true,
-      opacity: 0.75,
-      blending: THREE.AdditiveBlending,
-    });
-    const fireflyPoints = new THREE.Points(particleGeo, particleMat);
-    scene.add(fireflyPoints);
-
-    // --- 6. Load Authentic 3D Dog (Canis lupus - Supported Species #1) ---
+    // --- 5. Load Authentic 3D Dog (Canis lupus - Supported Species #1) ---
     const creatureGroup = new THREE.Group();
     scene.add(creatureGroup);
     creatureGroupRef.current = creatureGroup;
@@ -251,14 +231,6 @@ export function Creature3DStage() {
 
       // Pedestal slow rotation
       pedestalGroup.rotation.y += 0.0025;
-
-      // Ambient particle floating
-      const posAttr = particleGeo.attributes.position;
-      for (let i = 1; i < particleCount * 3; i += 3) {
-        posAttr.array[i] += 0.003;
-        if (posAttr.array[i] > 3) posAttr.array[i] = -0.8;
-      }
-      posAttr.needsUpdate = true;
 
       renderer.render(scene, camera);
     };
