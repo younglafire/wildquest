@@ -63,19 +63,26 @@ WildQuest dataset and model training.
 
 ### Dependencies
 
-- Node.js 20.9.0 or newer and npm
+- Node.js 20.19.0 or newer and npm 10 or newer
 - Rust 1.89.0, pinned by `rust-toolchain.toml`
 - Anchor CLI 1.1.2
 - Agave CLI 3.x
 - a Supabase project and Supabase CLI access
 - a Wallet Standard compatible Solana wallet for browser testing
 
-Install the JavaScript dependencies and generate the program artefacts:
+See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) for the requirements of
+each development workflow and the files that must remain present in a branch.
+
+Install the JavaScript dependencies and create the local environment file:
 
 ```sh
-npm install
+npm ci
 cp .env.example .env.local
 ```
+
+Run `npm ci` after checking out or pulling a branch whose `package.json` or
+`package-lock.json` changed. Dependencies in `node_modules` are local and are
+not transferred by Git.
 
 The generated client is committed, so application development does not require
 code generation. Run `npm run setup` only after selecting and synchronizing the
