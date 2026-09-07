@@ -15,7 +15,9 @@ const createObjectURL = vi.fn(() => {
 const revokeObjectURL = vi.fn();
 
 function getPhotoInput() {
-  return screen.getByLabelText(/take or choose a photo/i) as HTMLInputElement;
+  return screen.getByLabelText(
+    /open camera or choose photo/i,
+  ) as HTMLInputElement;
 }
 
 beforeEach(() => {
@@ -34,15 +36,32 @@ afterEach(() => {
 });
 
 describe("CaptureForm", () => {
-  it("requests the rear camera with a single desktop-compatible file input", () => {
+  it("requests the rear camera and accepts common JPEG file names", () => {
     render(<CaptureForm />);
     const input = getPhotoInput();
 
     expect(input).toHaveAttribute("type", "file");
     expect(input).toHaveAttribute("name", "image");
-    expect(input).toHaveAttribute("accept", "image/jpeg,image/png,image/webp");
+    expect(input).toHaveAttribute(
+      "accept",
+      ".jpg,.jpeg,image/jpeg,image/jpg,image/png,image/webp",
+    );
     expect(input).toHaveAttribute("capture", "environment");
     expect(input).not.toHaveAttribute("multiple");
+  });
+
+  it("accepts JPEG files reported with either common MIME value", async () => {
+    const user = userEvent.setup();
+    render(<CaptureForm />);
+
+    await user.upload(
+      getPhotoInput(),
+      new File([new Uint8Array([1])], "animal.jpeg", {
+        type: "image/jpg",
+      }),
+    );
+
+    expect(screen.getByAltText("Preview of animal.jpeg")).toBeInTheDocument();
   });
 
   it("previews, replaces, and clears a valid photo", async () => {

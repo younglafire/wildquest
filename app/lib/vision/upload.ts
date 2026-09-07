@@ -2,11 +2,16 @@ export const MAX_IMAGE_BYTES = 4_000_000;
 
 export const SUPPORTED_IMAGE_MIME_TYPES = [
   "image/jpeg",
+  "image/jpg",
   "image/png",
   "image/webp",
 ] as const;
 
-export const IMAGE_INPUT_ACCEPT = SUPPORTED_IMAGE_MIME_TYPES.join(",");
+export const IMAGE_INPUT_ACCEPT = [
+  ".jpg",
+  ".jpeg",
+  ...SUPPORTED_IMAGE_MIME_TYPES,
+].join(",");
 
 export const SUPPORTED_IMAGE_TYPES = new Set<string>(
   SUPPORTED_IMAGE_MIME_TYPES,

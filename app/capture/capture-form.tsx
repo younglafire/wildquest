@@ -95,8 +95,8 @@ export function CaptureForm({
           Photograph your discovery
         </h1>
         <p id="capture-help" className="text-sm leading-relaxed text-muted">
-          Use your rear camera on mobile or choose a photo on desktop. Your
-          image stays in this browser and is not uploaded yet.
+          Take a clear photo with your rear camera. Your image stays in this
+          browser until you choose to identify it.
         </p>
       </div>
 
@@ -182,10 +182,10 @@ export function CaptureForm({
             </span>
             <span>
               <span className="block text-lg font-semibold">
-                Take or choose a photo
+                Open camera or choose photo
               </span>
               <span className="mt-1 block text-sm text-muted">
-                Mobile camera · Desktop file picker
+                JPEG recommended · PNG and WebP supported
               </span>
             </span>
           </label>
@@ -200,8 +200,7 @@ export function CaptureForm({
         {state.error}
       </p>
       <p id="capture-requirements" className="mt-1 text-xs text-muted">
-        JPEG, PNG, or WebP · Maximum {MAX_IMAGE_BYTES / 1_000_000} MB · One
-        photo
+        JPG, JPEG, PNG, or WebP · Maximum {MAX_IMAGE_BYTES / 1_000_000} MB
       </p>
     </section>
   );
