@@ -13,6 +13,8 @@ export const catalogueSpeciesSchema = z
     imageUrl: z.string().url().nullable(),
     iconUrl: z.string().url().nullable(),
     isActive: z.boolean(),
+    modelClassId: z.number().int().min(0).max(999).nullable(),
+    captureEnabled: z.boolean(),
     baseXp: z.number().int().positive(),
     facts: z.array(z.string().min(1)),
     quiz: z

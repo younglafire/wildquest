@@ -9,8 +9,8 @@ import { GridBackground } from "./grid-background";
 
 const MOBILE_NAVIGATION = [
   ["/home", "Home", "⌂"],
-  ["/quest", "Quest", "◇"],
   ["/capture", "Capture", "+"],
+  ["/battle", "Battle", "⚔"],
   ["/collection", "Collection", "▦"],
   ["/profile", "Passport", "◎"],
 ] as const;
@@ -57,7 +57,7 @@ export function GameShell({ children }: { children: ReactNode }) {
         <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
           {MOBILE_NAVIGATION.map(([href, label, icon]) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
-            const capture = href === "/capture";
+            const capture = href === "/battle";
             return (
               <Link
                 key={href}

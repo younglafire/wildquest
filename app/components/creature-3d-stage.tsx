@@ -102,7 +102,14 @@ export function Creature3DStage() {
     pedestalGroup.add(edgeRing);
 
     // Holographic Polar Grid Disc
-    const gridHelper = new THREE.PolarGridHelper(1.95, 10, 8, 36, 0x10b981, 0x064e3b);
+    const gridHelper = new THREE.PolarGridHelper(
+      1.95,
+      10,
+      8,
+      36,
+      0x10b981,
+      0x064e3b,
+    );
     gridHelper.position.y = 0.11;
     pedestalGroup.add(gridHelper);
 
@@ -154,7 +161,8 @@ export function Creature3DStage() {
         // Apply wireframe if enabled
         if (wireframeMode) {
           wireframeMaterialsRef.current.forEach((mat) => {
-            if ("wireframe" in mat) (mat as THREE.MeshStandardMaterial).wireframe = true;
+            if ("wireframe" in mat)
+              (mat as THREE.MeshStandardMaterial).wireframe = true;
           });
         }
 
@@ -192,7 +200,10 @@ export function Creature3DStage() {
       creatureGroupRef.current.rotation.y += rotationVelocityRef.current.y;
       creatureGroupRef.current.rotation.x = Math.max(
         -0.3,
-        Math.min(0.4, creatureGroupRef.current.rotation.x + rotationVelocityRef.current.x),
+        Math.min(
+          0.4,
+          creatureGroupRef.current.rotation.x + rotationVelocityRef.current.x,
+        ),
       );
 
       prevMouseRef.current = { x: clientX, y: clientY };
@@ -206,7 +217,9 @@ export function Creature3DStage() {
     window.addEventListener("mousemove", handlePointerMove);
     window.addEventListener("mouseup", handlePointerUp);
 
-    container.addEventListener("touchstart", handlePointerDown, { passive: true });
+    container.addEventListener("touchstart", handlePointerDown, {
+      passive: true,
+    });
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
     window.addEventListener("touchend", handlePointerUp);
 
@@ -225,7 +238,8 @@ export function Creature3DStage() {
 
       // Scanner laser vertical sweep
       if (scanRingRef.current) {
-        scanRingRef.current.position.y = Math.sin(elapsedTime * 2.0) * 1.0 + 0.15;
+        scanRingRef.current.position.y =
+          Math.sin(elapsedTime * 2.0) * 1.0 + 0.15;
         scanRingRef.current.rotation.z += 0.015;
       }
 

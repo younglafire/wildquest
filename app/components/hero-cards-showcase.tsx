@@ -205,9 +205,7 @@ export function HeroCardsShowcase() {
                     {card.rarity}
                   </span>
                 </div>
-                <p className="text-xs text-muted leading-tight">
-                  {card.note}
-                </p>
+                <p className="text-xs text-muted leading-tight">{card.note}</p>
 
                 {/* Onchain Devnet Verified Footer */}
                 <div className="mt-3.5 flex items-center justify-between rounded-xl bg-cream/70 p-2 text-[11px] font-semibold dark:bg-black/30">

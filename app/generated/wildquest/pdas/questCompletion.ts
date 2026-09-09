@@ -24,7 +24,7 @@ export async function findQuestCompletionPda(
   config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
   const {
-    programAddress = "DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo" as Address<"DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo">,
+    programAddress = "3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF" as Address<"3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF">,
   } = config;
   return await getProgramDerivedAddress({
     programAddress,

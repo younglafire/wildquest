@@ -4,11 +4,10 @@
 
 WildQuest Solana dApp with an Anchor program and generated client
 
-WildQuest turns real wildlife photos into a game loop. A local ResNet-50 model
-identifies supported animals, the backend grades each capture and rejects reused
-photos, and the Solana program records discoveries, XP, levels, and quest
-rewards. Supabase supplies the species catalogue and duplicate reservation
-service.
+WildQuest is pivoting from wildlife discoveries into a deterministic creature
+battle vertical slice. A local ResNet-50 model identifies one of six exact
+creatures, Supabase supplies catalogue metadata and duplicate reservation, and
+the next program slice will create one Creature PDA per wallet and catalogue ID.
 
 ## Table of Contents
 
@@ -45,7 +44,7 @@ service.
 
 ## Background
 
-The MVP supports a short expedition loop:
+The legacy discovery UI supports a short expedition loop:
 
 - connect a Wallet Standard compatible Solana wallet;
 - create a Player Passport;
@@ -58,6 +57,10 @@ The current classifier recognizes eight catalogue groups: dog, cat, bee,
 chicken, butterfly, dragonfly, frog, and ant. It is an ImageNet classifier, not
 an open-ended wildlife model. Adding more reliable species requires a labelled
 WildQuest dataset and model training.
+
+The battle vertical slice narrows capture to six exact ImageNet classes. A
+wallet owns one Creature for each exact catalogue ID, selects an ordered team
+of three, and opens or joins a deterministic 0.01 SOL Devnet Match.
 
 ## Install
 
@@ -90,7 +93,10 @@ intended program ID because that command rebuilds the IDL and replaces the
 generated client.
 
 Fill `.env.local` with the RPC and Supabase values for your own environment.
-The checked-in `.env.example` contains names and placeholders only.
+Creature authorization additionally requires a dedicated Devnet capture
+authority encoded as `CAPTURE_AUTHORITY_SECRET_KEY_BASE64`. Never reuse the
+program deployment authority for this server role. The checked-in
+`.env.example` contains names and placeholders only.
 
 Link the Supabase project and apply the migrations:
 
@@ -126,7 +132,7 @@ The main routes are:
 - `/` for landing and wallet connection;
 - `/home` for Player level, XP, quest progress, and recent discoveries;
 - `/quest` for target progress and `complete_quest` reward claiming;
-- `/capture` for photo selection, identification, grading, and recording;
+- `/capture` for photo selection and exact six-creature identification;
 - `/collection` for catalogue and Discovery account aggregation;
 - `/collection/[speciesId]` for species facts and an unrewarded practice quiz;
 - `/profile` for wallet and Player Passport data;
@@ -141,18 +147,17 @@ uses the fixed bottom bar.
 The Home screen derives progression from confirmed Player and Discovery
 accounts. Level follows `1 + floor(total_xp / 100)`.
 
-The capture flow has four visible stages:
+The current battle-slice capture flow has three visible stages:
 
 - **Select** accepts one JPEG, PNG, or WebP file no larger than 4,000,000 bytes.
 - **Verify** sends the photo and connected wallet address to `/api/identify`.
-- **Review** shows species, confidence, rarity, grade, XP, explanation, and a
-  catalogue fact.
-- **Record** asks the wallet to sign `discover_species` and waits for confirmed
-  commitment before updating the collection.
+- **Result** shows the exact catalogue identity, ImageNet class, confidence, and
+  balance version.
 
-Pending identification metadata lives in session storage so a rejected wallet
-transaction can be retried in the same browser tab. Photo bytes never enter
-browser storage.
+Pending identification metadata lives in session storage. Photo bytes never
+enter browser storage. The legacy `discover_species` action is intentionally
+hidden: Day 3 must implement `capture_creature()` and server co-signing before a
+result can honestly become Creature ownership.
 
 ## Architecture
 
@@ -174,9 +179,10 @@ numeric ID, which becomes the program's `u64` species ID.
 
 ## Onchain Accounts
 
-The program currently exposes `initialize_player`, `discover_species`,
-`initialize_quest`, and `complete_quest`. The earlier Counter instructions
-remain in the program as scaffold functionality.
+The program exposes the legacy Player, Discovery, and Quest handlers plus the
+battle-slice `initialize_game_config`, `initialize_species_config`,
+`capture_creature`, `open_match`, `join_match`, and `cancel_match` handlers.
+The earlier Counter instructions remain as scaffold functionality.
 
 - **Player PDA** uses `["player", wallet]` and stores wallet, XP, level,
   discovery count, and badge count.
@@ -186,6 +192,15 @@ remain in the program as scaffold functionality.
   XP reward.
 - **QuestCompletion PDA** uses `["quest_completion", quest_pda, wallet]` and
   prevents the same wallet from claiming one quest twice.
+- **GameConfig PDA** uses `["game_config"]` and stores the capture authority,
+  balance version, rules version, and fixed stake.
+- **SpeciesConfig PDA** uses
+  `["species_config", catalogue_id_le, balance_version_le]` and stores the
+  static battle stats.
+- **Creature PDA** uses `["creature", wallet, catalogue_id_le]`, enforcing one
+  owned Creature for each exact catalogue ID.
+- **Match PDA** uses `["match", creator, match_id_le]` and stores both ordered
+  teams, stake, lifecycle status, winner, and timestamps.
 
 `discover_species` derives XP from the validated grade code inside the program:
 Bronze awards 50 XP, Silver 75 XP, and Gold 100 XP. It updates Player
@@ -197,9 +212,12 @@ Microsoft ResNet-50 runs through Transformers.js and quantized ONNX weights.
 Remote model loading is disabled. The Next.js function bundles the local model,
 `onnxruntime-node`, and Sharp.
 
-The endpoint rejects confidence below `0.70`. Confidence establishes the
-highest possible grade, while image sharpness, center luminance, and entropy may
-downgrade the result. The final response is validated by a strict Zod schema.
+The endpoint rejects confidence below `0.70`. It accepts only six exact
+ImageNet classes: Chihuahua `151`, Golden Retriever `207`, German Shepherd
+`235`, Tabby Cat `281`, Persian Cat `283`, and Monarch Butterfly `323`. It does
+not aggregate broad dog, cat, or butterfly labels. The catalogue row must carry
+the same model class and have `capture_enabled=true`; otherwise the request
+fails closed.
 
 Before returning success, the backend creates a 64-bit perceptual hash and
 calls the `reserve_discovery_image` Supabase function. A global Hamming distance
@@ -220,17 +238,39 @@ The quest screen stays unavailable until the current program version is
 deployed and Quest ID `1` is initialized on that cluster. Quest initialization
 is a one-time operator action, not a transaction charged to each player.
 
-### Program IDs
+### Program ID
 
-The checked-in browser client targets the deployed Devnet program:
-`DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo`.
+The Rust program, Anchor configuration, generated IDL, Codama client, PDA
+helpers, and browser transactions use the newer deployed Devnet program:
+`3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF`.
 
-The Rust `declare_id!`, generated IDL, and localnet configuration currently use
-`3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF`. This distinction matters when
-regenerating the client or deploying quest support. Confirm the intended
-program ID before code generation, PDA derivation, or deployment. In
-particular, `complete_quest` checks Discovery account ownership and must be
-built with the ID of the deployed program.
+The older Devnet program
+`DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo` remains relevant only to
+historical Discovery accounts and the dated WQ-28/WQ-29 results. New game state
+must derive addresses under the current program ID.
+
+The five-day battle scope, fixed creature roster, account contracts, and Day 1
+baseline are recorded in:
+
+- [`docs/PK-V1-RULES.md`](docs/PK-V1-RULES.md)
+- [`docs/PK-VERTICAL-SLICE-ARCHITECTURE.md`](docs/PK-VERTICAL-SLICE-ARCHITECTURE.md)
+- [`docs/PK-VERTICAL-SLICE-BASELINE.md`](docs/PK-VERTICAL-SLICE-BASELINE.md)
+- [`docs/PK-VERTICAL-SLICE-DAY2.md`](docs/PK-VERTICAL-SLICE-DAY2.md)
+- [`docs/PK-VERTICAL-SLICE-DAY3.md`](docs/PK-VERTICAL-SLICE-DAY3.md)
+- [`docs/PK-VERTICAL-SLICE-DAY4.md`](docs/PK-VERTICAL-SLICE-DAY4.md)
+- [`docs/PK-VERTICAL-SLICE-DAY5.md`](docs/PK-VERTICAL-SLICE-DAY5.md)
+
+Initialize the six-creature Devnet demo once, then run the two-wallet battle
+reliability check:
+
+```bash
+npm run setup:pk-demo
+npm run test:pk-devnet -- --runs 10
+```
+
+This prototype is Devnet-only. The six creature stats, 0.01 SOL stake, and
+deterministic battle rules are fixed for the vertical slice; see the Day 5 note
+for the complete demo flow and known limitations.
 
 ## Testing
 
@@ -282,9 +322,24 @@ npm run codama:js
 
 Do not accept generated program-address changes without checking the target
 cluster. Apply Supabase migrations before deploying a frontend that depends on
-new columns or database functions. Configure the four environment variables
-from `.env.example` in the hosting provider and keep the Supabase secret in a
-server-only secret store.
+new columns or database functions. Configure the required values from
+`.env.example` in the hosting provider. Keep both the Supabase key and capture
+authority keypair in a server-only secret store.
+
+After deploying the battle-slice program, initialize `GameConfig`, the six
+`SpeciesConfig` accounts, and two funded demo-wallet rosters with:
+
+```sh
+WQ_ADMIN_KEYPAIR_PATH=/absolute/path/to/admin.json \
+WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH=/absolute/path/to/capture-authority.json \
+WQ_DEMO_WALLET_A_KEYPAIR_PATH=/absolute/path/to/wallet-a.json \
+WQ_DEMO_WALLET_B_KEYPAIR_PATH=/absolute/path/to/wallet-b.json \
+  npm run setup:pk-demo
+```
+
+The script is idempotent: it verifies existing accounts and creates only the
+missing ones. It submits Devnet transactions and therefore must not be run
+against production keys.
 
 After deploying quest support, initialize Quest ID `1` once and verify its PDA
 before enabling quest claiming for users.
@@ -309,10 +364,13 @@ curl \
   http://localhost:3000/api/identify
 ```
 
-A successful response contains catalogue identity, display content, confidence,
-rarity, grade, awarded XP, and the original-image SHA-256 proof. Common failure
-codes include `LOW_CONFIDENCE`, `UNSUPPORTED_SPECIES`, `QUEST_INELIGIBLE`,
-`DUPLICATE_IMAGE`, `INVALID_IMAGE`, and `DUPLICATE_CHECK_UNAVAILABLE`.
+A successful response contains the exact catalogue identity and ImageNet class,
+display content, confidence, balance version, original-image SHA-256 proof, and
+a short-lived capture transaction already signed by the server capture
+authority. The connected owner wallet must add its signature before submission.
+Common failure codes include `LOW_CONFIDENCE`, `UNSUPPORTED_SPECIES`,
+`CAPTURE_INELIGIBLE`, `CAPTURE_AUTHORIZATION_UNAVAILABLE`, `DUPLICATE_IMAGE`,
+`INVALID_IMAGE`, and `DUPLICATE_CHECK_UNAVAILABLE`.
 
 ## Contributing
 

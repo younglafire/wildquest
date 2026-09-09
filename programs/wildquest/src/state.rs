@@ -48,3 +48,65 @@ pub struct QuestCompletion {
     pub reward_xp: u64,
     pub bump: u8,
 }
+
+#[account]
+#[derive(InitSpace)]
+pub struct GameConfig {
+    pub admin: Pubkey,
+    pub capture_authority: Pubkey,
+    pub balance_version: u16,
+    pub rules_version: u16,
+    pub stake_lamports: u64,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct SpeciesConfig {
+    pub catalogue_id: u64,
+    pub model_class_id: u16,
+    pub hp: u16,
+    pub attack: u16,
+    pub defense: u16,
+    pub speed: u16,
+    pub shield: u16,
+    pub balance_version: u16,
+    pub active: bool,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct Creature {
+    pub owner: Pubkey,
+    pub catalogue_id: u64,
+    pub proof_hash: [u8; 32],
+    pub captured_at: i64,
+    pub balance_version: u16,
+    pub bump: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, Eq, InitSpace, PartialEq)]
+pub enum MatchStatus {
+    Open,
+    Settled,
+    Cancelled,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct Match {
+    pub match_id: u64,
+    pub creator: Pubkey,
+    pub opponent: Option<Pubkey>,
+    pub creator_creatures: [Pubkey; 3],
+    pub opponent_creatures: [Pubkey; 3],
+    pub stake_lamports: u64,
+    pub balance_version: u16,
+    pub rules_version: u16,
+    pub status: MatchStatus,
+    pub winner: Option<Pubkey>,
+    pub created_at: i64,
+    pub settled_at: Option<i64>,
+    pub bump: u8,
+}

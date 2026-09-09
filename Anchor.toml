@@ -1,13 +1,16 @@
 skip_local_validator = true
 
 [toolchain]
+# Anchor's default is Yarn; this repository uses npm for every JavaScript command.
+package_manager = "npm"
 
 [features]
 resolution = true
 skip-lint = false
 
 [programs.devnet]
-wildquest = "DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo"
+# The vertical slice uses the newer deployed program that matches declare_id!, the IDL, and the deploy keypair.
+wildquest = "3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF"
 
 [programs.localnet]
 wildquest = "3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF"

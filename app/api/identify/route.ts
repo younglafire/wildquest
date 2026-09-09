@@ -4,6 +4,7 @@ import { createIdentifyHandler } from "@/app/lib/vision/handler";
 import { createPerceptualImageHash } from "@/app/lib/vision/perceptual-hash";
 import { createImageProofHash } from "@/app/lib/vision/proof";
 import { analyzeCaptureQuality } from "@/app/lib/vision/quality";
+import { createCaptureAuthorization } from "@/app/lib/vision/capture-authorization.server";
 import { getIdentificationSpecies } from "@/app/lib/vision/species";
 
 export const dynamic = "force-dynamic";
@@ -17,4 +18,5 @@ export const POST = createIdentifyHandler({
   createProofHash: createImageProofHash,
   createPerceptualHash: createPerceptualImageHash,
   reserveDiscovery: reserveDiscoveryImage,
+  createCaptureAuthorization,
 });

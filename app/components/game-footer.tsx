@@ -22,7 +22,9 @@ export function GameFooter() {
               </span>
             </div>
             <p className="max-w-sm text-xs leading-relaxed text-muted">
-              The truthful real-world wildlife RPG on Solana. Spot fauna in nature, classify species on-device with zero cloud exposure, and mint permanent Discovery accounts.
+              The truthful real-world wildlife RPG on Solana. Spot fauna in
+              nature, classify species on-device with zero cloud exposure, and
+              mint permanent Discovery accounts.
             </p>
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -109,7 +111,7 @@ export function GameFooter() {
           <div className="flex items-center gap-2">
             <span>PROGRAM ID:</span>
             <span className="rounded bg-cream px-2 py-0.5 font-bold text-foreground dark:bg-black/40">
-              DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo
+              3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF
             </span>
           </div>
         </div>

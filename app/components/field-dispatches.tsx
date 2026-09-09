@@ -37,10 +37,7 @@ const DISPATCHES = [
 
 export function FieldDispatches() {
   return (
-    <section
-      aria-label="Explorer field dispatches"
-      className="mt-28 space-y-8"
-    >
+    <section aria-label="Explorer field dispatches" className="mt-28 space-y-8">
       <div className="flex flex-col items-center text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-amber-700 dark:text-amber-300">
           <span>📡 FIELD COMM-LINK</span>
@@ -49,7 +46,8 @@ export function FieldDispatches() {
           Explorer Dispatches & Field Logs
         </h2>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          Read real-world field telemetry and tips from early explorers pioneering the Devnet wildlife protocol.
+          Read real-world field telemetry and tips from early explorers
+          pioneering the Devnet wildlife protocol.
         </p>
       </div>
 

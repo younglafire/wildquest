@@ -121,7 +121,9 @@ export function SpeciesMarquee() {
                   <p className="truncate text-xs font-black text-foreground">
                     {item.name}
                   </p>
-                  <span className={`shrink-0 rounded-md border px-1.5 py-0.2 font-mono text-[9px] font-bold ${item.badgeColor}`}>
+                  <span
+                    className={`shrink-0 rounded-md border px-1.5 py-0.2 font-mono text-[9px] font-bold ${item.badgeColor}`}
+                  >
                     {item.xp}
                   </span>
                 </div>
@@ -153,7 +155,9 @@ export function SpeciesMarquee() {
                   <p className="truncate text-xs font-black text-foreground">
                     {item.name}
                   </p>
-                  <span className={`shrink-0 rounded-md border px-1.5 py-0.2 font-mono text-[9px] font-bold ${item.badgeColor}`}>
+                  <span
+                    className={`shrink-0 rounded-md border px-1.5 py-0.2 font-mono text-[9px] font-bold ${item.badgeColor}`}
+                  >
                     {item.xp}
                   </span>
                 </div>

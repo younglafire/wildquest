@@ -4,8 +4,8 @@ import { GameShell } from "@/app/components/game-shell";
 import { CaptureExperience } from "./capture-experience";
 
 export const metadata: Metadata = {
-  title: "Capture a Discovery | WildQuest",
-  description: "Photograph or upload a wildlife discovery.",
+  title: "Capture a Creature | WildQuest",
+  description: "Photograph or upload one of the six battle creatures.",
 };
 
 export default function CapturePage() {

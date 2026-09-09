@@ -27,6 +27,8 @@ export type Species = {
   imageUrl: string | null;
   iconUrl: string | null;
   isActive: boolean;
+  modelClassId: number | null;
+  captureEnabled: boolean;
   baseXp: number;
   facts: string[];
   quiz: SpeciesQuiz | null;
@@ -102,6 +104,8 @@ export function mapSpeciesRow(row: SpeciesRow): Species {
     imageUrl: row.image_url,
     iconUrl: row.icon_url,
     isActive: row.is_active ?? false,
+    modelClassId: row.model_class_id,
+    captureEnabled: row.capture_enabled ?? false,
     baseXp: row.base_xp ?? 50,
     facts: parseFacts(row.facts ?? undefined),
     quiz: parseQuiz(row.quiz ?? undefined),

@@ -209,7 +209,8 @@ export function GridBackground() {
           `,
           backgroundSize: "64px 64px",
           mask: "radial-gradient(ellipse 55% 55% at 50% 45%, black 20%, transparent 80%)",
-          WebkitMask: "radial-gradient(ellipse 55% 55% at 50% 45%, black 20%, transparent 80%)",
+          WebkitMask:
+            "radial-gradient(ellipse 55% 55% at 50% 45%, black 20%, transparent 80%)",
         }}
       />
 

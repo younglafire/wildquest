@@ -83,7 +83,10 @@ export function WalletChooser({
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Explorer Comm-Link
             </div>
-            <h2 id="wallet-dialog-title" className="mt-2 text-2xl font-black tracking-tight">
+            <h2
+              id="wallet-dialog-title"
+              className="mt-2 text-2xl font-black tracking-tight"
+            >
               Choose your wallet
             </h2>
           </div>
@@ -98,7 +101,8 @@ export function WalletChooser({
         </div>
 
         <p className="mt-2 text-xs leading-relaxed text-muted">
-          Connect your Solana wallet to load your onchain Passport, discoveries, and expedition progression.
+          Connect your Solana wallet to load your onchain Passport, discoveries,
+          and expedition progression.
         </p>
 
         <div className="mt-5 space-y-2">

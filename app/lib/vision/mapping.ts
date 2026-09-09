@@ -1,12 +1,10 @@
 export const SUPPORTED_SPECIES_IDS = [
-  "dog",
-  "cat",
-  "bee",
-  "chicken",
-  "butterfly",
-  "dragonfly",
-  "frog",
-  "ant",
+  "chihuahua",
+  "golden_retriever",
+  "german_shepherd",
+  "tabby_cat",
+  "persian_cat",
+  "monarch_butterfly",
 ] as const;
 
 export type SupportedSpeciesId = (typeof SUPPORTED_SPECIES_IDS)[number];
@@ -18,9 +16,19 @@ export type ImageClassificationPrediction = {
 
 export type MappedClassification = {
   speciesId: SupportedSpeciesId;
+  classId: number;
   confidence: number;
   label: string;
 };
+
+const SPECIES_BY_IMAGENET_CLASS = new Map<number, SupportedSpeciesId>([
+  [151, "chihuahua"],
+  [207, "golden_retriever"],
+  [235, "german_shepherd"],
+  [281, "tabby_cat"],
+  [283, "persian_cat"],
+  [323, "monarch_butterfly"],
+]);
 
 export class UnsupportedSpeciesError extends Error {
   constructor(
@@ -42,15 +50,7 @@ export class InvalidModelOutputError extends Error {
 export function speciesIdForImageNetClass(
   classId: number,
 ): SupportedSpeciesId | null {
-  if (classId >= 151 && classId <= 268) return "dog";
-  if (classId >= 281 && classId <= 285) return "cat";
-  if (classId === 309) return "bee";
-  if (classId === 7 || classId === 8) return "chicken";
-  if (classId >= 322 && classId <= 326) return "butterfly";
-  if (classId === 319) return "dragonfly";
-  if (classId >= 30 && classId <= 32) return "frog";
-  if (classId === 310) return "ant";
-  return null;
+  return SPECIES_BY_IMAGENET_CLASS.get(classId) ?? null;
 }
 
 export function buildImageNetLabelIndex(
@@ -107,49 +107,15 @@ export function mapImageNetPredictions(
     );
   }
 
-  if (speciesIdForImageNetClass(topClassId) === null) {
+  const speciesId = speciesIdForImageNetClass(topClassId);
+  if (speciesId === null) {
     throw new UnsupportedSpeciesError(topPrediction.label, topPrediction.score);
   }
 
-  const totals = new Map<SupportedSpeciesId, number>();
-  const bestLabels = new Map<
-    SupportedSpeciesId,
-    ImageClassificationPrediction
-  >();
-
-  for (const prediction of predictions) {
-    const classId = labelToClassId.get(prediction.label);
-    if (classId === undefined) {
-      throw new InvalidModelOutputError(
-        `The classifier returned an unknown label: ${prediction.label}`,
-      );
-    }
-
-    const speciesId = speciesIdForImageNetClass(classId);
-    if (speciesId === null) continue;
-
-    totals.set(speciesId, (totals.get(speciesId) ?? 0) + prediction.score);
-
-    const currentBest = bestLabels.get(speciesId);
-    if (!currentBest || prediction.score > currentBest.score) {
-      bestLabels.set(speciesId, prediction);
-    }
-  }
-
-  const winner = [...totals.entries()].reduce((best, current) =>
-    current[1] > best[1] ? current : best,
-  );
-  const bestLabel = bestLabels.get(winner[0]);
-
-  if (!bestLabel) {
-    throw new InvalidModelOutputError(
-      "The classifier did not return a label for the winning species.",
-    );
-  }
-
   return {
-    speciesId: winner[0],
-    confidence: Math.min(1, winner[1]),
-    label: bestLabel.label,
+    speciesId,
+    classId: topClassId,
+    confidence: topPrediction.score,
+    label: topPrediction.label,
   };
 }

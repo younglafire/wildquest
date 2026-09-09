@@ -84,12 +84,17 @@ export function GameMetricsCounter() {
               [SYS]
             </span>
 
-            <div className="flex items-center gap-2 text-xl sm:text-2xl" aria-hidden="true">
+            <div
+              className="flex items-center gap-2 text-xl sm:text-2xl"
+              aria-hidden="true"
+            >
               <span>{metric.icon}</span>
             </div>
 
             <div className="mt-3 flex items-baseline gap-1.5">
-              <span className={`font-mono text-3xl font-black tracking-tight sm:text-4xl ${metric.textGlow}`}>
+              <span
+                className={`font-mono text-3xl font-black tracking-tight sm:text-4xl ${metric.textGlow}`}
+              >
                 {metric.value}
               </span>
               <span className="font-mono text-xs font-bold text-muted">

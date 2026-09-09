@@ -11,6 +11,8 @@
     "format:check": "prettier --check .",
     "lint": "eslint",
     "setup": "npm run anchor-build && npm run codama:js",
+    "setup:pk-demo": "tsx --env-file=.env.local scripts/setup-pk-demo-roster.ts",
+    "test:pk-devnet": "tsx --env-file=.env.local scripts/pk-devnet-battle.ts",
     "start": "next start",
     "test": "vitest run",
     "test:devnet": "tsx --env-file=.env.local scripts/wq-devnet-loop.ts",

@@ -18,3 +18,10 @@ export class InvalidCatalogueMetadataError extends Error {
     this.name = "InvalidCatalogueMetadataError";
   }
 }
+
+export class CaptureAuthorizationUnavailableError extends Error {
+  constructor(options?: ErrorOptions) {
+    super("A Creature capture transaction could not be prepared.", options);
+    this.name = "CaptureAuthorizationUnavailableError";
+  }
+}

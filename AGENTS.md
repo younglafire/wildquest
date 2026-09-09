@@ -88,15 +88,14 @@ Current PDA seeds:
 
 ## Program Identity
 
-The checked-in frontend client targets Devnet program ID
-`DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo`. The Rust `declare_id!`, IDL,
-and localnet configuration currently use
-`3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF`.
+The vertical slice uses Devnet program ID
+`3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF`. The Rust `declare_id!`, both
+Anchor cluster entries, IDL, Codama client, and deploy keypair must retain that
+address.
 
-Do not regenerate or deploy without resolving the intended target ID. Codama
-reads the IDL address, so careless generation can silently change every client
-PDA derivation. `complete_quest` also checks Discovery ownership through the
-compiled program ID. Build it with the address used for deployment.
+`DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo` is an older deployed Discovery
+program. Historical Devnet result documents may name it, but new PDA derivation
+and transaction code must not use it.
 
 After a program interface change:
 

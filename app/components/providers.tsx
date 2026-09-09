@@ -12,7 +12,9 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   console.error = (...args: unknown[]) => {
     const msg = typeof args[0] === "string" ? args[0] : "";
     if (
-      msg.includes("Encountered a script tag while rendering React component") ||
+      msg.includes(
+        "Encountered a script tag while rendering React component",
+      ) ||
       msg.includes("Hydration failed") ||
       msg.includes("server rendered HTML didn't match")
     ) {

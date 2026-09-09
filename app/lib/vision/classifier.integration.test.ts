@@ -8,23 +8,21 @@ import { getCaptureReward, getRarityCode } from "./rules";
 import { identificationSchema } from "./schema";
 
 const FIXTURES = [
-  "dog",
-  "cat",
-  "bee",
-  "chicken",
-  "butterfly",
-  "dragonfly",
-  "frog",
-  "ant",
+  { file: "dog", speciesId: "golden_retriever", catalogueId: "1002" },
+  {
+    file: "butterfly",
+    speciesId: "monarch_butterfly",
+    catalogueId: "1006",
+  },
 ] as const;
 
 describe.runIf(process.env.RUN_RESNET_INTEGRATION === "1")(
   "local ResNet-50 fixtures",
   () => {
-    for (const [fixtureIndex, speciesId] of FIXTURES.entries()) {
-      it(`identifies ${speciesId}`, async () => {
+    for (const fixture of FIXTURES) {
+      it(`identifies ${fixture.speciesId}`, async () => {
         const bytes = await readFile(
-          path.join(__dirname, "__fixtures__", `${speciesId}.jpg`),
+          path.join(__dirname, "__fixtures__", `${fixture.file}.jpg`),
         );
         const image = new Blob([new Uint8Array(bytes)], {
           type: "image/jpeg",
@@ -35,22 +33,26 @@ describe.runIf(process.env.RUN_RESNET_INTEGRATION === "1")(
         const proofHash = await createImageProofHash(image);
 
         console.info(
-          `${speciesId}: ${result.speciesId}, ${result.label}, ${result.confidence.toFixed(6)}`,
+          `${fixture.speciesId}: ${result.speciesId}, ${result.label}, ${result.confidence.toFixed(6)}`,
         );
-        expect(result.speciesId).toBe(speciesId);
+        expect(result.speciesId).toBe(fixture.speciesId);
 
         expect(
           identificationSchema.safeParse({
-            catalogue_id: String(fixtureIndex + 1),
+            catalogue_id: fixture.catalogueId,
             species_id: result.speciesId,
-            common_name: speciesId,
+            common_name: fixture.speciesId,
+            model_class_id: result.classId,
+            model_label: result.label,
+            balance_version: 1,
             confidence: result.confidence,
             explanation: `ResNet-50 matched the ImageNet label "${result.label}".`,
             rarity: "Common",
             rarity_code: getRarityCode("Common"),
             base_xp: 50,
-            facts: [`Fixture fact for ${speciesId}.`],
-            target_for_quest: true,
+            facts: [`Fixture fact for ${fixture.speciesId}.`],
+            target_for_quest: false,
+            capture_enabled: true,
             grade: reward.grade,
             grade_code: reward.gradeCode,
             awarded_xp: reward.awardedXp,

@@ -7,6 +7,7 @@ import {
   type DiscoveryReservationResult,
 } from "./duplicate";
 import {
+  CaptureAuthorizationUnavailableError,
   InvalidCatalogueMetadataError,
   InvalidImageError,
   ModelUnavailableError,
@@ -19,6 +20,7 @@ import {
 import {
   identificationSchema,
   identifySuccessSchema,
+  type CaptureTransaction,
   type Identification,
 } from "./schema";
 import {
@@ -39,6 +41,11 @@ type IdentifyDependencies = {
   reserveDiscovery: (
     reservation: DiscoveryReservation,
   ) => Promise<DiscoveryReservationResult>;
+  createCaptureAuthorization: (input: {
+    owner: string;
+    catalogueId: string;
+    proofHash: string;
+  }) => Promise<CaptureTransaction>;
 };
 
 type ErrorCode =
@@ -50,6 +57,8 @@ type ErrorCode =
   | "UNSUPPORTED_MEDIA_TYPE"
   | "UNSUPPORTED_SPECIES"
   | "LOW_CONFIDENCE"
+  | "CAPTURE_INELIGIBLE"
+  | "CAPTURE_AUTHORIZATION_UNAVAILABLE"
   | "QUEST_INELIGIBLE"
   | "DUPLICATE_IMAGE"
   | "DUPLICATE_CHECK_UNAVAILABLE"
@@ -85,6 +94,9 @@ function createIdentification(
     catalogue_id: species.catalogueId,
     species_id: species.speciesId,
     common_name: species.commonName,
+    model_class_id: classification.classId,
+    model_label: classification.label,
+    balance_version: 1,
     confidence: classification.confidence,
     explanation: `ResNet-50 matched the ImageNet label "${classification.label}".`,
     rarity: species.rarity,
@@ -92,6 +104,7 @@ function createIdentification(
     base_xp: species.baseXp,
     facts: species.facts,
     target_for_quest: species.targetForQuest,
+    capture_enabled: species.captureEnabled,
     grade: reward.grade,
     grade_code: reward.gradeCode,
     awarded_xp: reward.awardedXp,
@@ -199,24 +212,37 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
         );
       }
 
-      if (!species.targetForQuest) {
+      if (!species.captureEnabled) {
         return errorResponse(
-          "QUEST_INELIGIBLE",
-          "The identified species is not eligible for the current quest.",
+          "CAPTURE_INELIGIBLE",
+          "The identified species is not enabled for Creature capture.",
           422,
+        );
+      }
+
+      if (species.modelClassId !== classification.classId) {
+        throw new InvalidCatalogueMetadataError(
+          "The model class does not match the catalogue entry.",
         );
       }
 
       const quality = await dependencies.analyzeQuality(image);
       const proofHash = await dependencies.createProofHash(image);
 
+      const identification = createIdentification(
+        classification,
+        species,
+        quality,
+        proofHash,
+      );
+      const captureTransaction = await dependencies.createCaptureAuthorization({
+        owner: wallet,
+        catalogueId: identification.catalogue_id,
+        proofHash: identification.proof_hash,
+      });
       const response = identifySuccessSchema.parse({
-        identification: createIdentification(
-          classification,
-          species,
-          quality,
-          proofHash,
-        ),
+        identification,
+        capture_transaction: captureTransaction,
       });
 
       const perceptualHash = await dependencies.createPerceptualHash(image);
@@ -270,6 +296,14 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
 
       if (error instanceof DuplicateCheckUnavailableError) {
         return errorResponse("DUPLICATE_CHECK_UNAVAILABLE", error.message, 503);
+      }
+
+      if (error instanceof CaptureAuthorizationUnavailableError) {
+        return errorResponse(
+          "CAPTURE_AUTHORIZATION_UNAVAILABLE",
+          error.message,
+          503,
+        );
       }
 
       if (

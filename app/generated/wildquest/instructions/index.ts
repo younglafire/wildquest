@@ -6,9 +6,15 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./cancelMatch";
+export * from "./captureCreature";
 export * from "./completeQuest";
 export * from "./discoverSpecies";
 export * from "./increment";
 export * from "./initialize";
+export * from "./initializeGameConfig";
 export * from "./initializePlayer";
 export * from "./initializeQuest";
+export * from "./initializeSpeciesConfig";
+export * from "./joinMatch";
+export * from "./openMatch";

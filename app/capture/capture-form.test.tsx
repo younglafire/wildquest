@@ -189,9 +189,7 @@ describe("CaptureForm", () => {
     await user.upload(getPhotoInput(), image);
     expect(onIdentify).not.toHaveBeenCalled();
 
-    await user.click(
-      screen.getByRole("button", { name: "Identify discovery" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Identify creature" }));
     expect(onIdentify).toHaveBeenCalledOnce();
     expect(onIdentify).toHaveBeenCalledWith(image);
   });

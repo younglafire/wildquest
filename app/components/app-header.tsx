@@ -9,6 +9,7 @@ import { WalletButton } from "./wallet-button";
 
 const NAVIGATION = [
   ["/home", "Home"],
+  ["/battle", "Battle"],
   ["/quest", "Quest"],
   ["/collection", "Collection"],
   ["/profile", "Passport"],

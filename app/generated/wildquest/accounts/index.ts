@@ -7,7 +7,11 @@
  */
 
 export * from "./counter";
+export * from "./creature";
 export * from "./discovery";
+export * from "./gameConfig";
+export * from "./match";
 export * from "./player";
 export * from "./quest";
 export * from "./questCompletion";
+export * from "./speciesConfig";

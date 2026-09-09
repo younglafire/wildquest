@@ -79,7 +79,8 @@ export function GameSystemsGrid() {
           Six Core Gameplay Systems
         </h2>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          From optical viewfinder to cryptographic Solana confirmation, WildQuest operates as a cohesive, truthful Web3 gaming loop.
+          From optical viewfinder to cryptographic Solana confirmation,
+          WildQuest operates as a cohesive, truthful Web3 gaming loop.
         </p>
       </div>
 
@@ -96,7 +97,9 @@ export function GameSystemsGrid() {
                 <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cream text-3xl shadow-inner transition-transform duration-300 group-hover:scale-110 dark:bg-black/40">
                   {system.icon}
                 </span>
-                <span className={`rounded-full px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider ${system.badgeColor}`}>
+                <span
+                  className={`rounded-full px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider ${system.badgeColor}`}
+                >
                   {system.badge}
                 </span>
               </div>

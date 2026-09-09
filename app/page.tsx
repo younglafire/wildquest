@@ -40,7 +40,8 @@ export default function Home() {
               </h1>
 
               <p className="mx-auto max-w-xl text-xs leading-relaxed text-muted sm:text-sm">
-                Step outside, hunt real animals with your phone camera, and prove your finds with on-device AI vision.
+                Step outside, hunt real animals with your phone camera, and
+                prove your finds with on-device AI vision.
               </p>
 
               {/* Feature Tags */}
@@ -100,7 +101,9 @@ export default function Home() {
                   Campus Field Survey #01
                 </h3>
                 <p className="mt-1.5 text-sm text-muted">
-                  Locate all 5 target species: <strong>Bee, Chicken, Butterfly, Dragonfly, and Frog</strong> to earn the Founder Badge and +100 XP.
+                  Locate all 5 target species:{" "}
+                  <strong>Bee, Chicken, Butterfly, Dragonfly, and Frog</strong>{" "}
+                  to earn the Founder Badge and +100 XP.
                 </p>
               </div>
               <div className="shrink-0">
@@ -115,7 +118,10 @@ export default function Home() {
           {/* Pre-Footer Call to Action Banner */}
           <section className="mt-28 relative overflow-hidden rounded-3xl border-2 border-emerald-500/30 bg-gradient-to-b from-card via-card to-background p-8 text-center shadow-[0_20px_80px_-20px_rgba(16,185,129,0.25)] sm:p-12">
             {/* Ambient Background Glow */}
-            <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full bg-emerald-500/20 blur-3xl" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full bg-emerald-500/20 blur-3xl"
+              aria-hidden="true"
+            />
 
             <div className="relative z-10 max-w-2xl mx-auto space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
@@ -125,7 +131,9 @@ export default function Home() {
                 Ready to Step Into the Wild?
               </h2>
               <p className="text-sm text-muted sm:text-base leading-relaxed">
-                Your mobile phone is your neural scanner. Solana is your immutable ledger. Begin tracking local wildlife, level up your Explorer Passport, and mint your discoveries today.
+                Your mobile phone is your neural scanner. Solana is your
+                immutable ledger. Begin tracking local wildlife, level up your
+                Explorer Passport, and mint your discoveries today.
               </p>
               <div className="pt-4 flex justify-center">
                 <StartExpeditionButton />

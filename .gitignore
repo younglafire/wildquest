@@ -20,6 +20,7 @@ target/
 test-ledger/
 *.rs.bk
 *.keypair.json
+/.wildquest-keys/
 
 # Local development tools
 .surfpool/

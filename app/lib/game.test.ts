@@ -23,6 +23,8 @@ function species(id: number): CatalogueSpecies {
     imageUrl: null,
     iconUrl: null,
     isActive: true,
+    modelClassId: null,
+    captureEnabled: false,
     baseXp: 50,
     facts: ["A fact."],
     quiz: null,

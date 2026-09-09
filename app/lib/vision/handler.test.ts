@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { DuplicateCheckUnavailableError } from "./duplicate";
-import { InvalidImageError, ModelUnavailableError } from "./errors";
+import {
+  CaptureAuthorizationUnavailableError,
+  InvalidImageError,
+  ModelUnavailableError,
+} from "./errors";
 import { createIdentifyHandler } from "./handler";
 import {
   InvalidModelOutputError,
@@ -9,9 +13,11 @@ import {
 } from "./mapping";
 import { identificationSchema, identifySuccessSchema } from "./schema";
 import { MAX_IMAGE_BYTES } from "./upload";
+import { WILDQUEST_PROGRAM_ADDRESS } from "@/app/generated/wildquest";
 
 const classification: MappedClassification = {
-  speciesId: "butterfly",
+  speciesId: "monarch_butterfly",
+  classId: 323,
   confidence: 0.91,
   label: "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus",
 };
@@ -20,6 +26,12 @@ const PROOF_HASH =
   "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81";
 const PERCEPTUAL_HASH = "01".repeat(32);
 const WALLET = "11111111111111111111111111111111";
+const CAPTURE_TRANSACTION = {
+  program_id: WILDQUEST_PROGRAM_ADDRESS,
+  transaction_base64:
+    "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA==",
+  last_valid_block_height: "123456",
+} as const;
 const GOLD_QUALITY = {
   sharpnessVariance: 200,
   centerLuminance: 128,
@@ -27,22 +39,28 @@ const GOLD_QUALITY = {
 };
 
 const species = {
-  catalogueId: "8",
-  speciesId: "butterfly",
-  commonName: "Butterfly",
+  catalogueId: "1006",
+  speciesId: "monarch_butterfly",
+  commonName: "Monarch Butterfly",
   rarity: "Common",
   baseXp: 50,
   facts: [
     "Butterfly wings are covered with thousands of tiny scales.",
     "Butterflies undergo complete metamorphosis.",
   ],
-  targetForQuest: true,
+  targetForQuest: false,
+  modelClassId: 323,
+  captureEnabled: true,
 };
 
 const expectedIdentification = {
-  catalogue_id: "8",
-  species_id: "butterfly",
-  common_name: "Butterfly",
+  catalogue_id: "1006",
+  species_id: "monarch_butterfly",
+  common_name: "Monarch Butterfly",
+  model_class_id: 323,
+  model_label:
+    "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus",
+  balance_version: 1,
   confidence: 0.91,
   explanation:
     'ResNet-50 matched the ImageNet label "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus".',
@@ -50,7 +68,8 @@ const expectedIdentification = {
   rarity_code: 0,
   base_xp: 50,
   facts: species.facts,
-  target_for_quest: true,
+  target_for_quest: false,
+  capture_enabled: true,
   grade: "Gold",
   grade_code: 3,
   awarded_xp: 100,
@@ -87,6 +106,7 @@ function dependencies() {
     createProofHash: vi.fn().mockResolvedValue(PROOF_HASH),
     createPerceptualHash: vi.fn().mockResolvedValue(PERCEPTUAL_HASH),
     reserveDiscovery: vi.fn().mockResolvedValue({ duplicate: false }),
+    createCaptureAuthorization: vi.fn().mockResolvedValue(CAPTURE_TRANSACTION),
   };
 }
 
@@ -105,24 +125,98 @@ describe("POST /api/identify", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       identification: expectedIdentification,
+      capture_transaction: CAPTURE_TRANSACTION,
     });
     expect(identificationSchema.safeParse(body.identification).success).toBe(
       true,
     );
     expect(identifySuccessSchema.safeParse(body).success).toBe(true);
     expect(deps.classify).toHaveBeenCalledOnce();
-    expect(deps.getSpecies).toHaveBeenCalledWith("butterfly");
+    expect(deps.getSpecies).toHaveBeenCalledWith("monarch_butterfly");
     expect(deps.analyzeQuality).toHaveBeenCalledOnce();
     expect(deps.createProofHash).toHaveBeenCalledOnce();
+    expect(deps.createCaptureAuthorization).toHaveBeenCalledWith({
+      owner: WALLET,
+      catalogueId: "1006",
+      proofHash: PROOF_HASH,
+    });
     expect(deps.createPerceptualHash).toHaveBeenCalledOnce();
     expect(deps.reserveDiscovery).toHaveBeenCalledWith({
       wallet: WALLET,
-      catalogueId: "8",
+      catalogueId: "1006",
       gradeCode: 3,
       rarity: "Common",
       proofHash: PROOF_HASH,
       perceptualHash: PERCEPTUAL_HASH,
     });
+  });
+
+  it.each([
+    ["chihuahua", 151, "Chihuahua", "1001"],
+    ["golden_retriever", 207, "golden retriever", "1002"],
+    [
+      "german_shepherd",
+      235,
+      "German shepherd, German shepherd dog, German police dog, alsatian",
+      "1003",
+    ],
+    ["tabby_cat", 281, "tabby, tabby cat", "1004"],
+    ["persian_cat", 283, "Persian cat", "1005"],
+    [
+      "monarch_butterfly",
+      323,
+      "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus",
+      "1006",
+    ],
+  ] as const)(
+    "returns the exact %s catalogue candidate",
+    async (speciesId, classId, label, catalogueId) => {
+      const deps = dependencies();
+      deps.classify.mockResolvedValue({
+        speciesId,
+        classId,
+        label,
+        confidence: 0.91,
+      });
+      deps.getSpecies.mockResolvedValue({
+        ...species,
+        catalogueId,
+        speciesId,
+        commonName: speciesId,
+        modelClassId: classId,
+      });
+
+      const response = await createIdentifyHandler(deps)(
+        multipartRequest([imageFile()]),
+      );
+
+      expect(response.status).toBe(200);
+      expect(await responseBody(response)).toMatchObject({
+        identification: {
+          catalogue_id: catalogueId,
+          species_id: speciesId,
+          model_class_id: classId,
+          model_label: label,
+          balance_version: 1,
+        },
+      });
+    },
+  );
+
+  it("fails closed when the catalogue row belongs to another model class", async () => {
+    const deps = dependencies();
+    deps.getSpecies.mockResolvedValue({ ...species, modelClassId: 151 });
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await responseBody(response)).toMatchObject({
+      error: { code: "INTERNAL_OUTPUT_INVALID" },
+    });
+    expect(deps.createProofHash).not.toHaveBeenCalled();
+    expect(deps.reserveDiscovery).not.toHaveBeenCalled();
   });
 
   it("rejects extra fields in the response schema", () => {
@@ -136,6 +230,7 @@ describe("POST /api/identify", () => {
     expect(
       identifySuccessSchema.safeParse({
         identification: expectedIdentification,
+        capture_transaction: CAPTURE_TRANSACTION,
         extra: true,
       }).success,
     ).toBe(false);
@@ -255,13 +350,13 @@ describe("POST /api/identify", () => {
     expect(await responseBody(response)).toMatchObject({
       identification: {
         confidence: 0.7,
-        target_for_quest: true,
+        target_for_quest: false,
         grade: "Bronze",
         grade_code: 1,
         awarded_xp: 50,
       },
     });
-    expect(deps.getSpecies).toHaveBeenCalledWith("butterfly");
+    expect(deps.getSpecies).toHaveBeenCalledWith("monarch_butterfly");
     expect(deps.createProofHash).toHaveBeenCalledOnce();
     expect(deps.reserveDiscovery).toHaveBeenCalledOnce();
   });
@@ -292,11 +387,11 @@ describe("POST /api/identify", () => {
     );
   });
 
-  it("returns 422 before hashing for a quest-ineligible species", async () => {
+  it("returns 422 before hashing for a capture-ineligible species", async () => {
     const deps = dependencies();
     deps.getSpecies.mockResolvedValue({
       ...species,
-      targetForQuest: false,
+      captureEnabled: false,
     });
 
     const response = await createIdentifyHandler(deps)(
@@ -305,7 +400,7 @@ describe("POST /api/identify", () => {
 
     expect(response.status).toBe(422);
     expect(await responseBody(response)).toMatchObject({
-      error: { code: "QUEST_INELIGIBLE" },
+      error: { code: "CAPTURE_INELIGIBLE" },
     });
     expect(deps.analyzeQuality).not.toHaveBeenCalled();
     expect(deps.createProofHash).not.toHaveBeenCalled();
@@ -349,6 +444,26 @@ describe("POST /api/identify", () => {
         message: "The duplicate-image check is temporarily unavailable.",
       },
     });
+  });
+
+  it("fails closed before duplicate reservation when capture authorization is unavailable", async () => {
+    const deps = dependencies();
+    deps.createCaptureAuthorization.mockRejectedValue(
+      new CaptureAuthorizationUnavailableError(),
+    );
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await responseBody(response)).toEqual({
+      error: {
+        code: "CAPTURE_AUTHORIZATION_UNAVAILABLE",
+        message: "A Creature capture transaction could not be prepared.",
+      },
+    });
+    expect(deps.reserveDiscovery).not.toHaveBeenCalled();
   });
 
   it("returns 400 before proof generation when quality analysis fails", async () => {

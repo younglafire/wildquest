@@ -50,6 +50,7 @@ export type Database = {
       species: {
         Row: {
           base_xp: number;
+          capture_enabled: boolean;
           created_at: string | null;
           description: string | null;
           facts: Json;
@@ -58,6 +59,7 @@ export type Database = {
           id: number;
           image_url: string | null;
           is_active: boolean | null;
+          model_class_id: number | null;
           name: string;
           quiz: Json | null;
           rarity: string;
@@ -68,6 +70,7 @@ export type Database = {
         };
         Insert: {
           base_xp?: number;
+          capture_enabled?: boolean;
           created_at?: string | null;
           description?: string | null;
           facts?: Json;
@@ -76,6 +79,7 @@ export type Database = {
           id?: number;
           image_url?: string | null;
           is_active?: boolean | null;
+          model_class_id?: number | null;
           name: string;
           quiz?: Json | null;
           rarity: string;
@@ -86,6 +90,7 @@ export type Database = {
         };
         Update: {
           base_xp?: number;
+          capture_enabled?: boolean;
           created_at?: string | null;
           description?: string | null;
           facts?: Json;
@@ -94,6 +99,7 @@ export type Database = {
           id?: number;
           image_url?: string | null;
           is_active?: boolean | null;
+          model_class_id?: number | null;
           name?: string;
           quiz?: Json | null;
           rarity?: string;
