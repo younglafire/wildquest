@@ -325,7 +325,7 @@ const IDENTIFICATION_ERRORS: Record<string, string> = {
     "That file could not be decoded as a photo. Choose a different JPEG, PNG, or WebP image.",
   INVALID_WALLET: "Reconnect your Solana wallet before identifying this photo.",
   CAPTURE_INELIGIBLE:
-    "That exact animal class is not enabled for the six-creature battle slice.",
+    "That exact animal class is not enabled for the current battle roster.",
   IMAGE_TOO_LARGE:
     "That photo is too large. Choose an image smaller than 4 MB.",
   UNSUPPORTED_MEDIA_TYPE: "Choose a JPEG, PNG, or WebP photo.",

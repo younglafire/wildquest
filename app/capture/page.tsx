@@ -5,7 +5,7 @@ import { CaptureExperience } from "./capture-experience";
 
 export const metadata: Metadata = {
   title: "Capture a Creature | WildQuest",
-  description: "Photograph or upload one of the six battle creatures.",
+  description: "Photograph or upload one of the 36 battle creatures.",
 };
 
 export default function CapturePage() {

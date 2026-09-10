@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Rabbit</title>
+  <ellipse cx="96" cy="66" rx="22" ry="57" transform="rotate(-10 96 66)" fill="#e5e7eb"/><ellipse cx="158" cy="66" rx="22" ry="57" transform="rotate(10 158 66)" fill="#e5e7eb"/>
+  <ellipse cx="128" cy="151" rx="76" ry="68" fill="#f3f4f6"/>
+  <circle cx="99" cy="139" r="9" fill="#111827"/><circle cx="157" cy="139" r="9" fill="#111827"/>
+  <path fill="#f472b6" d="m128 157 13 11-13 10-13-10 13-11Z"/>
+</svg>

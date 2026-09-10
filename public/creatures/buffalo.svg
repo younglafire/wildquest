@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Water buffalo</title>
+  <path d="M87 86C49 91 26 72 21 43c25 18 48 18 72 4M169 86c38 5 61-14 66-43-25 18-48 18-72 4" fill="none" stroke="#111827" stroke-width="16" stroke-linecap="round"/>
+  <path fill="#374151" d="M65 103c0-38 27-62 63-62s63 24 63 62v51c0 43-29 69-63 69s-63-26-63-69v-51Z"/>
+  <circle cx="98" cy="127" r="8" fill="#f8fafc"/><circle cx="158" cy="127" r="8" fill="#f8fafc"/>
+  <ellipse cx="128" cy="177" rx="35" ry="25" fill="#6b7280"/>
+</svg>

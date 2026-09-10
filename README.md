@@ -5,7 +5,7 @@
 WildQuest Solana dApp with an Anchor program and generated client
 
 WildQuest is a deterministic creature-battle vertical slice. A local ResNet-50
-model identifies one of six exact creatures, each wallet can own one Creature
+model identifies one of 36 exact creatures, each wallet can own one Creature
 per catalogue ID, and ordered teams battle for a fixed Devnet SOL stake.
 
 ## Table of Contents
@@ -44,7 +44,7 @@ per catalogue ID, and ordered teams battle for a fixed Devnet SOL stake.
 ## Background
 
 The playable loop is: connect a Wallet Standard compatible wallet, identify
-one of six exact ImageNet classes, approve creation of its Creature account,
+one of 36 exact ImageNet classes, approve creation of its Creature account,
 build an ordered three-Creature team, and open or join a deterministic 0.01 SOL
 Devnet Match. The result can be replayed from the same onchain rules; the
 recorded winner signs a separate transaction to claim the 0.02 SOL pot. Ties
@@ -120,8 +120,9 @@ The main routes are:
 - `/` for landing and wallet connection;
 - `/home` for Player level, XP, quest progress, and recent discoveries;
 - `/quest` for target progress and `complete_quest` reward claiming;
-- `/capture` for photo selection and exact six-creature identification;
-- `/collection` for the six battle cards and wallet-owned Creature accounts;
+- `/capture` for photo selection and exact 36-creature identification;
+- `/collection` for all 36 battle cards and wallet-owned Creature accounts;
+- `/battle/[matchAddress]` for a shareable battlefield, replay, and signed receipts;
 - `/collection/[speciesId]` for species facts and an unrewarded practice quiz;
 - `/profile` for wallet and Player Passport data;
 - `/discovery/confirmed` for confirmation status and the Explorer link.
@@ -220,12 +221,12 @@ Microsoft ResNet-50 runs through Transformers.js and quantized ONNX weights.
 Remote model loading is disabled. The Next.js function bundles the local model,
 `onnxruntime-node`, and Sharp.
 
-The endpoint rejects confidence below `0.70`. It accepts only six exact
-ImageNet classes: Chihuahua `151`, Golden Retriever `207`, German Shepherd
-`235`, Tabby Cat `281`, Persian Cat `283`, and Monarch Butterfly `323`. It does
-not aggregate broad dog, cat, or butterfly labels. The catalogue row must carry
-the same model class and have `capture_enabled=true`; otherwise the request
-fails closed.
+The endpoint rejects confidence below `0.70`. It accepts 36 exact ImageNet
+classes defined in `app/lib/vision/mapping.ts`. The roster includes familiar
+dogs and cats, domestic and wetland animals, birds, insects, and butterflies
+seen in Vietnam or kept there as companion animals. It does not aggregate broad
+dog, cat, or butterfly labels. The catalogue row must carry the same model
+class and have `capture_enabled=true`; otherwise the request fails closed.
 
 Before returning success, the backend creates a 64-bit perceptual hash and
 calls the `reserve_discovery_image` Supabase function. A global Hamming distance
@@ -268,7 +269,7 @@ baseline are recorded in:
 - [`docs/PK-VERTICAL-SLICE-DAY4.md`](docs/PK-VERTICAL-SLICE-DAY4.md)
 - [`docs/PK-VERTICAL-SLICE-DAY5.md`](docs/PK-VERTICAL-SLICE-DAY5.md)
 
-Initialize the six-creature Devnet demo once, then run the two-wallet battle
+Initialize the 36-creature Devnet demo once, then run the two-wallet battle
 reliability check:
 
 ```bash
@@ -288,7 +289,7 @@ to their creators, decided unclaimed pots go to their recorded winners, and
 account rent returns to the account payer. Player, Discovery, GameConfig, and
 SpeciesConfig accounts remain because they do not grant Creature ownership.
 
-This prototype is Devnet-only. The six creature stats, 0.01 SOL stake, and
+This prototype is Devnet-only. The 36 creature stats, 0.01 SOL stake, and
 deterministic battle rules are fixed for the vertical slice; see the Day 5 note
 for the complete demo flow and known limitations.
 
@@ -346,7 +347,7 @@ new columns or database functions. Configure the required values from
 `.env.example` in the hosting provider. Keep both the Supabase key and capture
 authority keypair in a server-only secret store.
 
-After deploying the battle-slice program, initialize `GameConfig`, the six
+After deploying the battle-slice program, initialize `GameConfig`, the 36
 `SpeciesConfig` accounts, and two funded demo-wallet rosters with:
 
 ```sh

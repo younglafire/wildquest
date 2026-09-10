@@ -28,9 +28,11 @@ The demo uses the deployed Devnet program ID
 
 The two demo wallets receive their other roster members through a setup script that invokes the real instruction handlers. The setup script does not inject fabricated account data.
 
-## The six-creature roster is fixed
+## The 36-creature roster is fixed
 
-Every V1 stat uses an unsigned integer. Each creature has 300 total stat points, which makes the first comparison easy to reason about. Equal totals do not prove competitive balance.
+Every V1 stat uses an unsigned integer. The canonical IDs, ImageNet classes,
+and stats live in `programs/wildquest/src/constants.rs`; the matching names,
+facts, roles, and artwork live in the Supabase migrations.
 
 - **Catalogue 1001, Chihuahua:** ImageNet class `151`, HP `80`, Attack `55`, Defense `35`, Speed `95`, Shield `35`.
 - **Catalogue 1002, Golden Retriever:** ImageNet class `207`, HP `115`, Attack `60`, Defense `55`, Speed `45`, Shield `25`.
@@ -39,9 +41,10 @@ Every V1 stat uses an unsigned integer. Each creature has 300 total stat points,
 - **Catalogue 1005, Persian Cat:** ImageNet class `283`, HP `105`, Attack `55`, Defense `60`, Speed `35`, Shield `45`.
 - **Catalogue 1006, Monarch Butterfly:** ImageNet class `323`, HP `75`, Attack `55`, Defense `35`, Speed `100`, Shield `35`.
 
-All six SpeciesConfig accounts use `balance_version = 1`. The first Match rules use `rules_version = 1`.
-
-The catalogue slugs are `chihuahua`, `golden_retriever`, `german_shepherd`, `tabby_cat`, `persian_cat`, and `monarch_butterfly`. The numeric catalogue ID crosses the API and Solana boundary. The slug remains offchain display and lookup data.
+Catalogue IDs `1001` through `1036` cover 36 exact ImageNet classes. All 36
+SpeciesConfig accounts use `balance_version = 1`. The first Match rules use
+`rules_version = 1`. The numeric catalogue ID crosses the API and Solana
+boundary. Each slug remains offchain display and lookup data.
 
 ## Combat is deterministic
 
@@ -71,7 +74,7 @@ The five-day build stays on Devnet. It makes no mainnet or real-money safety cla
 
 ## The hard cut list stays outside five days
 
-- A roster larger than six creatures
+- A roster larger than 36 creatures
 - Model training or broad breed recognition
 - Commit-reveal teams
 - Matchmaking, lobby indexing, ratings, and leaderboards

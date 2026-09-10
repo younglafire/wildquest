@@ -19,6 +19,7 @@ import {
   buildClaimMatchPayoutInstruction,
   buildJoinMatchInstruction,
   buildOpenMatchInstruction,
+  getPlayerMatches,
   validateCreatureTeam,
 } from "./matches";
 
@@ -174,5 +175,27 @@ describe("Match transaction builders", () => {
         matchAccount,
       ),
     ).toThrow("not claimable");
+  });
+
+  it("returns only wallet matches in newest-first history order", () => {
+    const oldest = openMatch(creatorTeam);
+    oldest.data.createdAt = 10n;
+    const newest = {
+      ...openMatch(creatorTeam),
+      address: creatureAddresses[5],
+    };
+    newest.data.createdAt = 20n;
+    newest.data.creator = opponent;
+    newest.data.opponent = { __option: "Some", value: owner };
+    const unrelated = {
+      ...openMatch(creatorTeam),
+      address: creatureAddresses[4],
+    };
+    unrelated.data.creator = opponent;
+
+    expect(getPlayerMatches([oldest, unrelated, newest], owner)).toEqual([
+      newest,
+      oldest,
+    ]);
   });
 });

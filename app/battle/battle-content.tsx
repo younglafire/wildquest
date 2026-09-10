@@ -21,6 +21,7 @@ import { CreatureCard } from "../components/creature-card";
 import { useCluster } from "../components/cluster-context";
 import {
   fetchBattleCreatures,
+  fetchMatchBattleCreatures,
   type BattleCreature,
 } from "../lib/battle-creatures";
 import { useGameData } from "../lib/hooks/use-game-data";
@@ -31,6 +32,7 @@ import {
   buildJoinMatchInstruction,
   buildOpenMatchInstruction,
   fetchMatches,
+  getPlayerMatches,
   type GameMatch,
 } from "../lib/matches";
 import { useSolanaClient } from "../lib/solana-client-context";
@@ -180,7 +182,7 @@ export function BattleContent() {
         `wildquest:last-match:${cluster}:${signer.address}`,
         matchAddress,
       );
-    router.replace(`/battle?match=${matchAddress}`, { scroll: false });
+    router.push(`/battle/${matchAddress}`);
   };
   const run = async (operation: () => Promise<Signature>) => {
     setError(null);
@@ -280,6 +282,9 @@ export function BattleContent() {
       (match.data.creator === signer?.address || opponent === signer?.address)
     );
   });
+  const playerHistory = signer
+    ? getPlayerMatches(matches.data ?? [], signer.address)
+    : [];
 
   return (
     <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-14">
@@ -491,26 +496,97 @@ export function BattleContent() {
                     </p>
                   </div>
                   {claimable ? (
-                    <button
-                      type="button"
-                      onClick={() => rememberMatch(match.address)}
-                      className="min-h-12 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+                    <Link
+                      href={`/battle/${match.address}`}
+                      className="flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
                     >
                       Watch result
-                    </button>
+                    </Link>
+                  ) : mine ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/battle/${match.address}`}
+                        className="flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+                      >
+                        Open battlefield
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void cancelMatch(match)}
+                        disabled={isSending}
+                        className="min-h-12 rounded-xl border border-border px-5 text-sm font-bold disabled:opacity-50"
+                      >
+                        Cancel and refund
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
-                      onClick={() =>
-                        void (mine ? cancelMatch(match) : joinMatch(match))
-                      }
-                      disabled={isSending || (!mine && selected.length !== 3)}
-                      className={`min-h-12 rounded-xl px-5 text-sm font-bold disabled:opacity-50 ${mine ? "border border-border" : "bg-primary text-primary-foreground"}`}
+                      onClick={() => void joinMatch(match)}
+                      disabled={isSending || selected.length !== 3}
+                      className="min-h-12 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
                     >
-                      {mine ? "Cancel and refund" : "Join · stake 0.01 SOL"}
+                      Join · stake 0.01 SOL
                     </button>
                   )}
                 </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section
+        id="history"
+        className="mt-6 scroll-mt-24 rounded-3xl border border-border bg-card p-6 sm:p-8"
+      >
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
+          Onchain history
+        </p>
+        <h2 className="mt-2 text-2xl font-black">Your matches</h2>
+        <p className="mt-2 text-sm text-muted">
+          Every row links to the Match account, deterministic replay, and its
+          signed transaction receipts.
+        </p>
+        {matches.isLoading ? (
+          <p className="mt-6 text-sm text-muted">Loading history…</p>
+        ) : playerHistory.length === 0 ? (
+          <p className="mt-6 rounded-xl bg-cream p-5 text-sm text-muted">
+            Your wallet has not opened or joined a match yet.
+          </p>
+        ) : (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {playerHistory.map((match) => {
+              const winner = unwrapOption(match.data.winner);
+              const result =
+                winner === signer?.address
+                  ? "Won"
+                  : winner === null
+                    ? match.data.status === MatchStatus.Cancelled
+                      ? "Cancelled"
+                      : "Draw"
+                    : "Lost";
+              return (
+                <Link
+                  key={match.address}
+                  href={`/battle/${match.address}`}
+                  className="rounded-2xl border border-border p-5 transition hover:border-emerald-500"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-black">{result}</span>
+                    <span className="rounded-full bg-cream px-3 py-1 text-xs font-bold">
+                      {STATUS_LABEL[match.data.status]}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm text-muted">
+                    {new Date(
+                      Number(match.data.createdAt) * 1_000,
+                    ).toLocaleString()}
+                  </p>
+                  <p className="mt-2 truncate font-mono text-[10px] text-muted">
+                    {match.address}
+                  </p>
+                </Link>
               );
             })}
           </div>
@@ -520,7 +596,7 @@ export function BattleContent() {
   );
 }
 
-function MatchResult({
+export function MatchResult({
   match,
   wallet,
   catalogue,
@@ -538,12 +614,21 @@ function MatchResult({
   const details = useSWR(
     opponent ? ["match-replay", match.address, match.data.status] : null,
     async () => {
-      const accounts = await fetchAllCreature(
-        client.rpc,
-        [...match.data.creatorCreatures, ...match.data.opponentCreatures],
-        { commitment: "confirmed" },
-      );
-      const cards = await fetchBattleCreatures(client.rpc, accounts, catalogue);
+      const [creator, opponentCards] = await Promise.all([
+        fetchMatchBattleCreatures(
+          client.rpc,
+          match.data.creator,
+          match.data.creatorCreatures,
+          catalogue,
+        ),
+        fetchMatchBattleCreatures(
+          client.rpc,
+          opponent!,
+          match.data.opponentCreatures,
+          catalogue,
+        ),
+      ]);
+      const cards = [...creator, ...opponentCards];
       if (
         match.data.rulesVersion !== 1 ||
         cards.some(
@@ -553,9 +638,22 @@ function MatchResult({
       ) {
         throw new Error("This Match uses an unsupported battle rules version.");
       }
-      return { creator: cards.slice(0, 3), opponent: cards.slice(3) };
+      return { creator, opponent: opponentCards };
     },
   );
+  if (!opponent && match.data.status === MatchStatus.Cancelled)
+    return (
+      <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center sm:p-10">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
+          Match cancelled
+        </p>
+        <h2 className="mt-3 text-3xl font-black">Stake refunded</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-muted">
+          No opponent joined this challenge. The creator recovered the opening
+          stake.
+        </p>
+      </section>
+    );
   if (!opponent)
     return (
       <section className="mt-6 rounded-3xl border border-emerald-500/30 bg-card p-6 text-center sm:p-10">

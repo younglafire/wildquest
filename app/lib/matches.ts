@@ -197,3 +197,15 @@ export async function fetchMatches(
     decodeMatch(parseBase64RpcAccount(pubkey, account)),
   );
 }
+
+export function getPlayerMatches(
+  matches: readonly GameMatch[],
+  wallet: Address,
+): GameMatch[] {
+  return matches
+    .filter((match) => {
+      const opponent = unwrapOption(match.data.opponent);
+      return match.data.creator === wallet || opponent === wallet;
+    })
+    .sort((left, right) => Number(right.data.createdAt - left.data.createdAt));
+}

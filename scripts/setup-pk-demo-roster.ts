@@ -22,7 +22,9 @@ import {
 } from "../app/generated/wildquest";
 
 const DEFAULT_RPC_URL = "https://api.devnet.solana.com";
-const CATALOGUE_IDS = [1001n, 1002n, 1003n, 1004n, 1005n, 1006n] as const;
+const CATALOGUE_IDS = Array.from({ length: 36 }, (_, index) =>
+  BigInt(1001 + index),
+);
 const MINIMUM_ADMIN_BALANCE = 30_000_000n;
 const MINIMUM_WALLET_BALANCE = 20_000_000n;
 
@@ -158,6 +160,7 @@ async function ensureRoster(
 }
 
 async function main() {
+  const configsOnly = process.argv.includes("--configs-only");
   const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? DEFAULT_RPC_URL;
   const admin = await loadSigner(
     "WQ_ADMIN_KEYPAIR_PATH",
@@ -167,6 +170,19 @@ async function main() {
     "WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH",
     ".wildquest-keys/capture-authority.json",
   );
+  if (admin.address === captureAuthority.address) {
+    throw new Error(
+      "Use a dedicated capture authority; do not reuse the program admin keypair.",
+    );
+  }
+  const adminClient = createClient({ url: devnet(rpcUrl), payer: admin });
+  await requireBalance(adminClient.rpc, admin, MINIMUM_ADMIN_BALANCE);
+  await ensureGameConfig(adminClient, admin, captureAuthority);
+  await ensureSpeciesConfigs(adminClient, admin);
+  if (configsOnly) {
+    console.info("Battle configuration setup complete.");
+    return;
+  }
   const walletA = await loadSigner(
     "WQ_DEMO_WALLET_A_KEYPAIR_PATH",
     ".wildquest-keys/demo-wallet-a.json",
@@ -175,20 +191,9 @@ async function main() {
     "WQ_DEMO_WALLET_B_KEYPAIR_PATH",
     ".wildquest-keys/demo-wallet-b.json",
   );
-
-  if (admin.address === captureAuthority.address) {
-    throw new Error(
-      "Use a dedicated capture authority; do not reuse the program admin keypair.",
-    );
-  }
   if (walletA.address === walletB.address) {
     throw new Error("Demo wallet A and B must be different wallets.");
   }
-
-  const adminClient = createClient({ url: devnet(rpcUrl), payer: admin });
-  await requireBalance(adminClient.rpc, admin, MINIMUM_ADMIN_BALANCE);
-  await ensureGameConfig(adminClient, admin, captureAuthority);
-  await ensureSpeciesConfigs(adminClient, admin);
   await ensureRoster(rpcUrl, walletA, captureAuthority);
   await ensureRoster(rpcUrl, walletB, captureAuthority);
   console.info("Demo roster setup complete for both wallets.");

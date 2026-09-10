@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Bee</title>
+  <ellipse cx="128" cy="137" rx="62" ry="45" fill="#facc15"/>
+  <path d="M96 99v76M128 94v86M160 101v73" stroke="#111827" stroke-width="14"/>
+  <ellipse cx="91" cy="83" rx="38" ry="25" transform="rotate(-28 91 83)" fill="#dbeafe" fill-opacity=".9"/>
+  <ellipse cx="165" cy="83" rx="38" ry="25" transform="rotate(28 165 83)" fill="#dbeafe" fill-opacity=".9"/>
+  <circle cx="65" cy="136" r="8" fill="#111827"/>
+</svg>
