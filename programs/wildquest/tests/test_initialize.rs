@@ -442,6 +442,55 @@ fn claim_match_payout_instruction(winner: Pubkey, match_account: Pubkey) -> Inst
     )
 }
 
+fn release_creature_instruction(owner: Pubkey, creature: Pubkey) -> Instruction {
+    Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::ReleaseCreature {}.data(),
+        wildquest::accounts::ReleaseCreatureAccountConstraints { owner, creature }
+            .to_account_metas(None),
+    )
+}
+
+fn admin_close_creature_instruction(
+    admin: Pubkey,
+    game_config: Pubkey,
+    creature: Pubkey,
+    owner: Pubkey,
+) -> Instruction {
+    Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::AdminCloseCreature {}.data(),
+        wildquest::accounts::AdminCloseCreatureAccountConstraints {
+            admin,
+            game_config,
+            creature,
+            owner,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn admin_close_match_instruction(
+    admin: Pubkey,
+    game_config: Pubkey,
+    match_account: Pubkey,
+    creator: Pubkey,
+    payout_recipient: Pubkey,
+) -> Instruction {
+    Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::AdminCloseMatch {}.data(),
+        wildquest::accounts::AdminCloseMatchAccountConstraints {
+            admin,
+            game_config,
+            match_account,
+            creator,
+            payout_recipient,
+        }
+        .to_account_metas(None),
+    )
+}
+
 fn read_match(svm: &LiteSVM, match_account: &Pubkey) -> wildquest::state::Match {
     let account = svm.get_account(match_account).unwrap();
     let mut data: &[u8] = &account.data;
@@ -1439,4 +1488,189 @@ fn test_cancel_match_refunds_stake_and_rejects_wrong_creator() {
     let cancelled_balance = svm.get_balance(&match_account).unwrap();
     assert!(!send_instruction(&mut svm, &creator, cancel));
     assert_eq!(svm.get_balance(&match_account).unwrap(), cancelled_balance);
+}
+
+#[test]
+fn test_owner_releases_and_recaptures_creature() {
+    let admin = Keypair::new();
+    let owner = Keypair::new();
+    let wrong_owner = Keypair::new();
+    let capture_authority = Keypair::new();
+    let mut svm = create_test_svm();
+    for wallet in [&admin, &owner, &wrong_owner] {
+        svm.airdrop(&wallet.pubkey(), 2_000_000_000).unwrap();
+    }
+    let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
+    let species_config = initialize_species_config(
+        &mut svm,
+        &admin,
+        game_config,
+        wildquest::constants::BATTLE_CATALOGUE_IDS[0],
+    );
+    let creature = capture_creature(
+        &mut svm,
+        &owner,
+        &capture_authority,
+        game_config,
+        species_config,
+        wildquest::constants::BATTLE_CATALOGUE_IDS[0],
+        91,
+    );
+    let owner_before_release = svm.get_balance(&owner.pubkey()).unwrap();
+
+    let wrong_release = release_creature_instruction(wrong_owner.pubkey(), creature);
+    assert!(!send_instruction(&mut svm, &wrong_owner, wrong_release));
+    assert!(svm.get_account(&creature).is_some());
+
+    let release = release_creature_instruction(owner.pubkey(), creature);
+    assert!(send_instruction(&mut svm, &owner, release));
+    assert!(svm.get_account(&creature).is_none());
+    assert!(svm.get_balance(&owner.pubkey()).unwrap() > owner_before_release);
+
+    let recaptured = capture_creature(
+        &mut svm,
+        &owner,
+        &capture_authority,
+        game_config,
+        species_config,
+        wildquest::constants::BATTLE_CATALOGUE_IDS[0],
+        92,
+    );
+    assert_eq!(recaptured, creature);
+    assert!(svm.get_account(&creature).is_some());
+}
+
+#[test]
+fn test_admin_reset_closes_creature_and_refunds_open_match() {
+    let admin = Keypair::new();
+    let wrong_admin = Keypair::new();
+    let creator = Keypair::new();
+    let capture_authority = Keypair::new();
+    let mut svm = create_test_svm();
+    for wallet in [&admin, &wrong_admin, &creator] {
+        svm.airdrop(&wallet.pubkey(), 2_000_000_000).unwrap();
+    }
+    let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
+    let species = initialize_battle_configs(&mut svm, &admin, game_config);
+    let team = capture_team(
+        &mut svm,
+        &creator,
+        &capture_authority,
+        game_config,
+        &species,
+        [0, 1, 2],
+        100,
+    );
+    let (open_instruction, match_account) =
+        open_match_instruction(creator.pubkey(), game_config, 55, team);
+    assert!(send_instruction(&mut svm, &creator, open_instruction));
+    let creator_before_reset = svm.get_balance(&creator.pubkey()).unwrap();
+
+    let wrong_reset = admin_close_match_instruction(
+        wrong_admin.pubkey(),
+        game_config,
+        match_account,
+        creator.pubkey(),
+        creator.pubkey(),
+    );
+    assert!(!send_instruction(&mut svm, &wrong_admin, wrong_reset));
+    assert!(svm.get_account(&match_account).is_some());
+
+    let reset_match = admin_close_match_instruction(
+        admin.pubkey(),
+        game_config,
+        match_account,
+        creator.pubkey(),
+        creator.pubkey(),
+    );
+    assert!(send_instruction(&mut svm, &admin, reset_match));
+    assert!(svm.get_account(&match_account).is_none());
+    assert!(svm.get_balance(&creator.pubkey()).unwrap() > creator_before_reset);
+
+    let reset_creature =
+        admin_close_creature_instruction(admin.pubkey(), game_config, team[0], creator.pubkey());
+    assert!(send_instruction(&mut svm, &admin, reset_creature));
+    assert!(svm.get_account(&team[0]).is_none());
+}
+
+#[test]
+fn test_admin_reset_pays_claimable_match_winner() {
+    let admin = Keypair::new();
+    let creator = Keypair::new();
+    let opponent = Keypair::new();
+    let capture_authority = Keypair::new();
+    let mut svm = create_test_svm();
+    for wallet in [&admin, &creator, &opponent] {
+        svm.airdrop(&wallet.pubkey(), 2_000_000_000).unwrap();
+    }
+    let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
+    let species = initialize_battle_configs(&mut svm, &admin, game_config);
+    let creator_indexes = [1, 2, 4];
+    let opponent_indexes = [5, 0, 3];
+    let creator_team = capture_team(
+        &mut svm,
+        &creator,
+        &capture_authority,
+        game_config,
+        &species,
+        creator_indexes,
+        110,
+    );
+    let opponent_team = capture_team(
+        &mut svm,
+        &opponent,
+        &capture_authority,
+        game_config,
+        &species,
+        opponent_indexes,
+        120,
+    );
+    let (open_instruction, match_account) =
+        open_match_instruction(creator.pubkey(), game_config, 56, creator_team);
+    assert!(send_instruction(&mut svm, &creator, open_instruction));
+    let join = join_match_instruction(
+        opponent.pubkey(),
+        creator.pubkey(),
+        game_config,
+        match_account,
+        creator_team,
+        opponent_team,
+        creator_indexes.map(|index| species[index]),
+        opponent_indexes.map(|index| species[index]),
+    );
+    assert!(send_instruction(&mut svm, &opponent, join));
+    assert_eq!(
+        read_match(&svm, &match_account).winner,
+        Some(creator.pubkey())
+    );
+    let creator_before_reset = svm.get_balance(&creator.pubkey()).unwrap();
+    let opponent_before_reset = svm.get_balance(&opponent.pubkey()).unwrap();
+
+    let wrong_recipient = admin_close_match_instruction(
+        admin.pubkey(),
+        game_config,
+        match_account,
+        creator.pubkey(),
+        opponent.pubkey(),
+    );
+    assert!(!send_instruction(&mut svm, &admin, wrong_recipient));
+    assert!(svm.get_account(&match_account).is_some());
+    assert_eq!(
+        svm.get_balance(&opponent.pubkey()).unwrap(),
+        opponent_before_reset
+    );
+
+    let reset = admin_close_match_instruction(
+        admin.pubkey(),
+        game_config,
+        match_account,
+        creator.pubkey(),
+        creator.pubkey(),
+    );
+    assert!(send_instruction(&mut svm, &admin, reset));
+    assert!(svm.get_account(&match_account).is_none());
+    assert!(
+        svm.get_balance(&creator.pubkey()).unwrap()
+            > creator_before_reset + wildquest::constants::MATCH_STAKE_LAMPORTS
+    );
 }

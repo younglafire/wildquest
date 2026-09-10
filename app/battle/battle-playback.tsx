@@ -6,6 +6,7 @@ import { MatchStatus } from "../generated/wildquest";
 import { CreatureCard } from "../components/creature-card";
 import { battleStats, type BattleCreature } from "../lib/battle-creatures";
 import { simulateBattle } from "../lib/battle-engine";
+import { getBattleFrame } from "../lib/battle-timeline";
 import type { GameMatch } from "../lib/matches";
 
 type Props = {
@@ -33,19 +34,23 @@ export function BattlePlayback({
       ),
     [creatorTeam, opponentTeam],
   );
-  const [eventCount, setEventCount] = useState(0);
-  const [playing, setPlaying] = useState(true);
-  const finished = eventCount >= report.events.length;
+  const settledAt = unwrapOption(match.data.settledAt);
+  const [now, setNow] = useState(() => Date.now());
+  const frame = useMemo(
+    () =>
+      settledAt === null
+        ? { eventCount: 0, countdownSeconds: 0, finished: false }
+        : getBattleFrame(settledAt, report.events.length, now),
+    [now, report.events.length, settledAt],
+  );
+  const { eventCount, finished } = frame;
   const current = report.events[Math.max(0, eventCount - 1)];
 
   useEffect(() => {
-    if (!playing || finished) return;
-    const timer = window.setTimeout(
-      () => setEventCount((count) => count + 1),
-      650,
-    );
-    return () => window.clearTimeout(timer);
-  }, [eventCount, finished, playing]);
+    if (finished) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 100);
+    return () => window.clearInterval(timer);
+  }, [finished]);
 
   const health = useMemo(() => {
     const creator = creatorTeam.map((item) => ({
@@ -104,36 +109,16 @@ export function BattlePlayback({
             Battle replay
           </p>
           <h2 className="mt-2 text-3xl font-black">
-            {finished ? outcome : `Round ${current?.round ?? 1}`}
+            {frame.countdownSeconds > 0
+              ? `Battle starts in ${frame.countdownSeconds}`
+              : finished
+                ? outcome
+                : `Round ${current?.round ?? 1}`}
           </h2>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setPlaying((value) => !value)}
-            disabled={finished}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold disabled:opacity-40"
-          >
-            {playing && !finished ? "Pause" : "Play"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setEventCount(report.events.length)}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold"
-          >
-            Skip
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setEventCount(0);
-              setPlaying(true);
-            }}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold"
-          >
-            Replay
-          </button>
-        </div>
+        <p className="max-w-xs text-xs leading-relaxed text-muted">
+          Live timeline · synchronized from the confirmed Match account
+        </p>
       </div>
 
       <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6">

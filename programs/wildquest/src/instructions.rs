@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod cancel_match;
 pub mod capture_creature;
 pub mod claim_match_payout;
@@ -11,7 +12,9 @@ pub mod initialize_quest;
 pub mod initialize_species_config;
 pub mod join_match;
 pub mod open_match;
+pub mod release_creature;
 
+pub use admin::*;
 pub use cancel_match::*;
 pub use capture_creature::*;
 pub use claim_match_payout::*;
@@ -25,3 +28,4 @@ pub use initialize_quest::*;
 pub use initialize_species_config::*;
 pub use join_match::*;
 pub use open_match::*;
+pub use release_creature::*;

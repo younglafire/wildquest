@@ -14,6 +14,33 @@ export type BattleCreature = {
   config: Account<SpeciesConfig>;
 };
 
+export type CatalogueBattleCreature = {
+  species: CatalogueSpecies;
+  config: Account<SpeciesConfig>;
+};
+
+export async function fetchBattleCatalogue(
+  rpc: SolanaClient["rpc"],
+  catalogue: readonly CatalogueSpecies[],
+): Promise<Array<CatalogueBattleCreature>> {
+  const supported = catalogue.filter(
+    (species) => species.isActive && species.captureEnabled,
+  );
+  const addresses = await Promise.all(
+    supported.map(
+      async (species) =>
+        (await findSpeciesConfigPda({ catalogueId: BigInt(species.id) }))[0],
+    ),
+  );
+  const configs = await fetchAllSpeciesConfig(rpc, addresses, {
+    commitment: "confirmed",
+  });
+  return supported.map((species, index) => ({
+    species,
+    config: configs[index]!,
+  }));
+}
+
 export async function fetchBattleCreatures(
   rpc: SolanaClient["rpc"],
   creatures: readonly OwnedCreature[],

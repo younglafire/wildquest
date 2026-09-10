@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { BATTLE_ROLES, RARITIES } from "./species";
 
+const artworkUrlSchema = z.string().refine((value) => {
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}, "Artwork must use HTTP(S) or a root-relative local path.");
+
 export const catalogueSpeciesSchema = z
   .object({
     id: z.union([z.string(), z.number().int().positive()]),
@@ -10,8 +20,8 @@ export const catalogueSpeciesSchema = z
     rarity: z.enum(RARITIES),
     habitat: z.string().nullable(),
     description: z.string().nullable(),
-    imageUrl: z.string().url().nullable(),
-    iconUrl: z.string().url().nullable(),
+    imageUrl: artworkUrlSchema.nullable(),
+    iconUrl: artworkUrlSchema.nullable(),
     iconAttributionUrl: z.string().url().nullable(),
     iconLicense: z.string().trim().min(1).nullable(),
     cardSummary: z.string().trim().min(1).max(220).nullable(),

@@ -17,6 +17,8 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  parseAdminCloseCreatureInstruction,
+  parseAdminCloseMatchInstruction,
   parseCancelMatchInstruction,
   parseCaptureCreatureInstruction,
   parseClaimMatchPayoutInstruction,
@@ -30,6 +32,9 @@ import {
   parseInitializeSpeciesConfigInstruction,
   parseJoinMatchInstruction,
   parseOpenMatchInstruction,
+  parseReleaseCreatureInstruction,
+  type ParsedAdminCloseCreatureInstruction,
+  type ParsedAdminCloseMatchInstruction,
   type ParsedCancelMatchInstruction,
   type ParsedCaptureCreatureInstruction,
   type ParsedClaimMatchPayoutInstruction,
@@ -43,6 +48,7 @@ import {
   type ParsedInitializeSpeciesConfigInstruction,
   type ParsedJoinMatchInstruction,
   type ParsedOpenMatchInstruction,
+  type ParsedReleaseCreatureInstruction,
 } from "../instructions";
 
 export const WILDQUEST_PROGRAM_ADDRESS =
@@ -169,6 +175,8 @@ export function identifyWildquestAccount(
 }
 
 export enum WildquestInstruction {
+  AdminCloseCreature,
+  AdminCloseMatch,
   CancelMatch,
   CaptureCreature,
   ClaimMatchPayout,
@@ -182,12 +190,35 @@ export enum WildquestInstruction {
   InitializeSpeciesConfig,
   JoinMatch,
   OpenMatch,
+  ReleaseCreature,
 }
 
 export function identifyWildquestInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): WildquestInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([185, 81, 110, 52, 131, 132, 117, 165]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.AdminCloseCreature;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([117, 112, 67, 75, 106, 192, 54, 230]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.AdminCloseMatch;
+  }
   if (
     containsBytes(
       data,
@@ -331,6 +362,17 @@ export function identifyWildquestInstruction(
   ) {
     return WildquestInstruction.OpenMatch;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([5, 94, 180, 100, 108, 136, 84, 214]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.ReleaseCreature;
+  }
   throw new Error(
     "The provided instruction could not be identified as a wildquest instruction.",
   );
@@ -339,6 +381,12 @@ export function identifyWildquestInstruction(
 export type ParsedWildquestInstruction<
   TProgram extends string = "3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF",
 > =
+  | ({
+      instructionType: WildquestInstruction.AdminCloseCreature;
+    } & ParsedAdminCloseCreatureInstruction<TProgram>)
+  | ({
+      instructionType: WildquestInstruction.AdminCloseMatch;
+    } & ParsedAdminCloseMatchInstruction<TProgram>)
   | ({
       instructionType: WildquestInstruction.CancelMatch;
     } & ParsedCancelMatchInstruction<TProgram>)
@@ -377,13 +425,30 @@ export type ParsedWildquestInstruction<
     } & ParsedJoinMatchInstruction<TProgram>)
   | ({
       instructionType: WildquestInstruction.OpenMatch;
-    } & ParsedOpenMatchInstruction<TProgram>);
+    } & ParsedOpenMatchInstruction<TProgram>)
+  | ({
+      instructionType: WildquestInstruction.ReleaseCreature;
+    } & ParsedReleaseCreatureInstruction<TProgram>);
 
 export function parseWildquestInstruction<TProgram extends string>(
   instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedWildquestInstruction<TProgram> {
   const instructionType = identifyWildquestInstruction(instruction);
   switch (instructionType) {
+    case WildquestInstruction.AdminCloseCreature: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.AdminCloseCreature,
+        ...parseAdminCloseCreatureInstruction(instruction),
+      };
+    }
+    case WildquestInstruction.AdminCloseMatch: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.AdminCloseMatch,
+        ...parseAdminCloseMatchInstruction(instruction),
+      };
+    }
     case WildquestInstruction.CancelMatch: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -473,6 +538,13 @@ export function parseWildquestInstruction<TProgram extends string>(
       return {
         instructionType: WildquestInstruction.OpenMatch,
         ...parseOpenMatchInstruction(instruction),
+      };
+    }
+    case WildquestInstruction.ReleaseCreature: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.ReleaseCreature,
+        ...parseReleaseCreatureInstruction(instruction),
       };
     }
     default:

@@ -6,6 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./adminCloseCreature";
+export * from "./adminCloseMatch";
 export * from "./cancelMatch";
 export * from "./captureCreature";
 export * from "./claimMatchPayout";
@@ -19,3 +21,4 @@ export * from "./initializeQuest";
 export * from "./initializeSpeciesConfig";
 export * from "./joinMatch";
 export * from "./openMatch";
+export * from "./releaseCreature";

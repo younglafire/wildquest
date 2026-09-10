@@ -12,7 +12,9 @@ The decision was verified on 2026-09-09 in the following repository locations:
 - `target/idl/wildquest.json` uses the address in its top-level `address` field.
 - `app/generated/wildquest/programs/wildquest.ts` exports the address as `WILDQUEST_PROGRAM_ADDRESS`.
 - every generated PDA helper defaults to that program address.
-- `target/deploy/wildquest-keypair.json` derives that public key.
+- Program upgrades target that existing address directly and use the configured
+  upgrade authority. A generated local deploy keypair is not the program's
+  identity for an upgrade.
 - the game footer displays that address.
 
 A read-only Devnet query on 2026-09-09 confirmed that both historical addresses are deployed:

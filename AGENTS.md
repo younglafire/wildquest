@@ -95,8 +95,9 @@ Current PDA seeds:
 
 The vertical slice uses Devnet program ID
 `3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF`. The Rust `declare_id!`, both
-Anchor cluster entries, IDL, Codama client, and deploy keypair must retain that
-address.
+Anchor cluster entries, IDL, Codama client, and upgrade command must retain that
+address. For an upgrade, pass the existing address to `solana program deploy
+--program-id`; do not assume a local deploy keypair derives it.
 
 `DzUrGjvWMzp8m3Vs6jb8F7xfoh96W5Jmad9GBLgCAgvo` is an older deployed Discovery
 program. Historical Devnet result documents may name it, but new PDA derivation

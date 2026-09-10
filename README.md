@@ -121,7 +121,7 @@ The main routes are:
 - `/home` for Player level, XP, quest progress, and recent discoveries;
 - `/quest` for target progress and `complete_quest` reward claiming;
 - `/capture` for photo selection and exact six-creature identification;
-- `/collection` for catalogue and Discovery account aggregation;
+- `/collection` for the six battle cards and wallet-owned Creature accounts;
 - `/collection/[speciesId]` for species facts and an unrewarded practice quiz;
 - `/profile` for wallet and Player Passport data;
 - `/discovery/confirmed` for confirmation status and the Explorer link.
@@ -147,6 +147,12 @@ enter browser storage. `capture_creature()` requires both the wallet and server
 capture authority signatures and creates the one-per-wallet/species Creature
 account.
 
+Collection and team selection render the same Creature card component with the
+same SpeciesConfig stats. An owner may release a card through
+`release_creature`; the account rent returns to that owner and the species can
+be captured again. The UI prevents release while the card is referenced by an
+open or claimable Match.
+
 ## Architecture
 
 - `app/` contains the Next.js App Router frontend and Route Handlers.
@@ -170,7 +176,9 @@ numeric ID, which becomes the program's `u64` species ID.
 The program exposes the legacy Player, Discovery, and Quest handlers plus the
 battle-slice `initialize_game_config`, `initialize_species_config`,
 `capture_creature`, `open_match`, `join_match`, `claim_match_payout`, and
-`cancel_match` handlers.
+`cancel_match` handlers. `release_creature` lets an owner close one Creature
+account. The administrator-only `admin_close_match` and `admin_close_creature`
+handlers support a safe Devnet prototype reset without changing the program ID.
 The earlier Counter instructions remain as scaffold functionality.
 
 - **Player PDA** uses `["player", wallet]` and stores wallet, XP, level,
@@ -195,6 +203,12 @@ A Match moves from `Open` to `Claimable` when combat has a winner. The winner
 must sign `claim_match_payout` to receive both stakes and move it to `Settled`.
 A tie is refunded immediately and becomes `Settled`; an unmatched creator can
 cancel and recover the opening stake.
+
+Opening or joining a Match routes both wallets to the same battlefield address.
+Each browser subscribes to that Match account at confirmed commitment and uses
+its `settled_at` timestamp as the shared animation clock. Battle progress is
+derived from time, so the live view has no pause, skip, or replay controls.
+Confirmed polling covers temporary WebSocket disconnects.
 
 `discover_species` derives XP from the validated grade code inside the program:
 Bronze awards 50 XP, Silver 75 XP, and Gold 100 XP. It updates Player
@@ -261,6 +275,18 @@ reliability check:
 npm run setup:pk-demo
 npm run test:pk-devnet -- --runs 10
 ```
+
+To reset only the Devnet battle state, deploy the matching program build and
+run:
+
+```sh
+npm run reset:pk-devnet
+```
+
+The command closes every Match before closing every Creature. Open stakes return
+to their creators, decided unclaimed pots go to their recorded winners, and
+account rent returns to the account payer. Player, Discovery, GameConfig, and
+SpeciesConfig accounts remain because they do not grant Creature ownership.
 
 This prototype is Devnet-only. The six creature stats, 0.01 SOL stake, and
 deterministic battle rules are fixed for the vertical slice; see the Day 5 note

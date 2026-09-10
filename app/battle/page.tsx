@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { GameShell } from "../components/game-shell";
 import { BattleContent } from "./battle-content";
 
@@ -10,7 +11,15 @@ export const metadata: Metadata = {
 export default function BattlePage() {
   return (
     <GameShell>
-      <BattleContent />
+      <Suspense
+        fallback={
+          <main className="mx-auto max-w-6xl px-5 py-14 text-sm text-muted">
+            Loading battle arena…
+          </main>
+        }
+      >
+        <BattleContent />
+      </Suspense>
     </GameShell>
   );
 }

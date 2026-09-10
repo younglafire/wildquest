@@ -1,10 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type DragEvent } from "react";
-import { unwrapOption, type Address, type Signature } from "@solana/kit";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import {
+  address as parseAddress,
+  unwrapOption,
+  type Address,
+  type Signature,
+} from "@solana/kit";
 import useSWR from "swr";
-import { fetchAllCreature, MatchStatus } from "../generated/wildquest";
+import {
+  fetchAllCreature,
+  fetchMaybeMatch,
+  findMatchAccountPda,
+  MatchStatus,
+} from "../generated/wildquest";
 import { BattlePlayback } from "./battle-playback";
 import { CreatureCard } from "../components/creature-card";
 import { useCluster } from "../components/cluster-context";
@@ -34,6 +45,9 @@ const STATUS_LABEL: Record<MatchStatus, string> = {
 };
 
 export function BattleContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const arenaRef = useRef<HTMLElement>(null);
   const game = useGameData();
   const client = useSolanaClient();
   const { signer } = useWallet();
@@ -58,21 +72,91 @@ export function BattleContent() {
   const [lastMatchAddress, setLastMatchAddress] = useState<Address | null>(
     null,
   );
+  const activeMatch = useSWR(
+    lastMatchAddress
+      ? (["active-match", cluster, lastMatchAddress] as const)
+      : null,
+    async () => {
+      const account = await fetchMaybeMatch(client.rpc, lastMatchAddress!, {
+        commitment: "confirmed",
+      });
+      return account.exists ? account : null;
+    },
+    { refreshInterval: 5_000, revalidateOnFocus: true },
+  );
 
   useEffect(() => {
     if (!signer) return;
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
+      const requested = searchParams.get("match");
       const stored = sessionStorage.getItem(
         `wildquest:last-match:${cluster}:${signer.address}`,
       );
-      if (stored) setLastMatchAddress(stored as Address);
+      const candidate = requested ?? stored;
+      if (!candidate) return;
+      try {
+        setLastMatchAddress(parseAddress(candidate));
+      } catch {
+        sessionStorage.removeItem(
+          `wildquest:last-match:${cluster}:${signer.address}`,
+        );
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, [cluster, signer]);
+  }, [cluster, searchParams, signer]);
+
+  useEffect(() => {
+    if (!lastMatchAddress) return;
+    const abortController = new AbortController();
+    const subscribe = async () => {
+      try {
+        const notifications = await client.rpcSubscriptions
+          .accountNotifications(lastMatchAddress, { commitment: "confirmed" })
+          .subscribe({ abortSignal: abortController.signal });
+        for await (const notification of notifications) {
+          void notification;
+          await Promise.all([activeMatch.mutate(), matches.mutate()]);
+        }
+      } catch {
+        // Confirmed polling remains active when an RPC WebSocket disconnects.
+      }
+    };
+    void subscribe();
+    return () => abortController.abort();
+  }, [activeMatch, client, lastMatchAddress, matches]);
+
+  useEffect(() => {
+    if (!lastMatchAddress || !activeMatch.data) return;
+    arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [activeMatch.data, lastMatchAddress]);
+
+  useEffect(() => {
+    if (
+      !signer ||
+      !lastMatchAddress ||
+      activeMatch.isLoading ||
+      activeMatch.data !== null
+    )
+      return;
+    queueMicrotask(() => {
+      sessionStorage.removeItem(
+        `wildquest:last-match:${cluster}:${signer.address}`,
+      );
+      setLastMatchAddress(null);
+      router.replace("/battle", { scroll: false });
+    });
+  }, [
+    activeMatch.data,
+    activeMatch.isLoading,
+    cluster,
+    lastMatchAddress,
+    router,
+    signer,
+  ]);
 
   const selected = slots
     .map((slot) => creatures.find((creature) => creature.address === slot))
@@ -87,29 +171,22 @@ export function BattleContent() {
       ),
     [battleCreatures.data],
   );
-  const resultMatch = lastMatchAddress
-    ? ((matches.data ?? []).find(
-        (match) => match.address === lastMatchAddress,
-      ) ?? null)
-    : null;
+  const resultMatch = activeMatch.data ?? null;
 
-  const rememberMatch = (match: GameMatch) => {
-    setLastMatchAddress(match.address);
+  const rememberMatch = (matchAddress: Address) => {
+    setLastMatchAddress(matchAddress);
     if (signer)
       sessionStorage.setItem(
         `wildquest:last-match:${cluster}:${signer.address}`,
-        match.address,
+        matchAddress,
       );
+    router.replace(`/battle?match=${matchAddress}`, { scroll: false });
   };
-  const run = async (
-    operation: () => Promise<Signature>,
-    match?: GameMatch,
-  ) => {
+  const run = async (operation: () => Promise<Signature>) => {
     setError(null);
     try {
       const signature = await operation();
       setLastSignature(signature);
-      if (match) rememberMatch(match);
       await Promise.all([matches.mutate(), game.refresh()]);
     } catch (thrownObject) {
       setError(
@@ -142,11 +219,18 @@ export function BattleContent() {
   const createMatch = () =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
-      return send({
+      const matchId = BigInt(Date.now());
+      const [matchAddress] = await findMatchAccountPda({
+        creator: signer.address,
+        matchId,
+      });
+      const signature = await send({
         instructions: [
-          await buildOpenMatchInstruction(signer, selected, BigInt(Date.now())),
+          await buildOpenMatchInstruction(signer, selected, matchId),
         ],
       });
+      rememberMatch(matchAddress);
+      return signature;
     });
   const joinMatch = (match: GameMatch) =>
     run(async () => {
@@ -156,7 +240,7 @@ export function BattleContent() {
         [...match.data.creatorCreatures],
         { commitment: "confirmed" },
       );
-      return send({
+      const signature = await send({
         instructions: [
           await buildJoinMatchInstruction(
             signer,
@@ -166,21 +250,27 @@ export function BattleContent() {
           ),
         ],
       });
-    }, match);
+      rememberMatch(match.address);
+      return signature;
+    });
   const cancelMatch = (match: GameMatch) =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
-      return send({
+      const signature = await send({
         instructions: [buildCancelMatchInstruction(signer, match)],
       });
-    }, match);
+      rememberMatch(match.address);
+      return signature;
+    });
   const claimMatch = (match: GameMatch) =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
-      return send({
+      const signature = await send({
         instructions: [buildClaimMatchPayoutInstruction(signer, match)],
       });
-    }, match);
+      rememberMatch(match.address);
+      return signature;
+    });
 
   const relevantMatches = (matches.data ?? []).filter((match) => {
     if (match.data.status === MatchStatus.Open) return true;
@@ -318,14 +408,22 @@ export function BattleContent() {
         )}
       </section>
 
-      {resultMatch && (
-        <MatchResult
-          match={resultMatch}
-          wallet={signer?.address ?? null}
-          catalogue={game.catalogue.data ?? []}
-          isSending={isSending}
-          onClaim={() => void claimMatch(resultMatch)}
-        />
+      {lastMatchAddress && (
+        <section ref={arenaRef} className="scroll-mt-24">
+          {activeMatch.isLoading || !resultMatch ? (
+            <p className="mt-6 rounded-2xl bg-card p-5 text-sm text-muted">
+              Opening the shared battlefield…
+            </p>
+          ) : (
+            <MatchResult
+              match={resultMatch}
+              wallet={signer?.address ?? null}
+              catalogue={game.catalogue.data ?? []}
+              isSending={isSending}
+              onClaim={() => void claimMatch(resultMatch)}
+            />
+          )}
+        </section>
       )}
       {lastSignature && (
         <a
@@ -395,7 +493,7 @@ export function BattleContent() {
                   {claimable ? (
                     <button
                       type="button"
-                      onClick={() => rememberMatch(match)}
+                      onClick={() => rememberMatch(match.address)}
                       className="min-h-12 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
                     >
                       Watch result
@@ -458,7 +556,22 @@ function MatchResult({
       return { creator: cards.slice(0, 3), opponent: cards.slice(3) };
     },
   );
-  if (!opponent) return null;
+  if (!opponent)
+    return (
+      <section className="mt-6 rounded-3xl border border-emerald-500/30 bg-card p-6 text-center sm:p-10">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
+          Shared battlefield
+        </p>
+        <h2 className="mt-3 text-3xl font-black">Waiting for an opponent</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-muted">
+          Keep this battlefield open. It starts for both players as soon as the
+          joining transaction is confirmed.
+        </p>
+        <p className="mt-5 break-all font-mono text-[10px] text-muted">
+          {match.address}
+        </p>
+      </section>
+    );
   if (details.isLoading)
     return (
       <p className="mt-6 rounded-2xl bg-card p-5 text-sm text-muted">

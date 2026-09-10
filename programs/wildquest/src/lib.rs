@@ -102,4 +102,18 @@ pub mod wildquest {
     pub fn claim_match_payout(context: Context<ClaimMatchPayoutAccountConstraints>) -> Result<()> {
         crate::instructions::claim_match_payout::handle_claim_match_payout(context)
     }
+
+    pub fn release_creature(context: Context<ReleaseCreatureAccountConstraints>) -> Result<()> {
+        crate::instructions::release_creature::handle_release_creature(context)
+    }
+
+    pub fn admin_close_creature(
+        context: Context<AdminCloseCreatureAccountConstraints>,
+    ) -> Result<()> {
+        crate::instructions::admin::close_creature::handle_admin_close_creature(context)
+    }
+
+    pub fn admin_close_match(context: Context<AdminCloseMatchAccountConstraints>) -> Result<()> {
+        crate::instructions::admin::close_match::handle_admin_close_match(context)
+    }
 }
