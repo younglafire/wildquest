@@ -17,6 +17,7 @@ import {
   MatchStatus,
 } from "../app/generated/wildquest";
 import {
+  buildClaimMatchPayoutInstruction,
   buildJoinMatchInstruction,
   buildOpenMatchInstruction,
 } from "../app/lib/matches";
@@ -106,13 +107,31 @@ async function main() {
         teamB,
       );
       const joined = await clientB.sendTransaction([join]);
-      const settled = await fetchMatch(clientB.rpc, matchAddress, {
+      const resolved = await fetchMatch(clientB.rpc, matchAddress, {
         commitment: "confirmed",
       });
-      if (settled.data.status !== MatchStatus.Settled) {
-        throw new Error("Match was not settled atomically.");
+      const winner = unwrapOption(resolved.data.winner);
+      let claimSignature: string | null = null;
+      if (winner === null) {
+        if (resolved.data.status !== MatchStatus.Settled) {
+          throw new Error("A tied Match was not refunded atomically.");
+        }
+      } else {
+        if (resolved.data.status !== MatchStatus.Claimable) {
+          throw new Error("A winning Match did not become claimable.");
+        }
+        const winnerSigner = winner === walletA.address ? walletA : walletB;
+        const winnerClient = winner === walletA.address ? clientA : clientB;
+        const claim = buildClaimMatchPayoutInstruction(winnerSigner, resolved);
+        const claimed = await winnerClient.sendTransaction([claim]);
+        claimSignature = claimed.context.signature;
+        const paid = await fetchMatch(winnerClient.rpc, matchAddress, {
+          commitment: "confirmed",
+        });
+        if (paid.data.status !== MatchStatus.Settled) {
+          throw new Error("Winner claim did not settle the Match.");
+        }
       }
-      const winner = unwrapOption(settled.data.winner);
       const [afterA, afterB] = await Promise.all([
         clientA.rpc
           .getBalance(walletA.address, { commitment: "confirmed" })
@@ -145,7 +164,7 @@ async function main() {
       const outcome = winner ? `winner ${winner}` : "tie/refund";
       results.push({ ok: true });
       console.info(
-        `Run ${index + 1}: PASS (${outcome})\n  open ${opened.context.signature}\n  settle ${joined.context.signature}`,
+        `Run ${index + 1}: PASS (${outcome})\n  open ${opened.context.signature}\n  resolve ${joined.context.signature}${claimSignature ? `\n  claim ${claimSignature}` : ""}`,
       );
     } catch (thrownObject) {
       const detail =

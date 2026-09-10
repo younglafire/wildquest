@@ -9,9 +9,10 @@
    create a match with the fixed 0.01 SOL stake.
 4. Connect demo wallet B, choose its three-Creature team, and join the open
    match with the same stake.
-5. The join instruction resolves the deterministic battle and pays the winner
-   or refunds both players on a tie in the same transaction.
-6. Show the confirmed result and exact Devnet Explorer transaction.
+5. The join instruction resolves the deterministic battle. A tie refunds both
+   players immediately; a win leaves the two-stake pot in `Claimable` state.
+6. Replay the exact combat events, then let the recorded winner sign
+   `claim_match_payout` and show its Devnet Explorer transaction.
 
 ## One-time Devnet setup
 
@@ -29,8 +30,15 @@ of two ignored local demo keypairs.
 npm run test:pk-devnet -- --runs 10
 ```
 
-The runner creates and settles ten unique matches using two pre-funded wallets.
-It fails unless at least 9 of 10 matches settle successfully.
+The runner creates, resolves, and claims ten unique matches using two pre-funded
+wallets. It fails unless at least 9 of 10 matches settle successfully.
+
+On 2026-09-10 the upgraded program passed **10/10** consecutive runs through
+`open_match` → `join_match` → `claim_match_payout`. The program upgrade
+transaction was
+`gwn2yaFZBW6MoDYApqXKs8Lw6oXUhiQfDfPXRe6FL2pLBwk63FSwudTR2y67TYx99W7e1csWZrFtgzXFNhYhWRQ`.
+The tenth claim transaction was
+`5NjkHqug21t6bpzMeUVf8Ujmjvw8viKCaCPgY2uiy4cGU6eshg5kAhcXfeHYp4wRMXj1bHeY6UJFK77nH9paJb1p`.
 
 On 2026-09-09 the deployed program passed **10/10** consecutive matches, then
 passed a further **2/2** run with explicit winner-credit and loser-debit balance
@@ -47,7 +55,8 @@ transaction, and created its Creature account on Devnet in transaction
   managed key custody, authentication, rate limiting, and monitoring.
 - Match stake, rules, and six creature stats are frozen in the onchain
   GameConfig and SpeciesConfig accounts for this vertical slice.
-- A match resolves immediately when player B joins. There are no turns,
+- A match outcome resolves immediately when player B joins; payout requires the
+  winner's claim signature. There are no player-selected turns,
   upgrades, items, breeding, internal currency, matchmaking service, or random
   combat.
 - Open matches are globally readable. The prototype lobby polls Devnet and does

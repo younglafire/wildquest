@@ -50,17 +50,22 @@ export type Database = {
       species: {
         Row: {
           base_xp: number;
+          battle_role: string | null;
+          card_summary: string | null;
           capture_enabled: boolean;
           created_at: string | null;
           description: string | null;
           facts: Json;
           habitat: string | null;
           icon_url: string | null;
+          icon_attribution_url: string | null;
+          icon_license: string | null;
           id: number;
           image_url: string | null;
           is_active: boolean | null;
           model_class_id: number | null;
           name: string;
+          origin_region: string | null;
           quiz: Json | null;
           rarity: string;
           scientific_name: string | null;
@@ -70,17 +75,22 @@ export type Database = {
         };
         Insert: {
           base_xp?: number;
+          battle_role?: string | null;
+          card_summary?: string | null;
           capture_enabled?: boolean;
           created_at?: string | null;
           description?: string | null;
           facts?: Json;
           habitat?: string | null;
           icon_url?: string | null;
+          icon_attribution_url?: string | null;
+          icon_license?: string | null;
           id?: number;
           image_url?: string | null;
           is_active?: boolean | null;
           model_class_id?: number | null;
           name: string;
+          origin_region?: string | null;
           quiz?: Json | null;
           rarity: string;
           scientific_name?: string | null;
@@ -90,17 +100,22 @@ export type Database = {
         };
         Update: {
           base_xp?: number;
+          battle_role?: string | null;
+          card_summary?: string | null;
           capture_enabled?: boolean;
           created_at?: string | null;
           description?: string | null;
           facts?: Json;
           habitat?: string | null;
           icon_url?: string | null;
+          icon_attribution_url?: string | null;
+          icon_license?: string | null;
           id?: number;
           image_url?: string | null;
           is_active?: boolean | null;
           model_class_id?: number | null;
           name?: string;
+          origin_region?: string | null;
           quiz?: Json | null;
           rarity?: string;
           scientific_name?: string | null;

@@ -19,6 +19,7 @@ import {
 import {
   parseCancelMatchInstruction,
   parseCaptureCreatureInstruction,
+  parseClaimMatchPayoutInstruction,
   parseCompleteQuestInstruction,
   parseDiscoverSpeciesInstruction,
   parseIncrementInstruction,
@@ -31,6 +32,7 @@ import {
   parseOpenMatchInstruction,
   type ParsedCancelMatchInstruction,
   type ParsedCaptureCreatureInstruction,
+  type ParsedClaimMatchPayoutInstruction,
   type ParsedCompleteQuestInstruction,
   type ParsedDiscoverSpeciesInstruction,
   type ParsedIncrementInstruction,
@@ -169,6 +171,7 @@ export function identifyWildquestAccount(
 export enum WildquestInstruction {
   CancelMatch,
   CaptureCreature,
+  ClaimMatchPayout,
   CompleteQuest,
   DiscoverSpecies,
   Increment,
@@ -206,6 +209,17 @@ export function identifyWildquestInstruction(
     )
   ) {
     return WildquestInstruction.CaptureCreature;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([144, 173, 211, 53, 53, 66, 65, 29]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.ClaimMatchPayout;
   }
   if (
     containsBytes(
@@ -332,6 +346,9 @@ export type ParsedWildquestInstruction<
       instructionType: WildquestInstruction.CaptureCreature;
     } & ParsedCaptureCreatureInstruction<TProgram>)
   | ({
+      instructionType: WildquestInstruction.ClaimMatchPayout;
+    } & ParsedClaimMatchPayoutInstruction<TProgram>)
+  | ({
       instructionType: WildquestInstruction.CompleteQuest;
     } & ParsedCompleteQuestInstruction<TProgram>)
   | ({
@@ -379,6 +396,13 @@ export function parseWildquestInstruction<TProgram extends string>(
       return {
         instructionType: WildquestInstruction.CaptureCreature,
         ...parseCaptureCreatureInstruction(instruction),
+      };
+    }
+    case WildquestInstruction.ClaimMatchPayout: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.ClaimMatchPayout,
+        ...parseClaimMatchPayoutInstruction(instruction),
       };
     }
     case WildquestInstruction.CompleteQuest: {

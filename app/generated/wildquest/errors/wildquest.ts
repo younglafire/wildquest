@@ -64,14 +64,18 @@ export const WILDQUEST_ERROR__INVALID_BATTLE_STATS = 0x1786; // 6022
 export const WILDQUEST_ERROR__BATTLE_ARITHMETIC_OVERFLOW = 0x1787; // 6023
 /** MatchNotOpen: The Match account is not open */
 export const WILDQUEST_ERROR__MATCH_NOT_OPEN = 0x1788; // 6024
+/** MatchNotClaimable: The Match payout is not ready to be claimed */
+export const WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE = 0x1789; // 6025
+/** MatchWinnerMismatch: Only the stored Match winner can claim the payout */
+export const WILDQUEST_ERROR__MATCH_WINNER_MISMATCH = 0x178a; // 6026
 /** MatchSelfJoin: The Match creator cannot join as the opponent */
-export const WILDQUEST_ERROR__MATCH_SELF_JOIN = 0x1789; // 6025
+export const WILDQUEST_ERROR__MATCH_SELF_JOIN = 0x178b; // 6027
 /** MatchConfigMismatch: The Match account does not match the active GameConfig */
-export const WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH = 0x178a; // 6026
+export const WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH = 0x178c; // 6028
 /** MatchCreatorTeamMismatch: The submitted creator team does not match the Match account */
-export const WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH = 0x178b; // 6027
+export const WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH = 0x178d; // 6029
 /** MatchEscrowOverflow: Match escrow arithmetic overflowed */
-export const WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW = 0x178c; // 6028
+export const WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW = 0x178e; // 6030
 
 export type WildquestError =
   | typeof WILDQUEST_ERROR__BATTLE_ARITHMETIC_OVERFLOW
@@ -92,8 +96,10 @@ export type WildquestError =
   | typeof WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH
   | typeof WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH
   | typeof WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW
+  | typeof WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE
   | typeof WILDQUEST_ERROR__MATCH_NOT_OPEN
   | typeof WILDQUEST_ERROR__MATCH_SELF_JOIN
+  | typeof WILDQUEST_ERROR__MATCH_WINNER_MISMATCH
   | typeof WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH
   | typeof WILDQUEST_ERROR__PROGRESSION_OVERFLOW
   | typeof WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH
@@ -125,8 +131,10 @@ if (process.env.NODE_ENV !== "production") {
     [WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH]: `The Match account does not match the active GameConfig`,
     [WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH]: `The submitted creator team does not match the Match account`,
     [WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW]: `Match escrow arithmetic overflowed`,
+    [WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE]: `The Match payout is not ready to be claimed`,
     [WILDQUEST_ERROR__MATCH_NOT_OPEN]: `The Match account is not open`,
     [WILDQUEST_ERROR__MATCH_SELF_JOIN]: `The Match creator cannot join as the opponent`,
+    [WILDQUEST_ERROR__MATCH_WINNER_MISMATCH]: `Only the stored Match winner can claim the payout`,
     [WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH]: `Player account does not belong to the transaction signer`,
     [WILDQUEST_ERROR__PROGRESSION_OVERFLOW]: `Player progression arithmetic overflowed`,
     [WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH]: `A submitted discovery belongs to another player`,

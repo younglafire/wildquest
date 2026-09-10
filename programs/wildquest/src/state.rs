@@ -91,6 +91,7 @@ pub enum MatchStatus {
     Open,
     Settled,
     Cancelled,
+    Claimable,
 }
 
 #[account]

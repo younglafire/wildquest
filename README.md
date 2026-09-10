@@ -4,10 +4,9 @@
 
 WildQuest Solana dApp with an Anchor program and generated client
 
-WildQuest is pivoting from wildlife discoveries into a deterministic creature
-battle vertical slice. A local ResNet-50 model identifies one of six exact
-creatures, Supabase supplies catalogue metadata and duplicate reservation, and
-the next program slice will create one Creature PDA per wallet and catalogue ID.
+WildQuest is a deterministic creature-battle vertical slice. A local ResNet-50
+model identifies one of six exact creatures, each wallet can own one Creature
+per catalogue ID, and ordered teams battle for a fixed Devnet SOL stake.
 
 ## Table of Contents
 
@@ -44,23 +43,12 @@ the next program slice will create one Creature PDA per wallet and catalogue ID.
 
 ## Background
 
-The legacy discovery UI supports a short expedition loop:
-
-- connect a Wallet Standard compatible Solana wallet;
-- create a Player Passport;
-- photograph one of the supported catalogue animals;
-- review the AI identification, capture grade, and XP;
-- record the Discovery account on Solana Devnet;
-- complete the five-target demo quest and claim its reward.
-
-The current classifier recognizes eight catalogue groups: dog, cat, bee,
-chicken, butterfly, dragonfly, frog, and ant. It is an ImageNet classifier, not
-an open-ended wildlife model. Adding more reliable species requires a labelled
-WildQuest dataset and model training.
-
-The battle vertical slice narrows capture to six exact ImageNet classes. A
-wallet owns one Creature for each exact catalogue ID, selects an ordered team
-of three, and opens or joins a deterministic 0.01 SOL Devnet Match.
+The playable loop is: connect a Wallet Standard compatible wallet, identify
+one of six exact ImageNet classes, approve creation of its Creature account,
+build an ordered three-Creature team, and open or join a deterministic 0.01 SOL
+Devnet Match. The result can be replayed from the same onchain rules; the
+recorded winner signs a separate transaction to claim the 0.02 SOL pot. Ties
+refund both stakes during resolution.
 
 ## Install
 
@@ -151,13 +139,13 @@ The current battle-slice capture flow has three visible stages:
 
 - **Select** accepts one JPEG, PNG, or WebP file no larger than 4,000,000 bytes.
 - **Verify** sends the photo and connected wallet address to `/api/identify`.
-- **Result** shows the exact catalogue identity, ImageNet class, confidence, and
-  balance version.
+- **Result** reveals a battle card with the catalogue identity, onchain HP,
+  Damage, Defense, Speed, Shield, confidence, and balance version.
 
 Pending identification metadata lives in session storage. Photo bytes never
-enter browser storage. The legacy `discover_species` action is intentionally
-hidden: Day 3 must implement `capture_creature()` and server co-signing before a
-result can honestly become Creature ownership.
+enter browser storage. `capture_creature()` requires both the wallet and server
+capture authority signatures and creates the one-per-wallet/species Creature
+account.
 
 ## Architecture
 
@@ -181,7 +169,8 @@ numeric ID, which becomes the program's `u64` species ID.
 
 The program exposes the legacy Player, Discovery, and Quest handlers plus the
 battle-slice `initialize_game_config`, `initialize_species_config`,
-`capture_creature`, `open_match`, `join_match`, and `cancel_match` handlers.
+`capture_creature`, `open_match`, `join_match`, `claim_match_payout`, and
+`cancel_match` handlers.
 The earlier Counter instructions remain as scaffold functionality.
 
 - **Player PDA** uses `["player", wallet]` and stores wallet, XP, level,
@@ -201,6 +190,11 @@ The earlier Counter instructions remain as scaffold functionality.
   owned Creature for each exact catalogue ID.
 - **Match PDA** uses `["match", creator, match_id_le]` and stores both ordered
   teams, stake, lifecycle status, winner, and timestamps.
+
+A Match moves from `Open` to `Claimable` when combat has a winner. The winner
+must sign `claim_match_payout` to receive both stakes and move it to `Settled`.
+A tie is refunded immediately and becomes `Settled`; an unmatched creator can
+cancel and recover the opening stake.
 
 `discover_species` derives XP from the validated grade code inside the program:
 Bronze awards 50 XP, Silver 75 XP, and Gold 100 XP. It updates Player

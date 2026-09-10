@@ -1,19 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { unwrapOption, type Address, type Signature } from "@solana/kit";
 import useSWR from "swr";
-import {
-  fetchAllCreature,
-  MatchStatus,
-  type Match,
-} from "../generated/wildquest";
+import { fetchAllCreature, MatchStatus } from "../generated/wildquest";
+import { BattlePlayback } from "./battle-playback";
+import { CreatureCard } from "../components/creature-card";
 import { useCluster } from "../components/cluster-context";
+import {
+  fetchBattleCreatures,
+  type BattleCreature,
+} from "../lib/battle-creatures";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import {
   buildCancelMatchInstruction,
+  buildClaimMatchPayoutInstruction,
   buildJoinMatchInstruction,
   buildOpenMatchInstruction,
   fetchMatches,
@@ -25,8 +28,9 @@ import type { OwnedCreature } from "../lib/creatures";
 
 const STATUS_LABEL: Record<MatchStatus, string> = {
   [MatchStatus.Open]: "Open",
-  [MatchStatus.Settled]: "Settled",
+  [MatchStatus.Settled]: "Paid",
   [MatchStatus.Cancelled]: "Cancelled",
+  [MatchStatus.Claimable]: "Winner can claim",
 };
 
 export function BattleContent() {
@@ -39,42 +43,73 @@ export function BattleContent() {
     refreshInterval: 15_000,
     revalidateOnFocus: true,
   });
-  const [slots, setSlots] = useState<Array<string>>(["", "", ""]);
+  const creatures = game.creatures.data ?? [];
+  const battleCreatures = useSWR(
+    creatures.length && game.catalogue.data
+      ? ["battle-creatures", cluster, ...creatures.map((item) => item.address)]
+      : null,
+    () =>
+      fetchBattleCreatures(client.rpc, creatures, game.catalogue.data ?? []),
+  );
+  const [slots, setSlots] = useState<string[]>(["", "", ""]);
+  const [armed, setArmed] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastSignature, setLastSignature] = useState<Signature | null>(null);
   const [lastMatchAddress, setLastMatchAddress] = useState<Address | null>(
     null,
   );
 
-  const creatures = game.creatures.data ?? [];
+  useEffect(() => {
+    if (!signer) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const stored = sessionStorage.getItem(
+        `wildquest:last-match:${cluster}:${signer.address}`,
+      );
+      if (stored) setLastMatchAddress(stored as Address);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cluster, signer]);
+
   const selected = slots
     .map((slot) => creatures.find((creature) => creature.address === slot))
     .filter((creature): creature is OwnedCreature => Boolean(creature));
-  const catalogueById = useMemo(
+  const cardsByAddress = useMemo(
     () =>
-      new Map(
-        (game.catalogue.data ?? []).map((species) => [
-          BigInt(species.id).toString(),
-          species,
+      new Map<string, BattleCreature>(
+        (battleCreatures.data ?? []).map((item) => [
+          item.creature.address,
+          item,
         ]),
       ),
-    [game.catalogue.data],
+    [battleCreatures.data],
   );
+  const resultMatch = lastMatchAddress
+    ? ((matches.data ?? []).find(
+        (match) => match.address === lastMatchAddress,
+      ) ?? null)
+    : null;
 
-  const speciesName = (catalogueId: bigint) =>
-    catalogueById.get(catalogueId.toString())?.name ??
-    `Creature #${catalogueId.toString()}`;
-
+  const rememberMatch = (match: GameMatch) => {
+    setLastMatchAddress(match.address);
+    if (signer)
+      sessionStorage.setItem(
+        `wildquest:last-match:${cluster}:${signer.address}`,
+        match.address,
+      );
+  };
   const run = async (
     operation: () => Promise<Signature>,
     match?: GameMatch,
   ) => {
     setError(null);
-    setLastSignature(null);
     try {
       const signature = await operation();
       setLastSignature(signature);
-      setLastMatchAddress(match?.address ?? null);
+      if (match) rememberMatch(match);
       await Promise.all([matches.mutate(), game.refresh()]);
     } catch (thrownObject) {
       setError(
@@ -84,18 +119,35 @@ export function BattleContent() {
       );
     }
   };
+  const place = (index: number, creatureAddress: string) => {
+    if (
+      creatureAddress &&
+      slots.some(
+        (value, slotIndex) => slotIndex !== index && value === creatureAddress,
+      )
+    )
+      return;
+    setSlots((current) =>
+      current.map((value, slotIndex) =>
+        slotIndex === index ? creatureAddress : value,
+      ),
+    );
+    setArmed(null);
+  };
+  const handleDrop = (event: DragEvent, index: number) => {
+    event.preventDefault();
+    place(index, event.dataTransfer.getData("text/plain"));
+  };
 
   const createMatch = () =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
-      const instruction = await buildOpenMatchInstruction(
-        signer,
-        selected,
-        BigInt(Date.now()),
-      );
-      return send({ instructions: [instruction] });
+      return send({
+        instructions: [
+          await buildOpenMatchInstruction(signer, selected, BigInt(Date.now())),
+        ],
+      });
     });
-
   const joinMatch = (match: GameMatch) =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
@@ -104,15 +156,17 @@ export function BattleContent() {
         [...match.data.creatorCreatures],
         { commitment: "confirmed" },
       );
-      const instruction = await buildJoinMatchInstruction(
-        signer,
-        match,
-        creatorCreatures,
-        selected,
-      );
-      return send({ instructions: [instruction] });
+      return send({
+        instructions: [
+          await buildJoinMatchInstruction(
+            signer,
+            match,
+            creatorCreatures,
+            selected,
+          ),
+        ],
+      });
     }, match);
-
   const cancelMatch = (match: GameMatch) =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
@@ -120,13 +174,22 @@ export function BattleContent() {
         instructions: [buildCancelMatchInstruction(signer, match)],
       });
     }, match);
+  const claimMatch = (match: GameMatch) =>
+    run(async () => {
+      if (!signer) throw new Error("Connect your wallet first.");
+      return send({
+        instructions: [buildClaimMatchPayoutInstruction(signer, match)],
+      });
+    }, match);
 
-  const openMatches = (matches.data ?? []).filter(
-    (match) => match.data.status === MatchStatus.Open,
-  );
-  const resultMatch = lastMatchAddress
-    ? (matches.data ?? []).find((match) => match.address === lastMatchAddress)
-    : null;
+  const relevantMatches = (matches.data ?? []).filter((match) => {
+    if (match.data.status === MatchStatus.Open) return true;
+    const opponent = unwrapOption(match.data.opponent);
+    return (
+      match.data.status === MatchStatus.Claimable &&
+      (match.data.creator === signer?.address || opponent === signer?.address)
+    );
+  });
 
   return (
     <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-14">
@@ -138,16 +201,16 @@ export function BattleContent() {
           Build your team
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-          Pick three different Creatures in order. Every match stakes 0.01 SOL;
-          the winner receives both stakes and ties refund both players.
+          Choose three different Creatures in order. Tap a card then a + slot,
+          or drag it on desktop. Every match stakes 0.01 SOL.
         </p>
 
         {creatures.length < 3 ? (
           <div className="mt-7 rounded-2xl border border-border bg-cream p-5">
             <h2 className="font-black">You need three Creatures</h2>
             <p className="mt-2 text-sm text-muted">
-              You currently own {creatures.length}. Capture exact supported
-              species until your team has three members.
+              You currently own {creatures.length}. Capture more exact supported
+              species first.
             </p>
             <Link
               href="/capture"
@@ -156,45 +219,81 @@ export function BattleContent() {
               Capture a Creature
             </Link>
           </div>
+        ) : battleCreatures.isLoading ? (
+          <p className="mt-7 text-sm text-muted">
+            Loading verified onchain stats…
+          </p>
+        ) : battleCreatures.error ? (
+          <p role="alert" className="mt-7 text-sm text-destructive">
+            Creature stats could not be loaded.
+          </p>
         ) : (
-          <div className="mt-7 grid gap-3 md:grid-cols-3">
-            {slots.map((slot, index) => (
-              <label
-                key={index}
-                className="rounded-2xl border border-border bg-cream p-4"
-              >
-                <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                  Slot {index + 1}
-                </span>
-                <select
-                  aria-label={`Team slot ${index + 1}`}
-                  value={slot}
-                  onChange={(event) =>
-                    setSlots((current) =>
-                      current.map((value, slotIndex) =>
-                        slotIndex === index ? event.target.value : value,
-                      ),
-                    )
-                  }
-                  className="mt-2 min-h-12 w-full rounded-xl border border-border bg-card px-3 text-sm font-bold"
-                >
-                  <option value="">Choose Creature</option>
-                  {creatures.map((creature) => (
-                    <option
-                      key={creature.address}
-                      value={creature.address}
-                      disabled={slots.some(
-                        (value, slotIndex) =>
-                          slotIndex !== index && value === creature.address,
-                      )}
-                    >
-                      {speciesName(creature.data.catalogueId)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-          </div>
+          <>
+            <div className="mt-7 grid gap-3 md:grid-cols-3">
+              {slots.map((slot, index) => {
+                const card = cardsByAddress.get(slot);
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    aria-label={
+                      card
+                        ? `Remove ${card.species?.name ?? "Creature"} from slot ${index + 1}`
+                        : `Place selected Creature in slot ${index + 1}`
+                    }
+                    onClick={() =>
+                      card ? place(index, "") : armed && place(index, armed)
+                    }
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => handleDrop(event, index)}
+                    className="min-h-44 rounded-2xl border-2 border-dashed border-border bg-cream p-2 text-left transition hover:border-emerald-500"
+                  >
+                    {card ? (
+                      <CreatureCard creature={card} compact />
+                    ) : (
+                      <span className="flex min-h-40 items-center justify-center text-4xl font-light text-muted">
+                        +
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-6 text-xs font-bold uppercase tracking-wider text-muted">
+              Your Creature cards
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {(battleCreatures.data ?? []).map((card) => {
+                const creatureAddress = card.creature.address;
+                const used = slots.includes(creatureAddress);
+                return (
+                  <button
+                    key={creatureAddress}
+                    type="button"
+                    draggable={!used}
+                    disabled={used}
+                    aria-pressed={armed === creatureAddress}
+                    onDragStart={(event) =>
+                      event.dataTransfer.setData("text/plain", creatureAddress)
+                    }
+                    onClick={() =>
+                      setArmed((value) =>
+                        value === creatureAddress ? null : creatureAddress,
+                      )
+                    }
+                    className="rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-emerald-500"
+                  >
+                    <CreatureCard
+                      creature={card}
+                      compact
+                      selected={armed === creatureAddress}
+                      disabled={used}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {error && (
@@ -205,7 +304,6 @@ export function BattleContent() {
             {error}
           </p>
         )}
-
         {creatures.length >= 3 && (
           <button
             type="button"
@@ -220,14 +318,24 @@ export function BattleContent() {
         )}
       </section>
 
-      {lastSignature && (
-        <BattleResult
-          match={resultMatch?.data ?? null}
+      {resultMatch && (
+        <MatchResult
+          match={resultMatch}
           wallet={signer?.address ?? null}
-          signature={lastSignature}
-          cluster={cluster}
-          catalogueById={catalogueById}
+          catalogue={game.catalogue.data ?? []}
+          isSending={isSending}
+          onClaim={() => void claimMatch(resultMatch)}
         />
+      )}
+      {lastSignature && (
+        <a
+          href={`https://explorer.solana.com/tx/${lastSignature}?cluster=${cluster}`}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-flex min-h-12 items-center text-sm font-bold underline"
+        >
+          View latest transaction on Explorer
+        </a>
       )}
 
       <section className="mt-6 rounded-3xl border border-border bg-card p-6 sm:p-8">
@@ -236,7 +344,7 @@ export function BattleContent() {
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
               Match lobby
             </p>
-            <h2 className="mt-2 text-2xl font-black">Open challenges</h2>
+            <h2 className="mt-2 text-2xl font-black">Challenges</h2>
           </div>
           <button
             type="button"
@@ -246,21 +354,21 @@ export function BattleContent() {
             Refresh
           </button>
         </div>
-
         {matches.isLoading ? (
           <p className="mt-6 text-sm text-muted">Loading matches…</p>
         ) : matches.error ? (
           <p className="mt-6 text-sm text-destructive">
             The Devnet match lobby is unavailable.
           </p>
-        ) : openMatches.length === 0 ? (
+        ) : relevantMatches.length === 0 ? (
           <p className="mt-6 rounded-xl bg-cream p-5 text-sm text-muted">
-            No open challenge yet. Create the first one.
+            No open challenge or unclaimed win yet.
           </p>
         ) : (
           <div className="mt-6 grid gap-3">
-            {openMatches.map((match) => {
+            {relevantMatches.map((match) => {
               const mine = match.data.creator === signer?.address;
+              const claimable = match.data.status === MatchStatus.Claimable;
               return (
                 <article
                   key={match.address}
@@ -276,7 +384,7 @@ export function BattleContent() {
                       )}
                     </div>
                     <p className="mt-3 text-sm font-bold">
-                      {match.data.creatorCreatures.length} Creatures ·{" "}
+                      3 Creatures ·{" "}
                       {Number(match.data.stakeLamports) / 1_000_000_000} SOL
                       stake
                     </p>
@@ -284,16 +392,26 @@ export function BattleContent() {
                       {match.data.creator}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void (mine ? cancelMatch(match) : joinMatch(match))
-                    }
-                    disabled={isSending || (!mine && selected.length !== 3)}
-                    className={`min-h-12 rounded-xl px-5 text-sm font-bold disabled:opacity-50 ${mine ? "border border-border" : "bg-primary text-primary-foreground"}`}
-                  >
-                    {mine ? "Cancel and refund" : "Join · stake 0.01 SOL"}
-                  </button>
+                  {claimable ? (
+                    <button
+                      type="button"
+                      onClick={() => rememberMatch(match)}
+                      className="min-h-12 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+                    >
+                      Watch result
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void (mine ? cancelMatch(match) : joinMatch(match))
+                      }
+                      disabled={isSending || (!mine && selected.length !== 3)}
+                      className={`min-h-12 rounded-xl px-5 text-sm font-bold disabled:opacity-50 ${mine ? "border border-border" : "bg-primary text-primary-foreground"}`}
+                    >
+                      {mine ? "Cancel and refund" : "Join · stake 0.01 SOL"}
+                    </button>
+                  )}
                 </article>
               );
             })}
@@ -304,138 +422,66 @@ export function BattleContent() {
   );
 }
 
-function BattleResult({
+function MatchResult({
   match,
   wallet,
-  signature,
-  cluster,
-  catalogueById,
+  catalogue,
+  isSending,
+  onClaim,
 }: {
-  match: Match | null;
+  match: GameMatch;
   wallet: Address | null;
-  signature: Signature;
-  cluster: string;
-  catalogueById: Map<string, { name: string }>;
+  catalogue: NonNullable<ReturnType<typeof useGameData>["catalogue"]["data"]>;
+  isSending: boolean;
+  onClaim: () => void;
 }) {
   const client = useSolanaClient();
-  const winner = match ? unwrapOption(match.winner) : null;
-  const opponent = match ? unwrapOption(match.opponent) : null;
+  const opponent = unwrapOption(match.data.opponent);
   const details = useSWR(
-    match && opponent
-      ? (["match-result-details", cluster, signature] as const)
-      : null,
+    opponent ? ["match-replay", match.address, match.data.status] : null,
     async () => {
-      const creatureAddresses = [
-        ...match!.creatorCreatures,
-        ...match!.opponentCreatures,
-      ];
-      const [creatures, creatorBalance, opponentBalance] = await Promise.all([
-        fetchAllCreature(client.rpc, creatureAddresses, {
-          commitment: "confirmed",
-        }),
-        client.rpc
-          .getBalance(match!.creator, { commitment: "confirmed" })
-          .send(),
-        client.rpc.getBalance(opponent!, { commitment: "confirmed" }).send(),
-      ]);
-      return {
-        names: new Map(
-          creatures.map((creature) => [
-            creature.address,
-            catalogueById.get(creature.data.catalogueId.toString())?.name ??
-              `Creature #${creature.data.catalogueId.toString()}`,
-          ]),
-        ),
-        creatorBalance: creatorBalance.value,
-        opponentBalance: opponentBalance.value,
-      };
+      const accounts = await fetchAllCreature(
+        client.rpc,
+        [...match.data.creatorCreatures, ...match.data.opponentCreatures],
+        { commitment: "confirmed" },
+      );
+      const cards = await fetchBattleCreatures(client.rpc, accounts, catalogue);
+      if (
+        match.data.rulesVersion !== 1 ||
+        cards.some(
+          (card) =>
+            card.config.data.balanceVersion !== match.data.balanceVersion,
+        )
+      ) {
+        throw new Error("This Match uses an unsupported battle rules version.");
+      }
+      return { creator: cards.slice(0, 3), opponent: cards.slice(3) };
     },
   );
-  const outcome = !match
-    ? "Transaction confirmed"
-    : match.status === MatchStatus.Cancelled
-      ? "Match cancelled · stake refunded"
-      : winner === null
-        ? "Draw · both stakes refunded"
-        : winner === wallet
-          ? "Victory · 0.02 SOL payout"
-          : "Defeat · opponent received the pot";
-
-  return (
-    <section className="mt-6 rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-6 sm:p-8">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
-        Confirmed on Solana
+  if (!opponent) return null;
+  if (details.isLoading)
+    return (
+      <p className="mt-6 rounded-2xl bg-card p-5 text-sm text-muted">
+        Preparing deterministic replay…
       </p>
-      <h2 className="mt-2 text-3xl font-black">{outcome}</h2>
-      {match && match.status === MatchStatus.Settled && (
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <TeamSummary
-            title="Creator team"
-            addresses={match.creatorCreatures}
-            names={details.data?.names}
-          />
-          <TeamSummary
-            title="Opponent team"
-            addresses={match.opponentCreatures}
-            names={details.data?.names}
-          />
-        </div>
-      )}
-      {details.data && (
-        <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-          <div className="rounded-xl bg-card p-4">
-            <dt className="text-xs text-muted">Creator balance</dt>
-            <dd className="mt-1 font-black tabular-nums">
-              {(Number(details.data.creatorBalance) / 1_000_000_000).toFixed(4)}{" "}
-              SOL
-            </dd>
-          </div>
-          <div className="rounded-xl bg-card p-4">
-            <dt className="text-xs text-muted">Opponent balance</dt>
-            <dd className="mt-1 font-black tabular-nums">
-              {(Number(details.data.opponentBalance) / 1_000_000_000).toFixed(
-                4,
-              )}{" "}
-              SOL
-            </dd>
-          </div>
-        </dl>
-      )}
-      <a
-        href={`https://explorer.solana.com/tx/${signature}?cluster=${cluster}`}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-5 inline-flex min-h-12 items-center font-bold underline"
+    );
+  if (details.error || !details.data)
+    return (
+      <p
+        role="alert"
+        className="mt-6 rounded-2xl bg-destructive/10 p-5 text-sm text-destructive"
       >
-        View exact transaction on Explorer
-      </a>
-    </section>
-  );
-}
-
-function TeamSummary({
-  title,
-  addresses,
-  names,
-}: {
-  title: string;
-  addresses: Address[];
-  names?: Map<Address, string>;
-}) {
-  return (
-    <div className="rounded-xl bg-card p-4">
-      <p className="text-xs font-bold uppercase tracking-wider text-muted">
-        {title}
+        Battle replay data is unavailable.
       </p>
-      <ol className="mt-2 space-y-1 font-mono text-[10px] text-muted">
-        {addresses.map((creature, index) => (
-          <li key={creature}>
-            {index + 1}.{" "}
-            {names?.get(creature) ??
-              `${creature.slice(0, 8)}…${creature.slice(-6)}`}
-          </li>
-        ))}
-      </ol>
-    </div>
+    );
+  return (
+    <BattlePlayback
+      match={match}
+      creatorTeam={details.data.creator}
+      opponentTeam={details.data.opponent}
+      wallet={wallet}
+      isSending={isSending}
+      onClaim={onClaim}
+    />
   );
 }

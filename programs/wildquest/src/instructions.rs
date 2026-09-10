@@ -1,5 +1,6 @@
 pub mod cancel_match;
 pub mod capture_creature;
+pub mod claim_match_payout;
 pub mod complete_quest;
 pub mod discover_species;
 pub mod increment;
@@ -13,6 +14,7 @@ pub mod open_match;
 
 pub use cancel_match::*;
 pub use capture_creature::*;
+pub use claim_match_payout::*;
 pub use complete_quest::*;
 pub use discover_species::*;
 pub use increment::*;

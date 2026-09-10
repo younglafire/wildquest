@@ -52,6 +52,10 @@ pub enum ErrorCode {
     BattleArithmeticOverflow,
     #[msg("The Match account is not open")]
     MatchNotOpen,
+    #[msg("The Match payout is not ready to be claimed")]
+    MatchNotClaimable,
+    #[msg("Only the stored Match winner can claim the payout")]
+    MatchWinnerMismatch,
     #[msg("The Match creator cannot join as the opponent")]
     MatchSelfJoin,
     #[msg("The Match account does not match the active GameConfig")]

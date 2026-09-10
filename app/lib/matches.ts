@@ -3,6 +3,7 @@ import {
   address,
   getBase58Decoder,
   parseBase64RpcAccount,
+  unwrapOption,
   type Account,
   type Address,
   type Base58EncodedBytes,
@@ -13,6 +14,7 @@ import {
   decodeMatch,
   findSpeciesConfigPda,
   getCancelMatchInstruction,
+  getClaimMatchPayoutInstruction,
   getJoinMatchInstructionAsync,
   getMatchDiscriminatorBytes,
   getOpenMatchInstructionAsync,
@@ -145,6 +147,23 @@ export function buildCancelMatchInstruction(
   }
   return getCancelMatchInstruction({
     creator: signer,
+    matchAccount: matchAccount.address,
+  });
+}
+
+export function buildClaimMatchPayoutInstruction(
+  signer: TransactionSigner,
+  matchAccount: GameMatch,
+): Instruction {
+  if (matchAccount.data.status !== MatchStatus.Claimable) {
+    throw new Error("This Match payout is not claimable.");
+  }
+  const winner = unwrapOption(matchAccount.data.winner);
+  if (winner !== signer.address) {
+    throw new Error("Only the recorded Match winner can claim the pot.");
+  }
+  return getClaimMatchPayoutInstruction({
+    winner: signer,
     matchAccount: matchAccount.address,
   });
 }

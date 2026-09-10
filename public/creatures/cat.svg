@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Cat silhouette</title>
+  <rect width="256" height="256" rx="48" fill="#fef3c7"/>
+  <path fill="#92400e" d="m62 105 8-55c2-10 14-13 21-5l26 29c4-1 7-1 11-1s7 0 11 1l26-29c7-8 19-5 21 5l8 55c9 13 14 29 14 46 0 38-36 65-80 65s-80-27-80-65c0-17 5-33 14-46Z"/>
+  <circle cx="94" cy="130" r="10" fill="#fffbeb"/><circle cx="162" cy="130" r="10" fill="#fffbeb"/>
+  <path fill="#451a03" d="m116 151 12-8 12 8-12 13-12-13Z"/>
+  <path d="M81 158 37 146m45 28-45 6m138-22 44-12m-45 28 45 6" stroke="#451a03" stroke-width="6" stroke-linecap="round"/>
+</svg>

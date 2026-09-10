@@ -185,3 +185,48 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+@keyframes creature-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94) rotateY(-12deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.015) rotateY(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes battle-hit-right {
+  50% {
+    transform: translateX(20%) scale(1.03);
+  }
+}
+
+@keyframes battle-hit-left {
+  50% {
+    transform: translateX(-20%) scale(1.03);
+  }
+}
+
+.creature-reveal {
+  animation: creature-reveal 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.battle-hit-right {
+  animation: battle-hit-right 420ms ease-in-out;
+}
+.battle-hit-left {
+  animation: battle-hit-left 420ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .creature-reveal,
+  .battle-hit-right,
+  .battle-hit-left {
+    animation: none;
+  }
+}

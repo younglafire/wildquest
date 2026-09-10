@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { WalletChooser } from "../components/wallet-chooser";
 import { SpeciesArt } from "../components/species-art";
+import { CreatureCard } from "../components/creature-card";
+import {
+  fetchMaybeSpeciesConfig,
+  findSpeciesConfigPda,
+  type SpeciesConfig,
+} from "../generated/wildquest";
 import {
   fetchCatalogueSpecies,
   type CatalogueSpecies,
@@ -20,6 +26,7 @@ import { useWallet } from "../lib/wallet/context";
 import { useSubmitCaptureTransaction } from "../lib/hooks/use-submit-capture-transaction";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { useCluster } from "../components/cluster-context";
+import { useSolanaClient } from "../lib/solana-client-context";
 import Link from "next/link";
 import { CaptureForm } from "./capture-form";
 
@@ -27,10 +34,16 @@ export function CaptureExperience() {
   const { wallet, status } = useWallet();
   const { cluster } = useCluster();
   const game = useGameData();
-  const { submit, isSubmitting } = useSubmitCaptureTransaction();
+  const client = useSolanaClient();
+  const {
+    submit,
+    isSubmitting,
+    stage: submitStage,
+  } = useSubmitCaptureTransaction();
   const address = wallet?.account.address;
   const [pending, setPending] = useState<PendingIdentification | null>(null);
   const [species, setSpecies] = useState<CatalogueSpecies | null>(null);
+  const [battleStats, setBattleStats] = useState<SpeciesConfig | null>(null);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chooserOpen, setChooserOpen] = useState(false);
@@ -57,17 +70,32 @@ export function CaptureExperience() {
     if (!pending) return;
 
     let cancelled = false;
-    void fetchCatalogueSpecies(pending.identification.species_id)
-      .then((catalogueSpecies) => {
-        if (!cancelled) setSpecies(catalogueSpecies);
+    void Promise.all([
+      fetchCatalogueSpecies(pending.identification.species_id),
+      findSpeciesConfigPda({
+        catalogueId: BigInt(pending.identification.catalogue_id),
+      }).then(([configAddress]) =>
+        fetchMaybeSpeciesConfig(client.rpc, configAddress, {
+          commitment: "confirmed",
+        }),
+      ),
+    ])
+      .then(([catalogueSpecies, config]) => {
+        if (!cancelled) {
+          setSpecies(catalogueSpecies);
+          setBattleStats(config.exists ? config.data : null);
+        }
       })
       .catch(() => {
-        if (!cancelled) setSpecies(null);
+        if (!cancelled) {
+          setSpecies(null);
+          setBattleStats(null);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [pending]);
+  }, [client.rpc, pending]);
 
   const handleIdentify = async (file: File) => {
     if (!address || status !== "connected") {
@@ -105,16 +133,15 @@ export function CaptureExperience() {
       clearPendingIdentification();
       await game.refresh();
     } catch (thrownObject) {
-      setError(
-        thrownObject instanceof Error
-          ? thrownObject.message
-          : "The Creature transaction could not be completed.",
-      );
+      setError(getCaptureTransactionError(thrownObject));
     }
   };
 
   if (pending) {
     const result = pending.identification;
+    const alreadyOwned = (game.creatures.data ?? []).some(
+      (creature) => creature.data.catalogueId === BigInt(result.catalogue_id),
+    );
     return (
       <div className="mx-auto w-full max-w-3xl">
         <CaptureSteps current={3} />
@@ -182,6 +209,25 @@ export function CaptureExperience() {
                 Devnet. You can own this exact catalogue creature only once.
               </div>
 
+              {alreadyOwned && (
+                <p
+                  role="status"
+                  className="mt-4 rounded-xl bg-amber-500/10 p-4 text-sm font-semibold text-amber-800 dark:text-amber-200"
+                >
+                  You already own this exact Creature. One wallet can own each
+                  catalogue species only once.
+                </p>
+              )}
+
+              {species && battleStats && (
+                <div className="creature-reveal mt-5">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+                    Your battle card
+                  </p>
+                  <CreatureCard species={species} stats={battleStats} />
+                </div>
+              )}
+
               {error && (
                 <p role="alert" className="mt-5 text-sm text-destructive">
                   {error}
@@ -216,10 +262,16 @@ export function CaptureExperience() {
                   <button
                     type="button"
                     onClick={() => void handleOwnCreature()}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || alreadyOwned}
                     className="flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
                   >
-                    {isSubmitting ? "Creating Creature…" : "Own this Creature"}
+                    {alreadyOwned
+                      ? "Already owned"
+                      : submitStage === "signing"
+                        ? "Approve in wallet…"
+                        : submitStage === "confirming"
+                          ? "Submitted · confirming…"
+                          : "Own this Creature"}
                   </button>
                   <button
                     type="button"
@@ -227,6 +279,7 @@ export function CaptureExperience() {
                       clearPendingIdentification();
                       setPending(null);
                       setSpecies(null);
+                      setBattleStats(null);
                       setError(null);
                     }}
                     className="flex min-h-12 w-full items-center justify-center rounded-xl border border-border px-5 py-3 text-sm font-bold"
@@ -289,6 +342,24 @@ function getIdentificationError(thrownObject: unknown) {
   return thrownObject instanceof Error
     ? thrownObject.message
     : "Identification failed. Please try another photo.";
+}
+
+export function getCaptureTransactionError(thrownObject: unknown) {
+  const message =
+    thrownObject instanceof Error
+      ? thrownObject.message
+      : "The Creature transaction could not be completed.";
+  const normalized = message.toLowerCase();
+  if (normalized.includes("reject") || normalized.includes("declin")) {
+    return "You rejected the wallet request. Your identified Creature is saved here so you can try again.";
+  }
+  if (
+    normalized.includes("already in use") ||
+    normalized.includes("already exists")
+  ) {
+    return "You already own this exact Creature. Choose another supported species.";
+  }
+  return message;
 }
 
 function CaptureSteps({ current }: { current: number }) {

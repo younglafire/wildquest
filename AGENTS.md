@@ -5,14 +5,14 @@ before changing code.
 
 ## Goal
 
-Build WildQuest as one truthful game loop:
+Build WildQuest as one truthful battle loop:
 
 1. connect a Wallet Standard compatible wallet;
-2. create the Player Passport;
-3. capture and identify a supported animal;
-4. grade the image and reserve its duplicate proof;
-5. record the Discovery on Solana;
-6. update collection, XP, level, and quest progress from confirmed accounts.
+2. capture and identify one of six exact supported creatures;
+3. create one Creature account for that wallet and catalogue ID;
+4. choose three distinct owned Creatures in order;
+5. open or join a fixed-stake deterministic Match;
+6. replay the result and let only the winner sign to claim the pot.
 
 Prefer the smallest implementation that completes this loop. Do not add screens,
 accounts, fields, rewards, or claims that the current code cannot support.
@@ -52,9 +52,10 @@ or API response shapes.
 
 ## Data Boundaries
 
-Supabase owns catalogue content and duplicate reservations. Solana owns Player,
-Discovery, Quest, and QuestCompletion state. Join the two through the catalogue
-numeric ID stored as the onchain `species_id`.
+Supabase owns catalogue content and duplicate reservations. Solana owns Creature
+ownership, SpeciesConfig battle stats, Match outcomes, and stake settlement.
+Join the two through the numeric catalogue ID; never use the text slug as an
+onchain identifier or trust Supabase for battle stats.
 
 The browser may hold a selected photo and pending identification in memory or
 session storage as already designed. Never add photo bytes to local storage,
@@ -85,6 +86,10 @@ Current PDA seeds:
 - Discovery: `["discovery", wallet, proof_hash]`
 - Quest: `["quest", quest_id_le_bytes]`
 - QuestCompletion: `["quest_completion", quest_pda, wallet]`
+- GameConfig: `["game_config"]`
+- SpeciesConfig: `["species_config", catalogue_id_le_bytes, balance_version_le_bytes]`
+- Creature: `["creature", wallet, catalogue_id_le_bytes]`
+- Match: `["match", creator, match_id_le_bytes]`
 
 ## Program Identity
 

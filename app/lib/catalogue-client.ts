@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RARITIES } from "./species";
+import { BATTLE_ROLES, RARITIES } from "./species";
 
 export const catalogueSpeciesSchema = z
   .object({
@@ -12,6 +12,11 @@ export const catalogueSpeciesSchema = z
     description: z.string().nullable(),
     imageUrl: z.string().url().nullable(),
     iconUrl: z.string().url().nullable(),
+    iconAttributionUrl: z.string().url().nullable(),
+    iconLicense: z.string().trim().min(1).nullable(),
+    cardSummary: z.string().trim().min(1).max(220).nullable(),
+    originRegion: z.string().trim().min(1).nullable(),
+    battleRole: z.enum(BATTLE_ROLES).nullable(),
     isActive: z.boolean(),
     modelClassId: z.number().int().min(0).max(999).nullable(),
     captureEnabled: z.boolean(),

@@ -102,33 +102,25 @@ pub fn handle_join_match(context: Context<JoinMatchAccountConstraints>) -> Resul
     )?;
 
     let stake = match_account.stake_lamports;
-    let total = stake.checked_mul(2).ok_or(ErrorCode::MatchEscrowOverflow)?;
-    match outcome {
-        BattleOutcome::Creator => {
-            context.accounts.match_account.sub_lamports(total)?;
-            context.accounts.creator.add_lamports(total)?;
-        }
-        BattleOutcome::Opponent => {
-            context.accounts.match_account.sub_lamports(total)?;
-            context.accounts.opponent.add_lamports(total)?;
-        }
-        BattleOutcome::Tie => {
-            context.accounts.match_account.sub_lamports(total)?;
-            context.accounts.creator.add_lamports(stake)?;
-            context.accounts.opponent.add_lamports(stake)?;
-        }
-    }
-
     let match_account = &mut context.accounts.match_account;
     match_account.opponent = Some(opponent);
     match_account.opponent_creatures = opponent_keys;
-    match_account.status = MatchStatus::Settled;
     match_account.winner = match outcome {
         BattleOutcome::Creator => Some(creator),
         BattleOutcome::Opponent => Some(opponent),
         BattleOutcome::Tie => None,
     };
     match_account.settled_at = Some(Clock::get()?.unix_timestamp);
+
+    if outcome == BattleOutcome::Tie {
+        let total = stake.checked_mul(2).ok_or(ErrorCode::MatchEscrowOverflow)?;
+        match_account.status = MatchStatus::Settled;
+        match_account.sub_lamports(total)?;
+        context.accounts.creator.add_lamports(stake)?;
+        context.accounts.opponent.add_lamports(stake)?;
+    } else {
+        match_account.status = MatchStatus::Claimable;
+    }
     Ok(())
 }
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Dog silhouette</title>
+  <rect width="256" height="256" rx="48" fill="#dcfce7"/>
+  <path fill="#166534" d="M64 111 42 69c-4-8 5-16 13-11l34 21c12-7 25-11 39-11s27 4 39 11l34-21c8-5 17 3 13 11l-22 42v36c0 39-29 69-64 69s-64-30-64-69v-36Z"/>
+  <path fill="#f0fdf4" d="M91 126a11 11 0 1 1 0-22 11 11 0 0 1 0 22Zm74 0a11 11 0 1 1 0-22 11 11 0 0 1 0 22Zm-37 57c-23 0-35-19-35-19l23-18h24l23 18s-12 19-35 19Z"/>
+  <path fill="#052e16" d="M114 144c0-8 6-13 14-13s14 5 14 13c0 7-7 13-14 13s-14-6-14-13Z"/>
+</svg>

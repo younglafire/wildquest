@@ -52,6 +52,7 @@ export function useSubmitCaptureTransaction() {
   const { cluster } = useCluster();
   const client = useSolanaClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stage, setStage] = useState<"idle" | "signing" | "confirming">("idle");
 
   const submit = useCallback(
     async (authorization: CaptureTransaction) => {
@@ -61,6 +62,7 @@ export function useSubmitCaptureTransaction() {
       }
 
       setIsSubmitting(true);
+      setStage("signing");
       try {
         const unsignedForWallet = decodeBase64(
           authorization.transaction_base64,
@@ -87,14 +89,16 @@ export function useSubmitCaptureTransaction() {
           throw new Error("This wallet cannot sign Solana transactions.");
         }
 
+        setStage("confirming");
         await waitForConfirmation(signature, client.rpc);
         return signature;
       } finally {
         setIsSubmitting(false);
+        setStage("idle");
       }
     },
     [client.rpc, cluster, wallet],
   );
 
-  return { submit, isSubmitting };
+  return { submit, isSubmitting, stage };
 }

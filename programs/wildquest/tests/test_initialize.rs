@@ -430,6 +430,18 @@ fn cancel_match_instruction(creator: Pubkey, match_account: Pubkey) -> Instructi
     )
 }
 
+fn claim_match_payout_instruction(winner: Pubkey, match_account: Pubkey) -> Instruction {
+    Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::ClaimMatchPayout {}.data(),
+        wildquest::accounts::ClaimMatchPayoutAccountConstraints {
+            winner,
+            match_account,
+        }
+        .to_account_metas(None),
+    )
+}
+
 fn read_match(svm: &LiteSVM, match_account: &Pubkey) -> wildquest::state::Match {
     let account = svm.get_account(match_account).unwrap();
     let mut data: &[u8] = &account.data;
@@ -1152,7 +1164,7 @@ fn test_initialize_species_config_rejects_unknown_species_and_wrong_admin() {
 }
 
 #[test]
-fn test_match_pays_winner_and_rejects_replay() {
+fn test_match_requires_winner_claim_and_rejects_replay() {
     let admin = Keypair::new();
     let creator = Keypair::new();
     let opponent = Keypair::new();
@@ -1216,25 +1228,25 @@ fn test_match_pays_winner_and_rejects_replay() {
         join_instruction.clone()
     ));
 
-    let settled = read_match(&svm, &match_account);
-    assert_eq!(settled.status, wildquest::state::MatchStatus::Settled);
-    assert_eq!(settled.opponent, Some(opponent.pubkey()));
-    assert_eq!(settled.opponent_creatures, opponent_team);
-    assert_eq!(settled.winner, Some(creator.pubkey()));
-    assert!(settled.settled_at.is_some());
+    let claimable = read_match(&svm, &match_account);
+    assert_eq!(claimable.status, wildquest::state::MatchStatus::Claimable);
+    assert_eq!(claimable.opponent, Some(opponent.pubkey()));
+    assert_eq!(claimable.opponent_creatures, opponent_team);
+    assert_eq!(claimable.winner, Some(creator.pubkey()));
+    assert!(claimable.settled_at.is_some());
     assert_eq!(
         svm.get_balance(&creator.pubkey()).unwrap(),
-        creator_before_join + 2 * wildquest::constants::MATCH_STAKE_LAMPORTS
+        creator_before_join
     );
     assert_eq!(
         svm.get_balance(&match_account).unwrap(),
-        open_match_balance - wildquest::constants::MATCH_STAKE_LAMPORTS
+        open_match_balance + wildquest::constants::MATCH_STAKE_LAMPORTS
     );
 
-    let settled_balance = svm.get_balance(&match_account).unwrap();
+    let escrow_balance = svm.get_balance(&match_account).unwrap();
     let creator_creature_before = svm.get_account(&creator_team[0]).unwrap();
     assert!(!send_instruction(&mut svm, &opponent, join_instruction));
-    assert_eq!(svm.get_balance(&match_account).unwrap(), settled_balance);
+    assert_eq!(svm.get_balance(&match_account).unwrap(), escrow_balance);
     assert_eq!(
         svm.get_account(&creator_team[0]).unwrap().data,
         creator_creature_before.data
@@ -1243,6 +1255,31 @@ fn test_match_pays_winner_and_rejects_replay() {
         read_match(&svm, &match_account).winner,
         Some(creator.pubkey())
     );
+
+    let wrong_claim = claim_match_payout_instruction(opponent.pubkey(), match_account);
+    assert!(!send_instruction(&mut svm, &opponent, wrong_claim));
+    assert_eq!(svm.get_balance(&match_account).unwrap(), escrow_balance);
+    assert_eq!(
+        read_match(&svm, &match_account).status,
+        wildquest::state::MatchStatus::Claimable
+    );
+
+    let creator_before_claim = svm.get_balance(&creator.pubkey()).unwrap();
+    let claim = claim_match_payout_instruction(creator.pubkey(), match_account);
+    assert!(send_instruction(&mut svm, &creator, claim.clone()));
+    assert_eq!(
+        read_match(&svm, &match_account).status,
+        wildquest::state::MatchStatus::Settled
+    );
+    assert_eq!(
+        svm.get_balance(&match_account).unwrap(),
+        open_match_balance - wildquest::constants::MATCH_STAKE_LAMPORTS
+    );
+    assert!(svm.get_balance(&creator.pubkey()).unwrap() > creator_before_claim);
+
+    let settled_balance = svm.get_balance(&match_account).unwrap();
+    assert!(!send_instruction(&mut svm, &creator, claim));
+    assert_eq!(svm.get_balance(&match_account).unwrap(), settled_balance);
 }
 
 #[test]

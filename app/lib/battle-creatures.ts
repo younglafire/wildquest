@@ -1,0 +1,65 @@
+import type { Account, Address } from "@solana/kit";
+import {
+  fetchAllSpeciesConfig,
+  findSpeciesConfigPda,
+  type SpeciesConfig,
+} from "../generated/wildquest";
+import type { CatalogueSpecies } from "./catalogue-client";
+import type { OwnedCreature } from "./creatures";
+import type { SolanaClient } from "./solana-client";
+
+export type BattleCreature = {
+  creature: OwnedCreature;
+  species: CatalogueSpecies | null;
+  config: Account<SpeciesConfig>;
+};
+
+export async function fetchBattleCreatures(
+  rpc: SolanaClient["rpc"],
+  creatures: readonly OwnedCreature[],
+  catalogue: readonly CatalogueSpecies[],
+): Promise<BattleCreature[]> {
+  const addresses = await Promise.all(
+    creatures.map(
+      async (creature) =>
+        (
+          await findSpeciesConfigPda({ catalogueId: creature.data.catalogueId })
+        )[0],
+    ),
+  );
+  const configs = await fetchAllSpeciesConfig(rpc, addresses, {
+    commitment: "confirmed",
+  });
+  const catalogueById = new Map(
+    catalogue.map((species) => [BigInt(species.id).toString(), species]),
+  );
+  return creatures.map((creature, index) => {
+    const config = configs[index]!;
+    if (
+      config.data.catalogueId !== creature.data.catalogueId ||
+      config.data.balanceVersion !== creature.data.balanceVersion ||
+      !config.data.active
+    ) {
+      throw new Error(
+        "Creature battle configuration is inactive or out of date.",
+      );
+    }
+    return {
+      creature,
+      config,
+      species: catalogueById.get(creature.data.catalogueId.toString()) ?? null,
+    };
+  });
+}
+
+export function battleStats(creature: BattleCreature) {
+  const { hp, attack, defense, speed, shield } = creature.config.data;
+  return { hp, attack, defense, speed, shield };
+}
+
+export function battleCreatureByAddress(
+  creatures: readonly BattleCreature[],
+  address: Address,
+) {
+  return creatures.find((item) => item.creature.address === address) ?? null;
+}

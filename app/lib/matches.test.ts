@@ -16,6 +16,7 @@ import {
 } from "../generated/wildquest";
 import type { OwnedCreature } from "./creatures";
 import {
+  buildClaimMatchPayoutInstruction,
   buildJoinMatchInstruction,
   buildOpenMatchInstruction,
   validateCreatureTeam,
@@ -150,5 +151,28 @@ describe("Match transaction builders", () => {
       ...opponentConfigs,
       owner,
     ]);
+  });
+
+  it("lets only the recorded winner build a payout claim", () => {
+    const matchAccount = openMatch(creatorTeam);
+    matchAccount.data.status = MatchStatus.Claimable;
+    matchAccount.data.winner = { __option: "Some", value: opponent };
+
+    expect(() =>
+      buildClaimMatchPayoutInstruction(
+        createNoopSigner(opponent),
+        matchAccount,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      buildClaimMatchPayoutInstruction(createNoopSigner(owner), matchAccount),
+    ).toThrow("recorded Match winner");
+    matchAccount.data.status = MatchStatus.Settled;
+    expect(() =>
+      buildClaimMatchPayoutInstruction(
+        createNoopSigner(opponent),
+        matchAccount,
+      ),
+    ).toThrow("not claimable");
   });
 });

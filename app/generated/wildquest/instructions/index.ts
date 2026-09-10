@@ -8,6 +8,7 @@
 
 export * from "./cancelMatch";
 export * from "./captureCreature";
+export * from "./claimMatchPayout";
 export * from "./completeQuest";
 export * from "./discoverSpecies";
 export * from "./increment";

@@ -9,8 +9,8 @@ The five-day build has one player journey:
 3. The wallet signs and creates one Creature for that catalogue ID.
 4. The wallet selects three distinct owned Creatures in an ordered team.
 5. A second wallet joins the open Match with another ordered team.
-6. The program runs deterministic combat and settles the fixed Devnet SOL stake.
-7. The result screen shows both teams, the outcome, the balance change, and the Explorer transaction.
+6. The program runs deterministic combat and records the winner or refunds a tie.
+7. The UI replays the exact result; the winner signs once to claim the fixed Devnet SOL pot.
 
 The demo uses the deployed Devnet program ID
 `3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF`.
@@ -23,8 +23,8 @@ The demo uses the deployed Devnet program ID
 - **35 to 45 seconds:** Open the collection. Show the Golden Retriever once and explain that its PDA prevents another Golden Retriever for Wallet A.
 - **45 to 58 seconds:** Select three owned Creatures in order and open a Match. Wallet A deposits exactly 0.01 Devnet SOL.
 - **58 to 70 seconds:** Switch to prefunded Wallet B, select its three Creatures, and join with 0.01 Devnet SOL.
-- **70 to 82 seconds:** Show the deterministic result. The winner receives 0.02 SOL, or both wallets receive refunds when the result is a tie.
-- **82 to 90 seconds:** Open the exact Devnet Explorer transaction and show the final Match and Creature accounts.
+- **70 to 82 seconds:** Replay the deterministic result with HP and Shield bars. The winner signs to claim 0.02 SOL; a tie already refunded both players.
+- **82 to 90 seconds:** Open the exact claim transaction on Devnet Explorer and show the final Match and Creature accounts.
 
 The two demo wallets receive their other roster members through a setup script that invokes the real instruction handlers. The setup script does not inject fabricated account data.
 
@@ -62,7 +62,7 @@ The same teams, order, balance version, and rules version always produce the sam
 
 - Each player stakes exactly `10_000_000` lamports, displayed as 0.01 SOL.
 - The Match account records the stake in lamports.
-- The winner receives `20_000_000` lamports.
+- A winner result becomes `Claimable`; only the recorded winner may sign to receive `20_000_000` lamports.
 - A tie refunds `10_000_000` lamports to each player.
 - The creator may cancel an open Match before another wallet joins and receives the full stake back.
 - The program uses checked arithmetic and verifies lamport conservation on settlement.
@@ -81,7 +81,7 @@ The five-day build stays on Devnet. It makes no mainnet or real-money safety cla
 - Internal currency, shops, and rewards unrelated to the stake
 - Quizzes, quests, capture grades, XP, badges, and legacy progression in battle calculations
 - Creature trading, NFTs, and marketplaces
-- Battle animation, audio, and deep profile screens
+- Battle audio and deep profile screens
 - Geographic maps and location verification
 
 The existing Player, Discovery, Quest, and QuestCompletion accounts remain readable legacy state. The vertical-slice battle handlers do not read their XP, level, grade, rarity, quest, or badge fields.

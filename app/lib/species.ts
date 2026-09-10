@@ -16,6 +16,16 @@ export type SpeciesQuiz = {
   correctOptionIndex: number;
 };
 
+export const BATTLE_ROLES = [
+  "Balanced",
+  "Guardian",
+  "Scout",
+  "Skirmisher",
+  "Striker",
+] as const;
+
+export type BattleRole = (typeof BATTLE_ROLES)[number];
+
 export type Species = {
   id: string | number;
   speciesId: string;
@@ -26,6 +36,11 @@ export type Species = {
   description: string | null;
   imageUrl: string | null;
   iconUrl: string | null;
+  iconAttributionUrl: string | null;
+  iconLicense: string | null;
+  cardSummary: string | null;
+  originRegion: string | null;
+  battleRole: BattleRole | null;
   isActive: boolean;
   modelClassId: number | null;
   captureEnabled: boolean;
@@ -92,6 +107,13 @@ export function parseRarity(value: string): Rarity {
   throw new Error(`Unsupported species rarity: ${value}`);
 }
 
+function parseBattleRole(value: string | null): BattleRole | null {
+  if (value === null) return null;
+  const role = BATTLE_ROLES.find((candidate) => candidate === value.trim());
+  if (role) return role;
+  throw new Error(`Unsupported battle role: ${value}`);
+}
+
 export function mapSpeciesRow(row: SpeciesRow): Species {
   return {
     id: row.id,
@@ -103,6 +125,11 @@ export function mapSpeciesRow(row: SpeciesRow): Species {
     description: row.description,
     imageUrl: row.image_url,
     iconUrl: row.icon_url,
+    iconAttributionUrl: row.icon_attribution_url,
+    iconLicense: row.icon_license,
+    cardSummary: row.card_summary,
+    originRegion: row.origin_region,
+    battleRole: parseBattleRole(row.battle_role),
     isActive: row.is_active ?? false,
     modelClassId: row.model_class_id,
     captureEnabled: row.capture_enabled ?? false,

@@ -19,6 +19,7 @@ export enum MatchStatus {
   Open,
   Settled,
   Cancelled,
+  Claimable,
 }
 
 export type MatchStatusArgs = MatchStatus;

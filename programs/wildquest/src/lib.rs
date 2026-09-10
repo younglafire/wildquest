@@ -98,4 +98,8 @@ pub mod wildquest {
     pub fn cancel_match(context: Context<CancelMatchAccountConstraints>) -> Result<()> {
         crate::instructions::cancel_match::handle_cancel_match(context)
     }
+
+    pub fn claim_match_payout(context: Context<ClaimMatchPayoutAccountConstraints>) -> Result<()> {
+        crate::instructions::claim_match_payout::handle_claim_match_payout(context)
+    }
 }
