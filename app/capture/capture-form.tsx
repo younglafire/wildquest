@@ -54,6 +54,26 @@ export function CaptureForm({
   const [guidance, setGuidance] = useState<CameraGuidance>("searching");
   const [isCapturingFrame, setIsCapturingFrame] = useState(false);
 
+  const selectImage = (file: File | undefined) => {
+    if (!file) return;
+    const validation = validateImageUpload(file);
+    if (!validation.valid) {
+      setCameraError(
+        validation.code === "IMAGE_TOO_LARGE"
+          ? "That photo is too large. Choose an image smaller than 4 MB."
+          : "Choose a JPEG, PNG, or WebP photo.",
+      );
+      return;
+    }
+    stopCamera();
+    setCameraError(null);
+    setState({
+      status: "ready",
+      file,
+      previewUrl: URL.createObjectURL(file),
+    });
+  };
+
   const stopCamera = () => {
     cameraGeneration.current += 1;
     framePending.current = false;
@@ -187,12 +207,7 @@ export function CaptureForm({
           setCameraError("The camera frame is invalid. Try again.");
           return;
         }
-        stopCamera();
-        setState({
-          status: "ready",
-          file,
-          previewUrl: URL.createObjectURL(file),
-        });
+        selectImage(file);
       },
       "image/jpeg",
       0.88,
@@ -218,9 +233,41 @@ export function CaptureForm({
           Capture is available on a phone
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Open WildQuest on your phone to scan an animal with its rear camera.
-          Collection, battle, and quests remain available here.
+          Upload a photo here, or open WildQuest on your phone to scan an
+          animal with its rear camera.
         </p>
+        <label className="mt-6 inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground">
+          Choose an image
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(event) => selectImage(event.target.files?.[0])}
+          />
+        </label>
+        {state.status === "ready" && (
+          <div className="mt-6 text-left">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-background">
+              <Image
+                src={state.previewUrl}
+                alt="Selected animal photo"
+                fill
+                unoptimized
+                className="object-contain"
+              />
+            </div>
+            {onIdentify && (
+              <button
+                type="button"
+                disabled={isIdentifying}
+                onClick={() => onIdentify(state.file)}
+                className="mt-4 min-h-12 w-full rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground disabled:pointer-events-none disabled:opacity-60"
+              >
+                {isIdentifying ? "Identifying creature…" : "Identify creature"}
+              </button>
+            )}
+          </div>
+        )}
       </section>
     );
   }
@@ -353,6 +400,15 @@ export function CaptureForm({
               >
                 Start camera
               </button>
+              <label className="mt-2 flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-border px-5 py-3 text-sm font-bold">
+                Choose from library
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={(event) => selectImage(event.target.files?.[0])}
+                />
+              </label>
             </div>
           </div>
         )}

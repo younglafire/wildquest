@@ -104,6 +104,38 @@ describe("CaptureForm", () => {
     });
   });
 
+  it("identifies an image selected from the library", async () => {
+    const user = userEvent.setup();
+    const onIdentify = vi.fn();
+    const file = new File([new Uint8Array([1, 2, 3])], "animal.jpg", {
+      type: "image/jpeg",
+    });
+    render(<CaptureForm onIdentify={onIdentify} />);
+
+    await user.upload(
+      await screen.findByLabelText("Choose from library"),
+      file,
+    );
+    expect(await screen.findByText("Frame ready to identify")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Identify creature" }));
+    expect(onIdentify).toHaveBeenCalledWith(file);
+  });
+
+  it("allows image upload on desktop", async () => {
+    const user = userEvent.setup();
+    const onIdentify = vi.fn();
+    const file = new File([new Uint8Array([1, 2, 3])], "animal.png", {
+      type: "image/png",
+    });
+    setMobileDevice(false);
+    render(<CaptureForm onIdentify={onIdentify} />);
+
+    await user.upload(await screen.findByLabelText("Choose an image"), file);
+    await user.click(screen.getByRole("button", { name: "Identify creature" }));
+    expect(onIdentify).toHaveBeenCalledWith(file);
+  });
+
   it("explains a denied camera permission", async () => {
     const user = userEvent.setup();
     getUserMedia.mockRejectedValueOnce(
