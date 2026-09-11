@@ -12,6 +12,7 @@ import {
 } from "../../generated/wildquest";
 import { useCluster } from "../../components/cluster-context";
 import { buildCollectionCards, fetchPlayerDiscoveries } from "../collection";
+import { fetchOwnedCreatures } from "../creatures";
 import { fetchCatalogue } from "../catalogue-client";
 import {
   loadConfirmedDiscovery,
@@ -56,6 +57,11 @@ export function useGameData() {
   const discoveries = useSWR(
     address ? (["player-discoveries", cluster, address] as const) : null,
     () => fetchPlayerDiscoveries(client.rpc, address!),
+    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+  );
+  const creatures = useSWR(
+    address ? (["owned-creatures", cluster, address] as const) : null,
+    () => fetchOwnedCreatures(client.rpc, address!),
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
   const quest = useSWR(
@@ -125,11 +131,12 @@ export function useGameData() {
     await Promise.all([
       player.mutate(),
       discoveries.mutate(),
+      creatures.mutate(),
       quest.mutate(),
       questCompletion.mutate(),
       catalogue.mutate(),
     ]);
-  }, [catalogue, discoveries, player, quest, questCompletion]);
+  }, [catalogue, creatures, discoveries, player, quest, questCompletion]);
 
   return {
     address,
@@ -137,6 +144,7 @@ export function useGameData() {
     catalogue,
     player,
     discoveries,
+    creatures,
     quest,
     questCompletion,
     cards,
@@ -148,8 +156,12 @@ export function useGameData() {
       : 0,
     isLoading:
       status === "connected" &&
-      (catalogue.isLoading || player.isLoading || discoveries.isLoading),
-    error: catalogue.error ?? player.error ?? discoveries.error,
+      (catalogue.isLoading ||
+        player.isLoading ||
+        discoveries.isLoading ||
+        creatures.isLoading),
+    error:
+      catalogue.error ?? player.error ?? discoveries.error ?? creatures.error,
     refresh,
   };
 }

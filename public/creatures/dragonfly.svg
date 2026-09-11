@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Dragonfly</title>
+  <path d="M128 62v150" stroke="#111827" stroke-width="14" stroke-linecap="round"/><circle cx="128" cy="49" r="17" fill="#111827"/>
+  <g fill="#bae6fd" stroke="#0284c7" stroke-width="5"><ellipse cx="80" cy="96" rx="52" ry="22" transform="rotate(18 80 96)"/><ellipse cx="176" cy="96" rx="52" ry="22" transform="rotate(-18 176 96)"/><ellipse cx="82" cy="146" rx="48" ry="19" transform="rotate(-14 82 146)"/><ellipse cx="174" cy="146" rx="48" ry="19" transform="rotate(14 174 146)"/></g>
+</svg>

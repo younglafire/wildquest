@@ -166,6 +166,24 @@ export function ProfileContent() {
           </div>
         )}
       </section>
+      <section className="mt-6 flex flex-col gap-4 rounded-3xl border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
+            Battle record
+          </p>
+          <h2 className="mt-2 text-2xl font-black">Your onchain matches</h2>
+          <p className="mt-2 text-sm text-muted">
+            Rewatch deterministic battles and open every signed transaction
+            receipt on Explorer.
+          </p>
+        </div>
+        <Link
+          href="/battle#history"
+          className="flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+        >
+          View match history
+        </Link>
+      </section>
     </main>
   );
 }

@@ -9,6 +9,8 @@ export type IdentificationSpecies = {
   commonName: string;
   rarity: Rarity;
   baseXp: number;
+  modelClassId: number;
+  captureEnabled: boolean;
   facts: Array<string>;
   targetForQuest: boolean;
 };
@@ -20,6 +22,8 @@ type IdentificationSpeciesRow = Pick<
   | "name"
   | "rarity"
   | "base_xp"
+  | "model_class_id"
+  | "capture_enabled"
   | "facts"
   | "target_for_quest"
 >;
@@ -38,6 +42,14 @@ export function mapIdentificationSpecies(
     if (row.target_for_quest && row.base_xp !== QUEST_BASE_XP) {
       throw new Error(`Quest base XP must be ${QUEST_BASE_XP}.`);
     }
+    if (
+      row.model_class_id === null ||
+      !Number.isInteger(row.model_class_id) ||
+      row.model_class_id < 0 ||
+      row.model_class_id > 999
+    ) {
+      throw new Error("Model class ID must be an ImageNet-1k class.");
+    }
 
     return {
       catalogueId: String(row.id),
@@ -45,6 +57,8 @@ export function mapIdentificationSpecies(
       commonName: row.name,
       rarity: parseRarity(row.rarity),
       baseXp: row.base_xp,
+      modelClassId: row.model_class_id,
+      captureEnabled: row.capture_enabled,
       facts: parseFacts(row.facts),
       targetForQuest: row.target_for_quest,
     };

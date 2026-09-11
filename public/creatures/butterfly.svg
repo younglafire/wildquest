@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Butterfly silhouette</title>
+  <rect width="256" height="256" rx="48" fill="#ffedd5"/>
+  <path fill="#f97316" stroke="#7c2d12" stroke-width="8" d="M117 112C95 57 48 43 35 69c-13 25 7 60 52 72-35 8-45 38-29 56 17 18 50-2 64-46m17-39c22-55 69-69 82-43 13 25-7 60-52 72 35 8 45 38 29 56-17 18-50-2-64-46"/>
+  <path d="M128 80v101M128 82c-5-18-13-28-25-34m25 34c5-18 13-28 25-34" stroke="#431407" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="128" cy="76" r="13" fill="#431407"/>
+  <circle cx="72" cy="91" r="12" fill="#fff7ed"/><circle cx="184" cy="91" r="12" fill="#fff7ed"/>
+</svg>

@@ -13,6 +13,8 @@ const catalogueRow = {
     "Butterflies undergo complete metamorphosis.",
   ],
   target_for_quest: true,
+  model_class_id: 323,
+  capture_enabled: true,
 };
 
 describe("identification species mapping", () => {
@@ -23,6 +25,8 @@ describe("identification species mapping", () => {
       commonName: "Butterfly",
       rarity: "Common",
       baseXp: 50,
+      modelClassId: 323,
+      captureEnabled: true,
       facts: [
         "Butterfly wings are covered with thousands of tiny scales.",
         "Butterflies undergo complete metamorphosis.",
@@ -43,6 +47,8 @@ describe("identification species mapping", () => {
     ["non-array facts", { facts: { fact: "invalid" } }],
     ["non-string fact", { facts: ["valid", 42] }],
     ["empty fact", { facts: [" "] }],
+    ["missing model class", { model_class_id: null }],
+    ["model class outside ImageNet-1k", { model_class_id: 1000 }],
   ])("rejects %s", (_name, invalidMetadata) => {
     expect(() =>
       mapIdentificationSpecies({ ...catalogueRow, ...invalidMetadata }),

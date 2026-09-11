@@ -1,72 +1,152 @@
 import { AppHeader } from "./components/app-header";
+import { BackToTopButton } from "./components/back-to-top-button";
+import { FieldDispatches } from "./components/field-dispatches";
+import { GameFooter } from "./components/game-footer";
+import { GameMetricsCounter } from "./components/game-metrics-counter";
+import { GameSystemsGrid } from "./components/game-systems-grid";
 import { GridBackground } from "./components/grid-background";
+import { HeroInteractiveDisplay } from "./components/hero-interactive-display";
+import { SpeciesMarquee } from "./components/species-marquee";
 import { StartExpeditionButton } from "./components/start-expedition-button";
-
-const STEPS = [
-  ["01", "Photograph", "Capture wildlife around you."],
-  ["02", "Identify", "Local AI identifies and scores the photo."],
-  ["03", "Record", "Add the discovery to your Solana Passport."],
-] as const;
 
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <GridBackground />
-      <div className="relative z-10">
-        <AppHeader landing />
 
-        <main className="mx-auto max-w-6xl px-5 pb-20 pt-14 sm:px-6 sm:pt-24">
-          <section className="grid items-end gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted">
-                Real-world wildlife expedition
-              </p>
-              <h1 className="mt-5 max-w-4xl text-6xl font-black leading-[0.88] tracking-[-0.07em] sm:text-8xl lg:text-9xl">
-                Discover.
-                <br />
-                Prove.
-                <br />
-                Collect.
+      <div className="relative z-10">
+        {/* Sticky App Header with backdrop blur */}
+        <div className="sticky top-0 z-30 border-b border-border/40 bg-background/80 backdrop-blur-md">
+          <AppHeader landing />
+        </div>
+
+        <main className="mx-auto max-w-6xl px-4 pb-20 pt-3 sm:px-6 sm:pt-6">
+          {/* Hero Section: Centered Cinematic Layout */}
+          <section className="flex flex-col items-center text-center space-y-4 sm:space-y-5">
+            {/* Top Badge & Titles */}
+            <div className="space-y-2.5 max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700 dark:text-emerald-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                WildQuest · Season 01 // Solana Devnet
+              </div>
+
+              <h1 className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-6xl lg:text-7xl">
+                <span className="block bg-gradient-to-br from-amber-500 via-emerald-500 to-teal-600 bg-clip-text text-transparent dark:from-amber-200 dark:via-emerald-400 dark:to-teal-300">
+                  WILDQUEST
+                </span>
+                <span className="mt-1.5 block text-xl font-black tracking-tight sm:text-2xl lg:text-3xl text-foreground">
+                  The Real-World Wildlife RPG on Solana
+                </span>
               </h1>
+
+              <p className="mx-auto max-w-xl text-xs leading-relaxed text-muted sm:text-sm">
+                Step outside, hunt real animals with your phone camera, and
+                prove your finds with on-device AI vision.
+              </p>
+
+              {/* Feature Tags */}
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1 text-[11px] font-bold text-muted">
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
+                  🐾 8 Species
+                </span>
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
+                  ⚡ ResNet-50 Vision
+                </span>
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
+                  🛡️ Anti-Cheat pHash
+                </span>
+                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
+                  🏆 Onchain Quests
+                </span>
+              </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-card/90 p-6 shadow-[0_30px_100px_-55px_rgba(0,0,0,0.8)] backdrop-blur sm:p-8">
-              <p className="text-xl font-bold leading-snug sm:text-2xl">
-                Discover real wildlife, verify it with AI, and record your
-                achievement on Solana.
-              </p>
-              <p className="mt-4 text-sm leading-relaxed text-muted">
-                Connect a wallet to own your discoveries, XP, and collection.
-                Photos are analyzed in memory and are never stored.
-              </p>
-              <div className="mt-7">
+            {/* Centerpiece Visual: Frameless 3D Bio-Scanner & Cards */}
+            <div className="w-full">
+              <HeroInteractiveDisplay />
+            </div>
+
+            {/* Centered CTA & Trust Credentials */}
+            <div className="w-full max-w-md mx-auto space-y-2 pt-1">
+              <div className="flex flex-col items-center gap-2.5">
+                <StartExpeditionButton />
+                <div className="flex items-center justify-center gap-2 text-[11px] font-mono text-muted">
+                  <span>✓ Solana Devnet</span>
+                  <span>·</span>
+                  <span>Zero real SOL spent</span>
+                  <span>·</span>
+                  <span>In-Memory Neural Scan</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Live Telemetry Metrics Counters */}
+          <GameMetricsCounter />
+
+          {/* Section: Continuous Supported Species Marquee */}
+          <SpeciesMarquee />
+
+          {/* Section: 6 Core Gameplay Systems Grid */}
+          <GameSystemsGrid />
+
+          {/* Section: Active Bounty Quest Highlight */}
+          <section className="mt-28 overflow-hidden rounded-3xl border-2 border-emerald-900/30 bg-gradient-to-r from-emerald-950/20 via-card to-background p-6 shadow-xl sm:p-8 dark:border-emerald-500/30">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                  <span>🎯 ACTIVE BOUNTY QUEST</span>
+                </div>
+                <h3 className="mt-2 text-2xl font-black sm:text-3xl">
+                  Campus Field Survey #01
+                </h3>
+                <p className="mt-1.5 text-sm text-muted">
+                  Locate all 5 target species:{" "}
+                  <strong>Bee, Chicken, Butterfly, Dragonfly, and Frog</strong>{" "}
+                  to earn the Founder Badge and +100 XP.
+                </p>
+              </div>
+              <div className="shrink-0">
                 <StartExpeditionButton />
               </div>
-              <p className="mt-5 text-xs leading-relaxed text-muted">
-                Runs on Solana Devnet. Photos are processed in memory and are
-                never stored.
-              </p>
             </div>
           </section>
 
-          <section
-            aria-label="How WildQuest works"
-            className="mt-20 grid overflow-hidden rounded-3xl border border-border bg-card/80 md:grid-cols-3"
-          >
-            {STEPS.map(([number, title, copy], index) => (
-              <article
-                key={number}
-                className={`p-6 sm:p-8 ${index > 0 ? "border-t border-border md:border-l md:border-t-0" : ""}`}
-              >
-                <p className="font-mono text-xs text-muted">{number}</p>
-                <h2 className="mt-7 text-2xl font-black">{title}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {copy}
-                </p>
-              </article>
-            ))}
+          {/* Section: Explorer Dispatches & Field Logs */}
+          <FieldDispatches />
+
+          {/* Pre-Footer Call to Action Banner */}
+          <section className="mt-28 relative overflow-hidden rounded-3xl border-2 border-emerald-500/30 bg-gradient-to-b from-card via-card to-background p-8 text-center shadow-[0_20px_80px_-20px_rgba(16,185,129,0.25)] sm:p-12">
+            {/* Ambient Background Glow */}
+            <div
+              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full bg-emerald-500/20 blur-3xl"
+              aria-hidden="true"
+            />
+
+            <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                <span>⚡ SEASON 01 IS LIVE</span>
+              </div>
+              <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
+                Ready to Step Into the Wild?
+              </h2>
+              <p className="text-sm text-muted sm:text-base leading-relaxed">
+                Your mobile phone is your neural scanner. Solana is your
+                immutable ledger. Begin tracking local wildlife, level up your
+                Explorer Passport, and mint your discoveries today.
+              </p>
+              <div className="pt-4 flex justify-center">
+                <StartExpeditionButton />
+              </div>
+            </div>
           </section>
         </main>
+
+        {/* Tactical Gaming Footer */}
+        <GameFooter />
+
+        {/* Floating Tactical Back to Top Button */}
+        <BackToTopButton />
       </div>
     </div>
   );

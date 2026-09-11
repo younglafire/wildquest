@@ -16,7 +16,6 @@ import {
 } from "./mapping";
 
 const MODEL_ID = "Xenova/resnet-50";
-const IMAGE_NET_CLASS_COUNT = Object.keys(modelConfig.id2label).length;
 const labelToClassId = buildImageNetLabelIndex(
   modelConfig.id2label as Record<string, string>,
 );
@@ -54,7 +53,7 @@ export async function classifyImage(
   let output: ImageClassificationOutput | ImageClassificationOutput[];
 
   try {
-    output = await classifier(rawImage, { top_k: IMAGE_NET_CLASS_COUNT });
+    output = await classifier(rawImage, { top_k: 1 });
   } catch (error) {
     throw new InvalidModelOutputError(
       error instanceof Error

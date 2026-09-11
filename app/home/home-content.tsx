@@ -269,8 +269,13 @@ export function HomeContent() {
 
       <nav
         aria-label="Dashboard shortcuts"
-        className="mt-6 grid gap-3 sm:grid-cols-3"
+        className="mt-6 grid gap-3 sm:grid-cols-4"
       >
+        <QuickLink
+          href="/battle"
+          title="Battle"
+          copy="Build a team and stake 0.01 SOL"
+        />
         <QuickLink
           href="/quest"
           title="Quest"

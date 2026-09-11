@@ -40,37 +40,109 @@ export const WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY = 0x177a; // 6010
 export const WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH = 0x177b; // 6011
 /** QuestTargetsIncomplete: The player has not discovered every quest target */
 export const WILDQUEST_ERROR__QUEST_TARGETS_INCOMPLETE = 0x177c; // 6012
+/** GameAdminMismatch: Only the configured game administrator can perform this action */
+export const WILDQUEST_ERROR__GAME_ADMIN_MISMATCH = 0x177d; // 6013
+/** CaptureAuthorityMismatch: The capture authority does not match the configured authority */
+export const WILDQUEST_ERROR__CAPTURE_AUTHORITY_MISMATCH = 0x177e; // 6014
+/** UnsupportedBattleSpecies: The catalogue ID is not part of balance version one */
+export const WILDQUEST_ERROR__UNSUPPORTED_BATTLE_SPECIES = 0x177f; // 6015
+/** SpeciesConfigMismatch: The SpeciesConfig account does not match the requested creature */
+export const WILDQUEST_ERROR__SPECIES_CONFIG_MISMATCH = 0x1780; // 6016
+/** InactiveSpeciesConfig: The SpeciesConfig account is not active */
+export const WILDQUEST_ERROR__INACTIVE_SPECIES_CONFIG = 0x1781; // 6017
+/** InvalidCaptureProof: The capture proof hash cannot be all zeroes */
+export const WILDQUEST_ERROR__INVALID_CAPTURE_PROOF = 0x1782; // 6018
+/** InvalidBattleTeam: A battle team must contain three distinct Creature accounts */
+export const WILDQUEST_ERROR__INVALID_BATTLE_TEAM = 0x1783; // 6019
+/** CreatureOwnerMismatch: A Creature account does not belong to the expected player */
+export const WILDQUEST_ERROR__CREATURE_OWNER_MISMATCH = 0x1784; // 6020
+/** CreatureBalanceVersionMismatch: A Creature account uses the wrong balance version */
+export const WILDQUEST_ERROR__CREATURE_BALANCE_VERSION_MISMATCH = 0x1785; // 6021
+/** InvalidBattleStats: Battle stats must contain positive total HP or Shield */
+export const WILDQUEST_ERROR__INVALID_BATTLE_STATS = 0x1786; // 6022
+/** BattleArithmeticOverflow: Battle arithmetic overflowed */
+export const WILDQUEST_ERROR__BATTLE_ARITHMETIC_OVERFLOW = 0x1787; // 6023
+/** MatchNotOpen: The Match account is not open */
+export const WILDQUEST_ERROR__MATCH_NOT_OPEN = 0x1788; // 6024
+/** MatchNotClaimable: The Match payout is not ready to be claimed */
+export const WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE = 0x1789; // 6025
+/** MatchWinnerMismatch: Only the stored Match winner can claim the payout */
+export const WILDQUEST_ERROR__MATCH_WINNER_MISMATCH = 0x178a; // 6026
+/** MatchSelfJoin: The Match creator cannot join as the opponent */
+export const WILDQUEST_ERROR__MATCH_SELF_JOIN = 0x178b; // 6027
+/** MatchConfigMismatch: The Match account does not match the active GameConfig */
+export const WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH = 0x178c; // 6028
+/** MatchCreatorTeamMismatch: The submitted creator team does not match the Match account */
+export const WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH = 0x178d; // 6029
+/** MatchEscrowOverflow: Match escrow arithmetic overflowed */
+export const WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW = 0x178e; // 6030
 
 export type WildquestError =
+  | typeof WILDQUEST_ERROR__BATTLE_ARITHMETIC_OVERFLOW
+  | typeof WILDQUEST_ERROR__CAPTURE_AUTHORITY_MISMATCH
   | typeof WILDQUEST_ERROR__COUNTER_OVERFLOW
+  | typeof WILDQUEST_ERROR__CREATURE_BALANCE_VERSION_MISMATCH
+  | typeof WILDQUEST_ERROR__CREATURE_OWNER_MISMATCH
+  | typeof WILDQUEST_ERROR__GAME_ADMIN_MISMATCH
+  | typeof WILDQUEST_ERROR__INACTIVE_SPECIES_CONFIG
+  | typeof WILDQUEST_ERROR__INVALID_BATTLE_STATS
+  | typeof WILDQUEST_ERROR__INVALID_BATTLE_TEAM
   | typeof WILDQUEST_ERROR__INVALID_CAPTURE_GRADE
+  | typeof WILDQUEST_ERROR__INVALID_CAPTURE_PROOF
   | typeof WILDQUEST_ERROR__INVALID_QUEST_DEFINITION
   | typeof WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY
   | typeof WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY_COUNT
   | typeof WILDQUEST_ERROR__INVALID_RARITY
+  | typeof WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH
+  | typeof WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH
+  | typeof WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW
+  | typeof WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE
+  | typeof WILDQUEST_ERROR__MATCH_NOT_OPEN
+  | typeof WILDQUEST_ERROR__MATCH_SELF_JOIN
+  | typeof WILDQUEST_ERROR__MATCH_WINNER_MISMATCH
   | typeof WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH
   | typeof WILDQUEST_ERROR__PROGRESSION_OVERFLOW
   | typeof WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH
   | typeof WILDQUEST_ERROR__QUEST_ID_MISMATCH
   | typeof WILDQUEST_ERROR__QUEST_TARGETS_INCOMPLETE
+  | typeof WILDQUEST_ERROR__SPECIES_CONFIG_MISMATCH
   | typeof WILDQUEST_ERROR__UNAUTHORIZED
+  | typeof WILDQUEST_ERROR__UNSUPPORTED_BATTLE_SPECIES
   | typeof WILDQUEST_ERROR__UNSUPPORTED_QUEST;
 
 let wildquestErrorMessages: Record<WildquestError, string> | undefined;
 if (process.env.NODE_ENV !== "production") {
   wildquestErrorMessages = {
+    [WILDQUEST_ERROR__BATTLE_ARITHMETIC_OVERFLOW]: `Battle arithmetic overflowed`,
+    [WILDQUEST_ERROR__CAPTURE_AUTHORITY_MISMATCH]: `The capture authority does not match the configured authority`,
     [WILDQUEST_ERROR__COUNTER_OVERFLOW]: `Counter has reached the maximum value`,
+    [WILDQUEST_ERROR__CREATURE_BALANCE_VERSION_MISMATCH]: `A Creature account uses the wrong balance version`,
+    [WILDQUEST_ERROR__CREATURE_OWNER_MISMATCH]: `A Creature account does not belong to the expected player`,
+    [WILDQUEST_ERROR__GAME_ADMIN_MISMATCH]: `Only the configured game administrator can perform this action`,
+    [WILDQUEST_ERROR__INACTIVE_SPECIES_CONFIG]: `The SpeciesConfig account is not active`,
+    [WILDQUEST_ERROR__INVALID_BATTLE_STATS]: `Battle stats must contain positive total HP or Shield`,
+    [WILDQUEST_ERROR__INVALID_BATTLE_TEAM]: `A battle team must contain three distinct Creature accounts`,
     [WILDQUEST_ERROR__INVALID_CAPTURE_GRADE]: `Capture grade must be Bronze, Silver, or Gold`,
+    [WILDQUEST_ERROR__INVALID_CAPTURE_PROOF]: `The capture proof hash cannot be all zeroes`,
     [WILDQUEST_ERROR__INVALID_QUEST_DEFINITION]: `The quest definition is invalid`,
     [WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY]: `A submitted discovery account is invalid`,
     [WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY_COUNT]: `The number of submitted discoveries does not match the quest target count`,
     [WILDQUEST_ERROR__INVALID_RARITY]: `Species rarity must be between Common and Legendary`,
+    [WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH]: `The Match account does not match the active GameConfig`,
+    [WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH]: `The submitted creator team does not match the Match account`,
+    [WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW]: `Match escrow arithmetic overflowed`,
+    [WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE]: `The Match payout is not ready to be claimed`,
+    [WILDQUEST_ERROR__MATCH_NOT_OPEN]: `The Match account is not open`,
+    [WILDQUEST_ERROR__MATCH_SELF_JOIN]: `The Match creator cannot join as the opponent`,
+    [WILDQUEST_ERROR__MATCH_WINNER_MISMATCH]: `Only the stored Match winner can claim the payout`,
     [WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH]: `Player account does not belong to the transaction signer`,
     [WILDQUEST_ERROR__PROGRESSION_OVERFLOW]: `Player progression arithmetic overflowed`,
     [WILDQUEST_ERROR__QUEST_DISCOVERY_PLAYER_MISMATCH]: `A submitted discovery belongs to another player`,
     [WILDQUEST_ERROR__QUEST_ID_MISMATCH]: `The quest account does not match the requested quest ID`,
     [WILDQUEST_ERROR__QUEST_TARGETS_INCOMPLETE]: `The player has not discovered every quest target`,
+    [WILDQUEST_ERROR__SPECIES_CONFIG_MISMATCH]: `The SpeciesConfig account does not match the requested creature`,
     [WILDQUEST_ERROR__UNAUTHORIZED]: `Only the counter authority can update this counter`,
+    [WILDQUEST_ERROR__UNSUPPORTED_BATTLE_SPECIES]: `The catalogue ID is not part of balance version one`,
     [WILDQUEST_ERROR__UNSUPPORTED_QUEST]: `The requested quest is not defined by this program`,
   };
 }

@@ -8,9 +8,12 @@ import {
 
 describe("image upload rules", () => {
   it("publishes the capture input contract", () => {
-    expect(IMAGE_INPUT_ACCEPT).toBe("image/jpeg,image/png,image/webp");
+    expect(IMAGE_INPUT_ACCEPT).toBe(
+      ".jpg,.jpeg,image/jpeg,image/jpg,image/png,image/webp",
+    );
     expect(SUPPORTED_IMAGE_MIME_TYPES).toEqual([
       "image/jpeg",
+      "image/jpg",
       "image/png",
       "image/webp",
     ]);

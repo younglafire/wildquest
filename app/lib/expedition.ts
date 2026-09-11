@@ -8,22 +8,30 @@ import { z } from "zod";
 import {
   identificationSchema,
   identifySuccessSchema,
+  captureTransactionSchema,
+  type CaptureTransaction,
   type Identification,
 } from "./vision/schema";
 
-const PENDING_KEY = "wildquest:pending-identification:v1";
+const PENDING_KEY = "wildquest:pending-identification:v2";
 const CONFIRMED_KEY = "wildquest:last-confirmed-discovery:v1";
 
 const pendingIdentificationSchema = z
   .object({
-    version: z.literal(1),
+    version: z.literal(2),
     wallet: z.string().refine(isAddress),
     identification: identificationSchema,
+    captureTransaction: captureTransactionSchema,
   })
   .strict();
 
-const confirmedDiscoverySchema = pendingIdentificationSchema
-  .extend({ signature: z.string().refine(isSignature) })
+const confirmedDiscoverySchema = z
+  .object({
+    version: z.literal(1),
+    wallet: z.string().refine(isAddress),
+    identification: identificationSchema,
+    signature: z.string().refine(isSignature),
+  })
   .strict();
 
 const identifyErrorSchema = z
@@ -53,7 +61,10 @@ export class IdentifyRequestError extends Error {
 export async function identifyImage(
   image: File,
   wallet: Address,
-): Promise<Identification> {
+): Promise<{
+  identification: Identification;
+  captureTransaction: CaptureTransaction;
+}> {
   const formData = new FormData();
   formData.set("image", image);
   formData.set("wallet", wallet);
@@ -78,17 +89,23 @@ export async function identifyImage(
     );
   }
 
-  return identifySuccessSchema.parse(body).identification;
+  const parsed = identifySuccessSchema.parse(body);
+  return {
+    identification: parsed.identification,
+    captureTransaction: parsed.capture_transaction,
+  };
 }
 
 export function createPendingIdentification(
   wallet: Address,
   identification: Identification,
+  captureTransaction: CaptureTransaction,
 ): PendingIdentification {
   return pendingIdentificationSchema.parse({
-    version: 1,
+    version: 2,
     wallet,
     identification,
+    captureTransaction,
   });
 }
 
@@ -117,7 +134,9 @@ export function saveConfirmedDiscovery(
   transactionSignature: Signature,
 ) {
   const confirmed = confirmedDiscoverySchema.parse({
-    ...pending,
+    version: 1,
+    wallet: pending.wallet,
+    identification: pending.identification,
     signature: transactionSignature,
   });
   sessionStorage.setItem(CONFIRMED_KEY, JSON.stringify(confirmed));

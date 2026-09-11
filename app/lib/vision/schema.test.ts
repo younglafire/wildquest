@@ -5,6 +5,9 @@ const validIdentification = {
   catalogue_id: "3",
   species_id: "bee",
   common_name: "Bee",
+  model_class_id: 309,
+  model_label: "bee",
+  balance_version: 1,
   confidence: 0.85,
   explanation: 'ResNet-50 matched the ImageNet label "bee".',
   rarity: "Common",
@@ -12,6 +15,7 @@ const validIdentification = {
   base_xp: 50,
   facts: ["Honey bees collect nectar and pollen from flowers."],
   target_for_quest: true,
+  capture_enabled: true,
   grade: "Silver",
   grade_code: 2,
   awarded_xp: 75,
@@ -33,7 +37,7 @@ describe("identification response schema", () => {
     ["awarded XP", { awarded_xp: 76 }],
     ["proof hash", { proof_hash: "ABC" }],
     ["catalogue ID", { catalogue_id: "0" }],
-    ["quest eligibility", { target_for_quest: false }],
+    ["capture eligibility", { capture_enabled: false }],
     ["extra property", { unexpected: true }],
   ])("rejects an inconsistent %s", (_field, invalidValue) => {
     expect(

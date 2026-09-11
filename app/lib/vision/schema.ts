@@ -8,6 +8,7 @@ import {
   MIN_IDENTIFICATION_CONFIDENCE,
   RARITY_CODES,
 } from "./rules";
+import { WILDQUEST_PROGRAM_ADDRESS } from "@/app/generated/wildquest";
 
 const rarityCodeSchema = z.union([
   z.literal(0),
@@ -28,13 +29,17 @@ export const identificationSchema = z
       .max(100)
       .regex(/^[a-z0-9]+(?:_[a-z0-9]+)*$/),
     common_name: z.string().trim().min(1).max(100),
+    model_class_id: z.number().int().min(0).max(999),
+    model_label: z.string().trim().min(1).max(200),
+    balance_version: z.literal(1),
     confidence: z.number().finite().min(0).max(1),
     explanation: z.string().trim().min(1).max(300),
     rarity: z.enum(RARITIES),
     rarity_code: rarityCodeSchema,
     base_xp: z.number().int().positive().safe(),
     facts: z.array(z.string().trim().min(1).max(300)),
-    target_for_quest: z.literal(true),
+    target_for_quest: z.boolean(),
+    capture_enabled: z.literal(true),
     grade: z.enum(CAPTURE_GRADES),
     grade_code: gradeCodeSchema,
     awarded_xp: z.number().int().positive().safe(),
@@ -90,6 +95,19 @@ export const identificationSchema = z
 
 export type Identification = z.infer<typeof identificationSchema>;
 
+export const captureTransactionSchema = z
+  .object({
+    program_id: z.literal(WILDQUEST_PROGRAM_ADDRESS),
+    transaction_base64: z.string().trim().min(1),
+    last_valid_block_height: z.string().regex(/^\d+$/),
+  })
+  .strict();
+
+export type CaptureTransaction = z.infer<typeof captureTransactionSchema>;
+
 export const identifySuccessSchema = z
-  .object({ identification: identificationSchema })
+  .object({
+    identification: identificationSchema,
+    capture_transaction: captureTransactionSchema,
+  })
   .strict();

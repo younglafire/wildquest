@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { GameShell } from "./game-shell";
 
 const mocks = vi.hoisted(() => ({
-  pathname: "/quest",
+  pathname: "/battle",
   replace: vi.fn(),
   status: "connected" as "connected" | "disconnected",
   isReady: true,
@@ -25,7 +25,7 @@ vi.mock("./grid-background", () => ({ GridBackground: () => null }));
 afterEach(() => {
   cleanup();
   mocks.replace.mockReset();
-  mocks.pathname = "/quest";
+  mocks.pathname = "/battle";
   mocks.status = "connected";
   mocks.isReady = true;
 });
@@ -34,13 +34,13 @@ describe("GameShell", () => {
   it("shows the mobile game destinations and marks the current route", () => {
     render(
       <GameShell>
-        <main>Quest content</main>
+        <main>Battle content</main>
       </GameShell>,
     );
 
-    expect(screen.getByText("Quest content")).toBeVisible();
-    const questLink = screen.getByRole("link", { name: /Quest/ });
-    expect(questLink).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Battle content")).toBeVisible();
+    const battleLink = screen.getByRole("link", { name: /Battle/ });
+    expect(battleLink).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: /Capture/ })).toHaveAttribute(
       "href",
       "/capture",

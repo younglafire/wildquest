@@ -1,15 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSWRConfig } from "swr";
 import { WalletChooser } from "../components/wallet-chooser";
 import { SpeciesArt } from "../components/species-art";
+import { CreatureCard } from "../components/creature-card";
 import {
-  fetchMaybePlayer,
-  fetchDiscovery,
-  findDiscoveryPda,
-  findPlayerPda,
+  fetchMaybeSpeciesConfig,
+  findSpeciesConfigPda,
+  type SpeciesConfig,
 } from "../generated/wildquest";
 import {
   fetchCatalogueSpecies,
@@ -20,38 +18,36 @@ import {
   createPendingIdentification,
   identifyImage,
   loadPendingIdentification,
-  proofHashToBytes,
-  saveConfirmedDiscovery,
   savePendingIdentification,
   IdentifyRequestError,
   type PendingIdentification,
 } from "../lib/expedition";
-import { buildDiscoveryInstructions } from "../lib/discovery-transaction";
-import { useGameData } from "../lib/hooks/use-game-data";
-import { useSendTransaction } from "../lib/hooks/use-send-transaction";
-import { useSolanaClient } from "../lib/solana-client-context";
 import { useWallet } from "../lib/wallet/context";
+import { useSubmitCaptureTransaction } from "../lib/hooks/use-submit-capture-transaction";
+import { useGameData } from "../lib/hooks/use-game-data";
+import { useCluster } from "../components/cluster-context";
+import { useSolanaClient } from "../lib/solana-client-context";
+import Link from "next/link";
 import { CaptureForm } from "./capture-form";
 
-const GRADE_STYLES = {
-  Bronze: "bg-amber-900/15 text-amber-700 dark:text-amber-300",
-  Silver: "bg-slate-400/15 text-slate-600 dark:text-slate-300",
-  Gold: "bg-yellow-400/15 text-yellow-700 dark:text-yellow-300",
-} as const;
-
 export function CaptureExperience() {
-  const router = useRouter();
-  const client = useSolanaClient();
-  const { wallet, signer, status } = useWallet();
-  const { send, isSending } = useSendTransaction();
-  const { mutate } = useSWRConfig();
+  const { wallet, status } = useWallet();
+  const { cluster } = useCluster();
   const game = useGameData();
+  const client = useSolanaClient();
+  const {
+    submit,
+    isSubmitting,
+    stage: submitStage,
+  } = useSubmitCaptureTransaction();
   const address = wallet?.account.address;
   const [pending, setPending] = useState<PendingIdentification | null>(null);
   const [species, setSpecies] = useState<CatalogueSpecies | null>(null);
+  const [battleStats, setBattleStats] = useState<SpeciesConfig | null>(null);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chooserOpen, setChooserOpen] = useState(false);
+  const [captureSignature, setCaptureSignature] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,17 +70,32 @@ export function CaptureExperience() {
     if (!pending) return;
 
     let cancelled = false;
-    void fetchCatalogueSpecies(pending.identification.species_id)
-      .then((catalogueSpecies) => {
-        if (!cancelled) setSpecies(catalogueSpecies);
+    void Promise.all([
+      fetchCatalogueSpecies(pending.identification.species_id),
+      findSpeciesConfigPda({
+        catalogueId: BigInt(pending.identification.catalogue_id),
+      }).then(([configAddress]) =>
+        fetchMaybeSpeciesConfig(client.rpc, configAddress, {
+          commitment: "confirmed",
+        }),
+      ),
+    ])
+      .then(([catalogueSpecies, config]) => {
+        if (!cancelled) {
+          setSpecies(catalogueSpecies);
+          setBattleStats(config.exists ? config.data : null);
+        }
       })
       .catch(() => {
-        if (!cancelled) setSpecies(null);
+        if (!cancelled) {
+          setSpecies(null);
+          setBattleStats(null);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [pending]);
+  }, [client.rpc, pending]);
 
   const handleIdentify = async (file: File) => {
     if (!address || status !== "connected") {
@@ -92,16 +103,18 @@ export function CaptureExperience() {
       return;
     }
 
-    if (!game.player.data?.exists) {
-      setError("Create your Explorer Passport before identifying a photo.");
-      return;
-    }
-
     setError(null);
     setIsIdentifying(true);
     try {
-      const identification = await identifyImage(file, address);
-      const nextPending = createPendingIdentification(address, identification);
+      const { identification, captureTransaction } = await identifyImage(
+        file,
+        address,
+      );
+      const nextPending = createPendingIdentification(
+        address,
+        identification,
+        captureTransaction,
+      );
       savePendingIdentification(nextPending);
       setPending(nextPending);
     } catch (thrownObject) {
@@ -111,70 +124,27 @@ export function CaptureExperience() {
     }
   };
 
-  const handleRecord = async () => {
-    if (!pending || !address || !signer || pending.wallet !== address) {
-      setError("Reconnect the wallet that identified this discovery.");
-      return;
-    }
-
+  const handleOwnCreature = async () => {
+    if (!pending) return;
     setError(null);
     try {
-      const proofHash = proofHashToBytes(pending.identification.proof_hash);
-      const [playerAddress] = await findPlayerPda({ payer: address });
-      const player = await fetchMaybePlayer(client.rpc, playerAddress);
-      if (!player.exists) {
-        setError(
-          "Your Explorer Passport is missing. Return home to create it.",
-        );
-        return;
-      }
-      const instructions = await buildDiscoveryInstructions(
-        signer,
-        pending.identification,
-        true,
-      );
-
-      const transactionSignature = await send({ instructions });
-      saveConfirmedDiscovery(pending, transactionSignature);
-      try {
-        const [discoveryAddress] = await findDiscoveryPda({
-          payer: address,
-          proofHash,
-        });
-        const discovery = await fetchDiscovery(client.rpc, discoveryAddress, {
-          commitment: "confirmed",
-        });
-        await mutate(
-          ["player-discoveries", "devnet", address],
-          (current = []) => [
-            ...current.filter(
-              (item: typeof discovery) => item.address !== discovery.address,
-            ),
-            discovery,
-          ],
-          { revalidate: false },
-        );
-      } catch {
-        // The confirmed result stored in sessionStorage seeds the collection
-        // while its onchain query catches up.
-      }
-      router.push(
-        `/discovery/confirmed?signature=${encodeURIComponent(transactionSignature)}`,
-      );
+      const signature = await submit(pending.captureTransaction);
+      setCaptureSignature(signature);
+      clearPendingIdentification();
+      await game.refresh();
     } catch (thrownObject) {
-      setError(
-        thrownObject instanceof Error
-          ? thrownObject.message
-          : "The transaction could not be confirmed. You can safely retry.",
-      );
+      setError(getCaptureTransactionError(thrownObject));
     }
   };
 
   if (pending) {
     const result = pending.identification;
+    const alreadyOwned = (game.creatures.data ?? []).some(
+      (creature) => creature.data.catalogueId === BigInt(result.catalogue_id),
+    );
     return (
       <div className="mx-auto w-full max-w-3xl">
-        <CaptureSteps current={isSending ? 4 : 3} />
+        <CaptureSteps current={3} />
         <section className="mt-5 overflow-hidden rounded-3xl border border-border bg-card shadow-[0_24px_90px_-55px_rgba(0,0,0,0.65)]">
           <div className="grid md:grid-cols-[0.85fr_1.15fr]">
             <div className="relative flex min-h-64 items-end overflow-hidden bg-cream p-6">
@@ -185,23 +155,21 @@ export function CaptureExperience() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
               <div className="relative text-white">
                 <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted">
-                  Verified discovery
+                  Creature identified
                 </p>
                 <p className="mt-3 text-5xl font-black tracking-tight">
-                  {result.grade}
+                  Exact match
                 </p>
                 <p className="mt-1 text-sm text-muted">
-                  +{result.awarded_xp} XP
+                  Catalogue #{result.catalogue_id}
                 </p>
               </div>
             </div>
 
             <div className="p-6 sm:p-8">
               <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${GRADE_STYLES[result.grade]}`}
-                >
-                  {result.grade} capture
+                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                  ResNet class {result.model_class_id}
                 </span>
                 <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold">
                   {result.rarity}
@@ -225,19 +193,40 @@ export function CaptureExperience() {
                   </dd>
                 </div>
                 <div className="rounded-xl bg-cream p-4">
-                  <dt className="text-xs text-muted">Reward</dt>
+                  <dt className="text-xs text-muted">Balance version</dt>
                   <dd className="mt-1 text-xl font-black tabular-nums">
-                    {result.awarded_xp} XP
+                    v{result.balance_version}
                   </dd>
                 </div>
               </dl>
 
-              <blockquote className="mt-5 border-l-2 border-foreground pl-4 text-sm leading-relaxed text-muted">
-                {result.facts[0] ?? result.explanation}
-              </blockquote>
               <p className="mt-4 text-xs leading-relaxed text-muted">
-                {result.explanation}
+                Model label: {result.model_label}
               </p>
+
+              <div className="mt-5 rounded-xl border border-border bg-cream p-4 text-sm text-muted">
+                One wallet approval creates your Creature account on Solana
+                Devnet. You can own this exact catalogue creature only once.
+              </div>
+
+              {alreadyOwned && (
+                <p
+                  role="status"
+                  className="mt-4 rounded-xl bg-amber-500/10 p-4 text-sm font-semibold text-amber-800 dark:text-amber-200"
+                >
+                  You already own this exact Creature. One wallet can own each
+                  catalogue species only once.
+                </p>
+              )}
+
+              {species && battleStats && (
+                <div className="creature-reveal mt-5">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+                    Your battle card
+                  </p>
+                  <CreatureCard species={species} stats={battleStats} />
+                </div>
+              )}
 
               {error && (
                 <p role="alert" className="mt-5 text-sm text-destructive">
@@ -245,67 +234,64 @@ export function CaptureExperience() {
                 </p>
               )}
 
-              <button
-                type="button"
-                disabled={isSending}
-                onClick={handleRecord}
-                className="mt-6 flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
-              >
-                {isSending ? "Confirming on Devnet…" : "Record on Solana"}
-              </button>
-              <button
-                type="button"
-                disabled={isSending}
-                onClick={() => {
-                  clearPendingIdentification();
-                  setPending(null);
-                  setSpecies(null);
-                  setError(null);
-                }}
-                className="mt-3 w-full py-2 text-xs font-medium text-muted transition hover:text-foreground disabled:opacity-50"
-              >
-                Discard result and capture another
-              </button>
+              {captureSignature ? (
+                <div className="mt-6 space-y-3">
+                  <p
+                    role="status"
+                    className="text-sm font-bold text-emerald-700 dark:text-emerald-300"
+                  >
+                    Creature owned. Add it to your battle team.
+                  </p>
+                  <Link
+                    href="/battle"
+                    className="flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground"
+                  >
+                    Build battle team
+                  </Link>
+                  <a
+                    href={`https://explorer.solana.com/tx/${captureSignature}?cluster=${cluster}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex min-h-12 items-center justify-center text-sm font-semibold underline"
+                  >
+                    View transaction
+                  </a>
+                </div>
+              ) : (
+                <div className="mt-6 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleOwnCreature()}
+                    disabled={isSubmitting || alreadyOwned}
+                    className="flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {alreadyOwned
+                      ? "Already owned"
+                      : submitStage === "signing"
+                        ? "Approve in wallet…"
+                        : submitStage === "confirming"
+                          ? "Submitted · confirming…"
+                          : "Own this Creature"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearPendingIdentification();
+                      setPending(null);
+                      setSpecies(null);
+                      setBattleStats(null);
+                      setError(null);
+                    }}
+                    className="flex min-h-12 w-full items-center justify-center rounded-xl border border-border px-5 py-3 text-sm font-bold"
+                  >
+                    Retake photo
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </section>
       </div>
-    );
-  }
-
-  if (!game.isLoading && !game.player.data?.exists) {
-    if (game.player.error) {
-      return (
-        <section className="mx-auto max-w-2xl rounded-3xl border border-destructive/30 bg-card p-8 text-center">
-          <h1 className="text-3xl font-black">Passport unavailable</h1>
-          <p className="mt-3 text-sm text-muted">
-            WildQuest could not verify your Player account. No photo was
-            uploaded or reserved.
-          </p>
-          <button
-            type="button"
-            onClick={() => void game.player.mutate()}
-            className="mt-6 min-h-12 rounded-xl border border-border px-5 text-sm font-bold"
-          >
-            Try again
-          </button>
-        </section>
-      );
-    }
-    return (
-      <section className="mx-auto max-w-2xl rounded-3xl border border-border bg-card p-8 text-center">
-        <h1 className="text-3xl font-black">Create your Passport first</h1>
-        <p className="mt-3 text-sm text-muted">
-          Passport setup must finish before a photo is identified and
-          permanently reserved.
-        </p>
-        <a
-          href="/home"
-          className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
-        >
-          Create Passport
-        </a>
-      </section>
     );
   }
 
@@ -338,8 +324,8 @@ const IDENTIFICATION_ERRORS: Record<string, string> = {
   INVALID_IMAGE:
     "That file could not be decoded as a photo. Choose a different JPEG, PNG, or WebP image.",
   INVALID_WALLET: "Reconnect your Solana wallet before identifying this photo.",
-  QUEST_INELIGIBLE:
-    "This species is in the field guide but is not eligible for the current photo quest.",
+  CAPTURE_INELIGIBLE:
+    "That exact animal class is not enabled for the current battle roster.",
   IMAGE_TOO_LARGE:
     "That photo is too large. Choose an image smaller than 4 MB.",
   UNSUPPORTED_MEDIA_TYPE: "Choose a JPEG, PNG, or WebP photo.",
@@ -358,10 +344,28 @@ function getIdentificationError(thrownObject: unknown) {
     : "Identification failed. Please try another photo.";
 }
 
+export function getCaptureTransactionError(thrownObject: unknown) {
+  const message =
+    thrownObject instanceof Error
+      ? thrownObject.message
+      : "The Creature transaction could not be completed.";
+  const normalized = message.toLowerCase();
+  if (normalized.includes("reject") || normalized.includes("declin")) {
+    return "You rejected the wallet request. Your identified Creature is saved here so you can try again.";
+  }
+  if (
+    normalized.includes("already in use") ||
+    normalized.includes("already exists")
+  ) {
+    return "You already own this exact Creature. Choose another supported species.";
+  }
+  return message;
+}
+
 function CaptureSteps({ current }: { current: number }) {
-  const steps = ["Select", "Verify", "Review", "Record"];
+  const steps = ["Select", "Verify", "Result"];
   return (
-    <ol aria-label="Capture progress" className="grid grid-cols-4 gap-2">
+    <ol aria-label="Capture progress" className="grid grid-cols-3 gap-2">
       {steps.map((step, index) => {
         const position = index + 1;
         return (

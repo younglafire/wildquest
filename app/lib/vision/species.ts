@@ -10,7 +10,9 @@ export async function getIdentificationSpecies(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("species")
-    .select("id, species_id, name, rarity, base_xp, facts, target_for_quest")
+    .select(
+      "id, species_id, name, rarity, base_xp, facts, target_for_quest, model_class_id, capture_enabled",
+    )
     .eq("species_id", speciesId)
     .eq("is_active", true)
     .maybeSingle();

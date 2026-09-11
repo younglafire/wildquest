@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "WildQuest",
   description: "WildQuest Solana dApp powered by Anchor and @solana/kit",
+  applicationName: "WildQuest",
+  appleWebApp: {
+    capable: true,
+    title: "WildQuest",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
@@ -31,7 +37,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
+      <body
+        suppressHydrationWarning
+        className={`${inter.variable} ${geistMono.variable} antialiased`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

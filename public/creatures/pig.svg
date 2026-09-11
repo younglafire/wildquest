@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Pig</title>
+  <path fill="#f9a8d4" d="m67 88-25-45 51 19 70-1 51-18-24 46c15 14 23 34 23 58 0 46-36 76-85 76s-85-30-85-76c0-24 9-44 24-59Z"/>
+  <circle cx="94" cy="128" r="9" fill="#111827"/><circle cx="162" cy="128" r="9" fill="#111827"/>
+  <ellipse cx="128" cy="170" rx="37" ry="26" fill="#f472b6"/><circle cx="116" cy="170" r="5" fill="#111827"/><circle cx="140" cy="170" r="5" fill="#111827"/>
+</svg>
