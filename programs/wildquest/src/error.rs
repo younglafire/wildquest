@@ -64,4 +64,20 @@ pub enum ErrorCode {
     MatchCreatorTeamMismatch,
     #[msg("Match escrow arithmetic overflowed")]
     MatchEscrowOverflow,
+    #[msg("The Match is not active")]
+    MatchNotActive,
+    #[msg("The configured authority did not sign this Match result")]
+    MatchResolverMismatch,
+    #[msg("The Match result hash cannot be all zeroes")]
+    InvalidMatchResultHash,
+    #[msg("The Match turn count is outside the supported range")]
+    InvalidMatchTurnCount,
+    #[msg("The Match winner must be one of its two players")]
+    InvalidMatchWinner,
+    #[msg("The active Match deadline has passed")]
+    MatchResolutionExpired,
+    #[msg("The active Match deadline has not passed")]
+    MatchRefundUnavailable,
+    #[msg("Only a Match participant can request its stale refund")]
+    MatchParticipantMismatch,
 }

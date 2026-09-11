@@ -21,4 +21,6 @@ export * from "./initializeQuest";
 export * from "./initializeSpeciesConfig";
 export * from "./joinMatch";
 export * from "./openMatch";
+export * from "./refundStaleMatch";
 export * from "./releaseCreature";
+export * from "./resolveMatch";

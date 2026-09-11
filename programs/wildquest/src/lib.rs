@@ -103,6 +103,24 @@ pub mod wildquest {
         crate::instructions::claim_match_payout::handle_claim_match_payout(context)
     }
 
+    pub fn resolve_match(
+        context: Context<ResolveMatchAccountConstraints>,
+        winner: Option<Pubkey>,
+        turn_count: u16,
+        result_hash: [u8; 32],
+    ) -> Result<()> {
+        crate::instructions::resolve_match::handle_resolve_match(
+            context,
+            winner,
+            turn_count,
+            result_hash,
+        )
+    }
+
+    pub fn refund_stale_match(context: Context<RefundStaleMatchAccountConstraints>) -> Result<()> {
+        crate::instructions::refund_stale_match::handle_refund_stale_match(context)
+    }
+
     pub fn release_creature(context: Context<ReleaseCreatureAccountConstraints>) -> Result<()> {
         crate::instructions::release_creature::handle_release_creature(context)
     }

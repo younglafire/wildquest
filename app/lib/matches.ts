@@ -12,12 +12,12 @@ import {
 } from "@solana/kit";
 import {
   decodeMatch,
-  findSpeciesConfigPda,
   getCancelMatchInstruction,
   getClaimMatchPayoutInstruction,
   getJoinMatchInstructionAsync,
   getMatchDiscriminatorBytes,
   getOpenMatchInstructionAsync,
+  getRefundStaleMatchInstruction,
   MatchStatus,
   WILDQUEST_PROGRAM_ADDRESS,
   type Match,
@@ -88,22 +88,6 @@ export async function buildJoinMatchInstruction(
     throw new Error("The creator Creature data does not match this Match.");
   }
 
-  const creatorConfigs = await Promise.all(
-    creatorCreatures.map(
-      async (creature) =>
-        (
-          await findSpeciesConfigPda({ catalogueId: creature.data.catalogueId })
-        )[0],
-    ),
-  );
-  const opponentConfigs = await Promise.all(
-    opponentTeam.map(
-      async (creature) =>
-        (
-          await findSpeciesConfigPda({ catalogueId: creature.data.catalogueId })
-        )[0],
-    ),
-  );
   const base = await getJoinMatchInstructionAsync({
     opponent: signer,
     creator: matchAccount.data.creator,
@@ -120,14 +104,6 @@ export async function buildJoinMatchInstruction(
       })),
       ...opponentTeam.map((creature) => ({
         address: creature.address,
-        role: AccountRole.READONLY,
-      })),
-      ...creatorConfigs.map((config) => ({
-        address: config,
-        role: AccountRole.READONLY,
-      })),
-      ...opponentConfigs.map((config) => ({
-        address: config,
         role: AccountRole.READONLY,
       })),
       { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
@@ -164,6 +140,28 @@ export function buildClaimMatchPayoutInstruction(
   }
   return getClaimMatchPayoutInstruction({
     winner: signer,
+    matchAccount: matchAccount.address,
+  });
+}
+
+export function buildRefundStaleMatchInstruction(
+  signer: TransactionSigner,
+  matchAccount: GameMatch,
+): Instruction {
+  const opponent = unwrapOption(matchAccount.data.opponent);
+  if (!opponent || matchAccount.data.status !== MatchStatus.Active) {
+    throw new Error("This Match is not waiting for a stale refund.");
+  }
+  if (
+    signer.address !== matchAccount.data.creator &&
+    signer.address !== opponent
+  ) {
+    throw new Error("Only a Match participant can request its refund.");
+  }
+  return getRefundStaleMatchInstruction({
+    participant: signer,
+    creator: matchAccount.data.creator,
+    opponent,
     matchAccount: matchAccount.address,
   });
 }

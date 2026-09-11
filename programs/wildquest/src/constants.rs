@@ -31,7 +31,13 @@ pub const MATCH_SEED: &[u8] = b"match";
 pub const BALANCE_VERSION: u16 = 1;
 
 #[constant]
-pub const RULES_VERSION: u16 = 1;
+pub const RULES_VERSION: u16 = 2;
+
+#[constant]
+pub const MAX_MATCH_TURNS: u16 = 30;
+
+#[constant]
+pub const MATCH_ACTIVE_TIMEOUT_SECONDS: i64 = 600;
 
 #[constant]
 pub const MATCH_STAKE_LAMPORTS: u64 = 10_000_000;

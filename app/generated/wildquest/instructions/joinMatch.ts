@@ -58,7 +58,7 @@ export type JoinMatchInstruction<
             AccountSignerMeta<TAccountOpponent>
         : TAccountOpponent,
       TAccountCreator extends string
-        ? WritableAccount<TAccountCreator>
+        ? ReadonlyAccount<TAccountCreator>
         : TAccountCreator,
       TAccountGameConfig extends string
         ? ReadonlyAccount<TAccountGameConfig>
@@ -138,7 +138,7 @@ export async function getJoinMatchInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     opponent: { value: input.opponent ?? null, isWritable: true },
-    creator: { value: input.creator ?? null, isWritable: true },
+    creator: { value: input.creator ?? null, isWritable: false },
     gameConfig: { value: input.gameConfig ?? null, isWritable: false },
     matchAccount: { value: input.matchAccount ?? null, isWritable: true },
   };
@@ -210,7 +210,7 @@ export function getJoinMatchInstruction<
   // Original accounts.
   const originalAccounts = {
     opponent: { value: input.opponent ?? null, isWritable: true },
-    creator: { value: input.creator ?? null, isWritable: true },
+    creator: { value: input.creator ?? null, isWritable: false },
     gameConfig: { value: input.gameConfig ?? null, isWritable: false },
     matchAccount: { value: input.matchAccount ?? null, isWritable: true },
   };

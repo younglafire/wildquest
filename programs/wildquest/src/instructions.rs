@@ -12,7 +12,9 @@ pub mod initialize_quest;
 pub mod initialize_species_config;
 pub mod join_match;
 pub mod open_match;
+pub mod refund_stale_match;
 pub mod release_creature;
+pub mod resolve_match;
 
 pub use admin::*;
 pub use cancel_match::*;
@@ -28,4 +30,6 @@ pub use initialize_quest::*;
 pub use initialize_species_config::*;
 pub use join_match::*;
 pub use open_match::*;
+pub use refund_stale_match::*;
 pub use release_creature::*;
+pub use resolve_match::*;
