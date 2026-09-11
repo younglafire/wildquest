@@ -21,7 +21,10 @@ export class InvalidCatalogueMetadataError extends Error {
 
 export class CaptureAuthorizationUnavailableError extends Error {
   constructor(options?: ErrorOptions) {
-    super("A Creature capture transaction could not be prepared.", options);
+    super(
+      "Capture authorization is unavailable. Configure CAPTURE_AUTHORITY_SECRET_KEY_BASE64 or provide WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH (default: .wildquest-keys/capture-authority.json) using the shared Devnet capture authority keypair.",
+      options,
+    );
     this.name = "CaptureAuthorizationUnavailableError";
   }
 }

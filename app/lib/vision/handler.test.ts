@@ -460,7 +460,8 @@ describe("POST /api/identify", () => {
     expect(await responseBody(response)).toEqual({
       error: {
         code: "CAPTURE_AUTHORIZATION_UNAVAILABLE",
-        message: "A Creature capture transaction could not be prepared.",
+        message:
+          "Capture authorization is unavailable. Configure CAPTURE_AUTHORITY_SECRET_KEY_BASE64 or provide WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH (default: .wildquest-keys/capture-authority.json) using the shared Devnet capture authority keypair.",
       },
     });
     expect(deps.reserveDiscovery).not.toHaveBeenCalled();

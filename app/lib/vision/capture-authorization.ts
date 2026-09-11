@@ -36,11 +36,11 @@ function getCaptureAuthority() {
       if (process.env.NODE_ENV === "production") {
         throw new CaptureAuthorizationUnavailableError();
       }
+      const keypairPath =
+        process.env.WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH ??
+        ".wildquest-keys/capture-authority.json";
       const serialized = JSON.parse(
-        await readFile(
-          path.join(process.cwd(), ".wildquest-keys/capture-authority.json"),
-          "utf8",
-        ),
+        await readFile(path.resolve(process.cwd(), keypairPath), "utf8"),
       ) as number[];
       return createKeyPairSignerFromBytes(Uint8Array.from(serialized));
     })().catch((error: unknown) => {

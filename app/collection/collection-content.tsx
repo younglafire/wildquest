@@ -20,7 +20,10 @@ import { fetchMatches } from "../lib/matches";
 import { useSolanaClient } from "../lib/solana-client-context";
 import type { Rarity } from "../lib/species";
 import { useWallet } from "../lib/wallet/context";
-import { generateCreature, fetchGenerationAccess } from "../lib/admin/generate-creature";
+import {
+  generateCreature,
+  fetchGenerationAccess,
+} from "../lib/admin/generate-creature";
 import { useSubmitCaptureTransaction } from "../lib/hooks/use-submit-capture-transaction";
 
 const FILTERS = ["All", "Owned", "Missing"] as const;
@@ -50,7 +53,9 @@ export function CollectionContent() {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const generationInFlight = useRef(false);
   const generationAccess = useSWR(
-    game.address && cluster === "devnet" ? ["generate-access", cluster, game.address] : null,
+    game.address && cluster === "devnet"
+      ? ["generate-access", cluster, game.address]
+      : null,
     () => fetchGenerationAccess(game.address!, cluster),
   );
   const battleCatalogue = useSWR(
@@ -130,9 +135,15 @@ export function CollectionContent() {
 
   const generateAnimal = async (catalogueId: string) => {
     if (generationInFlight.current) return;
-    if (!signer || !wallet || !game.address || cluster !== "devnet" || !generationAccess.data) {
+    if (
+      !signer ||
+      !wallet ||
+      !game.address ||
+      cluster !== "devnet" ||
+      !generationAccess.data
+    ) {
       setError(
-        "Connect an allowlisted Devnet wallet before generating a Creature.",
+        "Connect a Devnet wallet that can sign messages before generating a Creature.",
       );
       return;
     }
@@ -308,18 +319,16 @@ export function CollectionContent() {
                     >
                       Capture this Creature
                     </Link>
-                    {cluster === "devnet" && generationAccess.data && (
-                      <button
-                        type="button"
-                        disabled={isGenerating || generatingId !== null}
-                        onClick={() => void generateAnimal(String(species.id))}
-                        className="min-h-11 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 text-sm font-bold text-amber-800 disabled:opacity-50 dark:text-amber-200"
-                      >
-                        {generatingId === String(species.id)
-                          ? "Generating…"
-                          : "Generate animal"}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={isGenerating || generatingId !== null}
+                      onClick={() => void generateAnimal(String(species.id))}
+                      className="min-h-11 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 text-sm font-bold text-amber-800 disabled:opacity-50 dark:text-amber-200"
+                    >
+                      {generatingId === String(species.id)
+                        ? "Generating…"
+                        : "Generate pet"}
+                    </button>
                   </div>
                 )}
               </div>

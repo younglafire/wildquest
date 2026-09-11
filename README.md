@@ -75,6 +75,37 @@ Run `npm ci` after checking out or pulling a branch whose `package.json` or
 `package-lock.json` changed. Dependencies in `node_modules` are local and are
 not transferred by Git.
 
+### Local Supabase with Docker
+
+Install Docker Desktop and make sure it is running. The Supabase CLI manages
+the local PostgreSQL, API, and Studio containers from `supabase/config.toml`;
+do not create a second hand-written Compose stack for them.
+
+```sh
+npm run supabase:start
+npm run supabase:status
+npm run supabase:reset
+```
+
+Use the local API URL and publishable/anon key printed by
+`npm run supabase:status` in `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<local-publishable-or-anon-key>
+```
+
+Stop the containers when they are no longer needed:
+
+```sh
+npm run supabase:stop
+```
+
+Each developer gets the same schema and seed data from the committed
+`supabase/migrations/` and `supabase/seed.sql`. Do not put `.env.local`, wallet
+keypairs, or the capture-authority key in Docker images or Git. The capture
+flow still uses the shared Devnet capture authority configured separately.
+
 The generated client is committed, so application development does not require
 code generation. Run `npm run setup` only after selecting and synchronizing the
 intended program ID because that command rebuilds the IDL and replaces the
@@ -85,6 +116,14 @@ Creature authorization additionally requires a dedicated Devnet capture
 authority encoded as `CAPTURE_AUTHORITY_SECRET_KEY_BASE64`. Never reuse the
 program deployment authority for this server role. The checked-in
 `.env.example` contains names and placeholders only.
+
+For local development, a teammate can instead receive the shared
+`.wildquest-keys/capture-authority.json` file through a secure channel. It is
+ignored by Git on purpose. The key must be the same public key stored in the
+Devnet `GameConfig.capture_authority`; generating a new keypair locally will
+not authorize captures until an admin reinitializes the Devnet configuration.
+The path can be changed with `WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH`. Restart
+`npm run dev` after adding the key.
 
 Link the Supabase project and apply the migrations:
 
