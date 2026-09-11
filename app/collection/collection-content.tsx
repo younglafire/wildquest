@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MatchStatus } from "../generated/wildquest";
 import useSWR from "swr";
 import { CreatureCard } from "../components/creature-card";
@@ -20,6 +20,8 @@ import { fetchMatches } from "../lib/matches";
 import { useSolanaClient } from "../lib/solana-client-context";
 import type { Rarity } from "../lib/species";
 import { useWallet } from "../lib/wallet/context";
+import { generateCreature, fetchGenerationAccess } from "../lib/admin/generate-creature";
+import { useSubmitCaptureTransaction } from "../lib/hooks/use-submit-capture-transaction";
 
 const FILTERS = ["All", "Owned", "Missing"] as const;
 const SORTS = ["Name", "Rarity", "Battle role"] as const;
@@ -35,14 +37,22 @@ export function CollectionContent() {
   const game = useGameData();
   const client = useSolanaClient();
   const { cluster } = useCluster();
-  const { signer } = useWallet();
+  const { signer, wallet } = useWallet();
   const { send, isSending } = useSendTransaction();
+  const { submit: submitGenerated, isSubmitting: isGenerating } =
+    useSubmitCaptureTransaction();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const [rarity, setRarity] = useState<Rarity | "All">("All");
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Name");
   const [releaseCandidate, setReleaseCandidate] =
     useState<OwnedCreature | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const generationInFlight = useRef(false);
+  const generationAccess = useSWR(
+    game.address && cluster === "devnet" ? ["generate-access", cluster, game.address] : null,
+    () => fetchGenerationAccess(game.address!, cluster),
+  );
   const battleCatalogue = useSWR(
     game.catalogue.data ? (["battle-catalogue", cluster] as const) : null,
     () => fetchBattleCatalogue(client.rpc, game.catalogue.data ?? []),
@@ -115,6 +125,33 @@ export function CollectionContent() {
           ? thrownObject.message
           : "The Creature could not be released.",
       );
+    }
+  };
+
+  const generateAnimal = async (catalogueId: string) => {
+    if (generationInFlight.current) return;
+    if (!signer || !wallet || !game.address || cluster !== "devnet" || !generationAccess.data) {
+      setError(
+        "Connect an allowlisted Devnet wallet before generating a Creature.",
+      );
+      return;
+    }
+    generationInFlight.current = true;
+    setGeneratingId(catalogueId);
+    setError(null);
+    try {
+      const transaction = await generateCreature(wallet, catalogueId);
+      await submitGenerated(transaction);
+      await game.refresh();
+    } catch (thrownObject) {
+      setError(
+        thrownObject instanceof Error
+          ? thrownObject.message
+          : "Creature generation failed.",
+      );
+    } finally {
+      generationInFlight.current = false;
+      setGeneratingId(null);
     }
   };
 
@@ -264,12 +301,26 @@ export function CollectionContent() {
                     {locked ? "Card locked in active Match" : "Release card"}
                   </button>
                 ) : (
-                  <Link
-                    href="/capture"
-                    className="mt-2 flex min-h-11 items-center justify-center rounded-xl border border-border text-sm font-bold"
-                  >
-                    Capture this Creature
-                  </Link>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <Link
+                      href="/capture"
+                      className="flex min-h-11 items-center justify-center rounded-xl border border-border text-sm font-bold"
+                    >
+                      Capture this Creature
+                    </Link>
+                    {cluster === "devnet" && generationAccess.data && (
+                      <button
+                        type="button"
+                        disabled={isGenerating || generatingId !== null}
+                        onClick={() => void generateAnimal(String(species.id))}
+                        className="min-h-11 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 text-sm font-bold text-amber-800 disabled:opacity-50 dark:text-amber-200"
+                      >
+                        {generatingId === String(species.id)
+                          ? "Generating…"
+                          : "Generate animal"}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             );

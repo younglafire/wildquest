@@ -22,7 +22,7 @@ import {
 } from "../app/generated/wildquest";
 
 const DEFAULT_RPC_URL = "https://api.devnet.solana.com";
-const CATALOGUE_IDS = Array.from({ length: 36 }, (_, index) =>
+const CATALOGUE_IDS = Array.from({ length: 40 }, (_, index) =>
   BigInt(1001 + index),
 );
 const MINIMUM_ADMIN_BALANCE = 30_000_000n;

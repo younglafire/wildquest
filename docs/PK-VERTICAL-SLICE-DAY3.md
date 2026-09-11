@@ -31,14 +31,14 @@ Generate and fund a dedicated Devnet-only keypair, configure its public key in
 
 ## Verification
 
-LiteSVM covers the six stat records, valid capture, one-per-species rejection,
+LiteSVM covers the 40 stat records, valid capture, one-per-species rejection,
 wrong capture authority, wrong owner-derived PDA, zero proof, unsupported
 catalogue ID, unauthorized config initialization, and rollback. Codama output
 contains the three new account codecs, PDA helpers, and instruction builders.
 
 A read-only Devnet check fetched a blockhash and produced a partially signed
 transaction without submitting it. `npm run setup:pk-demo` is the idempotent
-operator command for initializing `GameConfig`, all six `SpeciesConfig`
-accounts, and six Creatures for each of two funded demo wallets after program
+operator command for initializing `GameConfig`, all 40 `SpeciesConfig`
+accounts, and 40 Creatures for each of two funded demo wallets after program
 deployment. Deployment and running that state-changing setup remain explicit
 environment operations rather than repository-only verification.

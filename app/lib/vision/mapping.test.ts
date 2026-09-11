@@ -44,6 +44,10 @@ const EXPECTED_MAPPINGS = new Map<number, string>([
   [333, "hamster"],
   [341, "pig"],
   [346, "water_buffalo"],
+  [311, "grasshopper"],
+  [312, "cricket"],
+  [315, "praying_mantis"],
+  [42, "garden_lizard"],
 ]);
 
 describe("speciesIdForImageNetClass", () => {

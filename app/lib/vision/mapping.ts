@@ -35,6 +35,10 @@ export const SUPPORTED_SPECIES_IDS = [
   "hamster",
   "pig",
   "water_buffalo",
+  "grasshopper",
+  "cricket",
+  "praying_mantis",
+  "garden_lizard",
 ] as const;
 
 export type SupportedSpeciesId = (typeof SUPPORTED_SPECIES_IDS)[number];
@@ -88,6 +92,10 @@ const SPECIES_BY_IMAGENET_CLASS = new Map<number, SupportedSpeciesId>([
   [333, "hamster"],
   [341, "pig"],
   [346, "water_buffalo"],
+  [311, "grasshopper"],
+  [312, "cricket"],
+  [315, "praying_mantis"],
+  [42, "garden_lizard"],
 ]);
 
 export class UnsupportedSpeciesError extends Error {

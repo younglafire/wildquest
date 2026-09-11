@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "WildQuest",
   description: "WildQuest Solana dApp powered by Anchor and @solana/kit",
+  applicationName: "WildQuest",
+  appleWebApp: {
+    capable: true,
+    title: "WildQuest",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

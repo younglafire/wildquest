@@ -20,8 +20,8 @@
 npm run setup:pk-demo
 ```
 
-The setup is idempotent. It initializes the GameConfig PDA account, the six
-versioned SpeciesConfig PDA accounts, and six demo Creature accounts for each
+The setup is idempotent. It initializes the GameConfig PDA account, the 40
+versioned SpeciesConfig PDA accounts, and 40 demo Creature accounts for each
 of two ignored local demo keypairs.
 
 ## Reliability run
@@ -53,7 +53,7 @@ transaction, and created its Creature account on Devnet in transaction
 - Devnet SOL has no monetary value; this prototype does not support mainnet.
 - The capture authority is a trusted offchain service. Production requires
   managed key custody, authentication, rate limiting, and monitoring.
-- Match stake, rules, and six creature stats are frozen in the onchain
+- Match stake, rules, and 40 creature stats are frozen in the onchain
   GameConfig and SpeciesConfig accounts for this vertical slice.
 - A match outcome resolves immediately when player B joins; payout requires the
   winner's claim signature. There are no player-selected turns,

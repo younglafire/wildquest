@@ -4,29 +4,66 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MAX_IMAGE_BYTES } from "@/app/lib/vision/upload";
 import { CaptureForm } from "./capture-form";
 
-let objectUrlSequence = 0;
-const createObjectURL = vi.fn(() => {
-  objectUrlSequence += 1;
-  return `blob:capture-${objectUrlSequence}`;
-});
-const revokeObjectURL = vi.fn();
+const getUserMedia = vi.fn();
+const stopTrack = vi.fn();
+const stream = { getTracks: () => [{ stop: stopTrack }] } as unknown as MediaStream;
+const canvasContext = {
+  drawImage: vi.fn(),
+  getImageData: vi.fn(() => ({
+    data: new Uint8ClampedArray(96 * 72 * 4).fill(180),
+  })),
+};
 
-function getPhotoInput() {
-  return screen.getByLabelText(
-    /open camera or choose photo/i,
-  ) as HTMLInputElement;
+function setMobileDevice(isMobile: boolean) {
+  Object.defineProperty(navigator, "userAgent", {
+    configurable: true,
+    value: isMobile ? "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+  });
+  Object.defineProperty(navigator, "maxTouchPoints", {
+    configurable: true,
+    value: isMobile ? 1 : 0,
+  });
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn(() => ({
+      matches: isMobile,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  });
 }
 
 beforeEach(() => {
-  objectUrlSequence = 0;
-  createObjectURL.mockClear();
-  revokeObjectURL.mockClear();
+  setMobileDevice(true);
+  getUserMedia.mockReset();
+  stopTrack.mockReset();
+  getUserMedia.mockResolvedValue(stream);
+  Object.defineProperty(navigator, "mediaDevices", {
+    configurable: true,
+    value: { getUserMedia },
+  });
+  Object.defineProperties(HTMLVideoElement.prototype, {
+    videoWidth: { configurable: true, get: () => 1280 },
+    videoHeight: { configurable: true, get: () => 720 },
+    readyState: {
+      configurable: true,
+      get: () => HTMLMediaElement.HAVE_CURRENT_DATA,
+    },
+    play: { configurable: true, value: vi.fn(() => Promise.resolve()) },
+  });
+  Object.defineProperties(HTMLCanvasElement.prototype, {
+    getContext: { configurable: true, value: vi.fn(() => canvasContext) },
+    toBlob: {
+      configurable: true,
+      value: (callback: BlobCallback) =>
+        callback(new Blob([new Uint8Array([1, 2, 3])], { type: "image/jpeg" })),
+    },
+  });
   Object.defineProperties(URL, {
-    createObjectURL: { configurable: true, value: createObjectURL },
-    revokeObjectURL: { configurable: true, value: revokeObjectURL },
+    createObjectURL: { configurable: true, value: vi.fn(() => "blob:capture") },
+    revokeObjectURL: { configurable: true, value: vi.fn() },
   });
 });
 
@@ -36,161 +73,83 @@ afterEach(() => {
 });
 
 describe("CaptureForm", () => {
-  it("requests the rear camera and accepts common JPEG file names", () => {
-    render(<CaptureForm />);
-    const input = getPhotoInput();
-
-    expect(input).toHaveAttribute("type", "file");
-    expect(input).toHaveAttribute("name", "image");
-    expect(input).toHaveAttribute(
-      "accept",
-      ".jpg,.jpeg,image/jpeg,image/jpg,image/png,image/webp",
-    );
-    expect(input).toHaveAttribute("capture", "environment");
-    expect(input).not.toHaveAttribute("multiple");
-  });
-
-  it("accepts JPEG files reported with either common MIME value", async () => {
-    const user = userEvent.setup();
+  it("keeps capture unavailable on desktop", async () => {
+    setMobileDevice(false);
     render(<CaptureForm />);
 
-    await user.upload(
-      getPhotoInput(),
-      new File([new Uint8Array([1])], "animal.jpeg", {
-        type: "image/jpg",
-      }),
-    );
-
-    expect(screen.getByAltText("Preview of animal.jpeg")).toBeInTheDocument();
-  });
-
-  it("previews, replaces, and clears a valid photo", async () => {
-    const user = userEvent.setup();
-    const { unmount } = render(<CaptureForm />);
-    const input = getPhotoInput();
-    const first = new File([new Uint8Array([1, 2, 3])], "bee.jpg", {
-      type: "image/jpeg",
-    });
-    const second = new File([new Uint8Array([4, 5, 6])], "frog.png", {
-      type: "image/png",
-    });
-
-    await user.upload(input, first);
-    expect(screen.getByAltText("Preview of bee.jpg")).toBeInTheDocument();
-    expect(screen.getByText("Photo ready", { exact: false })).toBeVisible();
-
-    await user.upload(input, second);
-    expect(screen.getByAltText("Preview of frog.png")).toBeInTheDocument();
-    await waitFor(() =>
-      expect(revokeObjectURL).toHaveBeenCalledWith("blob:capture-1"),
-    );
-
-    await user.click(screen.getByRole("button", { name: "Clear" }));
     expect(
-      screen.queryByAltText("Preview of frog.png"),
-    ).not.toBeInTheDocument();
-    await waitFor(() =>
-      expect(revokeObjectURL).toHaveBeenCalledWith("blob:capture-2"),
-    );
-
-    unmount();
+      await screen.findByRole("heading", {
+        name: "Capture is available on a phone",
+      }),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Start camera" })).toBeNull();
   });
 
-  it("allows the same file to be selected again", async () => {
+  it("opens the rear camera after an explicit phone action", async () => {
     const user = userEvent.setup();
     render(<CaptureForm />);
-    const input = getPhotoInput();
-    const file = new File([new Uint8Array([1])], "ant.webp", {
-      type: "image/webp",
+
+    await user.click(await screen.findByRole("button", { name: "Start camera" }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Live rear camera preview")).toBeVisible(),
+    );
+    expect(getUserMedia).toHaveBeenCalledWith({
+      audio: false,
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
     });
-
-    await user.upload(input, file);
-    await user.upload(input, file);
-
-    expect(createObjectURL).toHaveBeenCalledTimes(2);
-    await waitFor(() =>
-      expect(revokeObjectURL).toHaveBeenCalledWith("blob:capture-1"),
-    );
   });
 
-  it("releases the preview URL when the screen unmounts", async () => {
+  it("explains a denied camera permission", async () => {
     const user = userEvent.setup();
-    const { unmount } = render(<CaptureForm />);
-
-    await user.upload(
-      getPhotoInput(),
-      new File([new Uint8Array([1])], "dragonfly.jpg", {
-        type: "image/jpeg",
-      }),
+    getUserMedia.mockRejectedValueOnce(
+      new DOMException("Denied", "NotAllowedError"),
     );
-    unmount();
-
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:capture-1");
-  });
-
-  it.each([
-    [
-      "empty",
-      new File([], "empty.jpg", { type: "image/jpeg" }),
-      "That image is empty",
-    ],
-    [
-      "oversized",
-      new File([new Uint8Array(MAX_IMAGE_BYTES + 1)], "large.jpg", {
-        type: "image/jpeg",
-      }),
-      "larger than 4 MB",
-    ],
-    [
-      "HEIC",
-      new File([new Uint8Array([1])], "phone.heic", { type: "image/heic" }),
-      "HEIC is not supported yet",
-    ],
-    [
-      "unsupported",
-      new File([new Uint8Array([1])], "notes.txt", { type: "text/plain" }),
-      "Choose a JPEG, PNG, or WebP",
-    ],
-  ])("shows a clear error for an %s file", async (_name, file, message) => {
-    const user = userEvent.setup({ applyAccept: false });
     render(<CaptureForm />);
 
-    await user.upload(getPhotoInput(), file);
+    await user.click(await screen.findByRole("button", { name: "Start camera" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(message);
-    expect(createObjectURL).not.toHaveBeenCalled();
-  });
-
-  it("keeps the selected bytes in memory without calling or persisting them", async () => {
-    const user = userEvent.setup();
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const storageSpy = vi.spyOn(window.Storage.prototype, "setItem");
-    render(<CaptureForm />);
-
-    await user.upload(
-      getPhotoInput(),
-      new File([new Uint8Array([1, 2, 3])], "butterfly.jpg", {
-        type: "image/jpeg",
-      }),
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Camera permission was denied",
     );
-
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(storageSpy).not.toHaveBeenCalled();
   });
 
-  it("submits the selected file only after the identify action", async () => {
+  it("keeps the camera frame in memory until identification", async () => {
     const user = userEvent.setup();
     const onIdentify = vi.fn();
-    const image = new File([new Uint8Array([1, 2, 3])], "bee.jpg", {
-      type: "image/jpeg",
-    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const storageSpy = vi.spyOn(window.Storage.prototype, "setItem");
     render(<CaptureForm onIdentify={onIdentify} />);
 
-    await user.upload(getPhotoInput(), image);
-    expect(onIdentify).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole("button", { name: "Start camera" }));
+    await screen.findByLabelText("Live rear camera preview");
+    await user.click(screen.getByRole("button", { name: "Scan this animal" }));
+
+    expect(await screen.findByText("Frame ready to identify")).toBeVisible();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(storageSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Identify creature" }));
     expect(onIdentify).toHaveBeenCalledOnce();
-    expect(onIdentify).toHaveBeenCalledWith(image);
+    expect(onIdentify.mock.calls[0][0]).toBeInstanceOf(File);
+    expect(stopTrack).toHaveBeenCalledOnce();
+  });
+
+  it("stops the camera when the player closes the scanner", async () => {
+    const user = userEvent.setup();
+    render(<CaptureForm />);
+
+    await user.click(await screen.findByRole("button", { name: "Start camera" }));
+    await screen.findByLabelText("Live rear camera preview");
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(stopTrack).toHaveBeenCalledOnce();
+    expect(
+      await screen.findByRole("button", { name: "Start camera" }),
+    ).toBeVisible();
   });
 });

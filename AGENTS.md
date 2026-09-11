@@ -8,7 +8,7 @@ before changing code.
 Build WildQuest as one truthful battle loop:
 
 1. connect a Wallet Standard compatible wallet;
-2. capture and identify one of 36 exact supported creatures;
+2. capture and identify one of 40 exact supported creatures;
 3. create one Creature account for that wallet and catalogue ID;
 4. choose three distinct owned Creatures in order;
 5. open or join a fixed-stake deterministic Match;

@@ -16,7 +16,7 @@
   <rect x="38" y="32" width="270" height="112" class="offchain"/>
   <text x="54" y="58" class="label">Supabase catalogue</text>
   <line x1="54" y1="66" x2="292" y2="66" class="rule"/>
-  <text x="54" y="84" class="body">IDs 1001–1006 · names · images</text>
+  <text x="54" y="84" class="body">IDs 1001–1040 · names · images</text>
   <text x="54" y="102" class="body">model_class_id · active · source</text>
   <text x="54" y="124" class="small">Offchain content and duplicate reservation</text>
 

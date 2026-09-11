@@ -223,10 +223,29 @@
   animation: battle-hit-left 420ms ease-in-out;
 }
 
+@keyframes scan-line {
+  0%,
+  100% {
+    transform: translateY(-5rem);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateY(5rem);
+    opacity: 1;
+  }
+}
+
+.scan-line {
+  animation: scan-line 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .creature-reveal,
   .battle-hit-right,
   .battle-hit-left {
+    animation: none;
+  }
+  .scan-line {
     animation: none;
   }
 }

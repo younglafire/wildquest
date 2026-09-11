@@ -28,7 +28,7 @@ The demo uses the deployed Devnet program ID
 
 The two demo wallets receive their other roster members through a setup script that invokes the real instruction handlers. The setup script does not inject fabricated account data.
 
-## The 36-creature roster is fixed
+## The 40-creature roster is fixed
 
 Every V1 stat uses an unsigned integer. The canonical IDs, ImageNet classes,
 and stats live in `programs/wildquest/src/constants.rs`; the matching names,
@@ -41,7 +41,7 @@ facts, roles, and artwork live in the Supabase migrations.
 - **Catalogue 1005, Persian Cat:** ImageNet class `283`, HP `105`, Attack `55`, Defense `60`, Speed `35`, Shield `45`.
 - **Catalogue 1006, Monarch Butterfly:** ImageNet class `323`, HP `75`, Attack `55`, Defense `35`, Speed `100`, Shield `35`.
 
-Catalogue IDs `1001` through `1036` cover 36 exact ImageNet classes. All 36
+Catalogue IDs `1001` through `1040` cover 40 exact ImageNet classes. All 40
 SpeciesConfig accounts use `balance_version = 1`. The first Match rules use
 `rules_version = 1`. The numeric catalogue ID crosses the API and Solana
 boundary. Each slug remains offchain display and lookup data.
@@ -74,7 +74,7 @@ The five-day build stays on Devnet. It makes no mainnet or real-money safety cla
 
 ## The hard cut list stays outside five days
 
-- A roster larger than 36 creatures
+- A roster larger than 40 creatures
 - Model training or broad breed recognition
 - Commit-reveal teams
 - Matchmaking, lobby indexing, ratings, and leaderboards

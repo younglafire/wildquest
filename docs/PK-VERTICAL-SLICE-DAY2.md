@@ -2,7 +2,7 @@
 
 ## What is implemented
 
-- Six exact catalogue identities are reserved as IDs `1001` through `1006`.
+- Forty exact catalogue identities are reserved as IDs `1001` through `1040`.
 - Each row has a unique ImageNet class and a separate `capture_enabled` flag.
 - ResNet accepts only classes `151`, `207`, `235`, `281`, `283`, and `323`.
 - Broad dog, cat, and butterfly probability aggregation has been removed.
@@ -29,7 +29,7 @@ catalogue UI remains compatible. These battle fields are now mandatory:
 - `capture_enabled`
 
 `catalogue_id` is the numeric cross-system identity. `species_id` is only an
-offchain slug. `balance_version` is `1` for the fixed six-creature roster.
+offchain slug. `balance_version` is `1` for the fixed 40-creature roster.
 
 ## Day 3 continuation
 

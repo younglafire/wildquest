@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Insect</title>
+  <ellipse cx="131" cy="137" rx="33" ry="67" fill="#65a30d"/><circle cx="131" cy="61" r="25" fill="#3f6212"/>
+  <g fill="none" stroke="#365314" stroke-width="10" stroke-linecap="round"><path d="m105 109-58-35M102 137 38 132M106 165l-54 38M157 109l53-38M160 137l59-8M156 165l52 40M115 43 91 18M146 43l25-25"/></g>
+  <path d="m101 84-44 45 48 15M161 84l41 45-44 15" fill="none" stroke="#84cc16" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

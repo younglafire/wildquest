@@ -13,7 +13,7 @@ The Rust `declare_id!`, both Anchor cluster entries, the IDL address, the Codama
 
 ### Supabase controls catalogue content
 
-Supabase owns these fields for each of the six supported catalogue rows:
+Supabase owns these fields for each of the 40 supported catalogue rows:
 
 - `id`: positive numeric catalogue ID, reserved as `1001` through `1006`
 - `species_id`: stable offchain slug
@@ -25,7 +25,9 @@ Supabase owns these fields for each of the six supported catalogue rows:
 - `is_active`
 - `model_class_id`: exact ImageNet class ID
 
-The Day 2 migration inserts the six IDs explicitly and advances the table sequence beyond `1006`. Supabase never decides ownership, battle stats, a Match outcome, or a payout.
+The catalogue migrations insert IDs `1001` through `1040` explicitly and
+advance the table sequence beyond `1040`. Supabase never decides ownership,
+battle stats, a Match outcome, or a payout.
 
 ### The Next.js server controls capture authorization
 
@@ -111,7 +113,9 @@ Its account stores:
 - `active: bool`
 - `bump: u8`
 
-`initialize_species_config()` requires the GameConfig admin signer. The handler accepts only the six catalogue IDs and version-one values fixed in [PK-V1-RULES.md](PK-V1-RULES.md).
+`initialize_species_config()` requires the GameConfig admin signer. The handler
+accepts only the 40 catalogue IDs and version-one values fixed in
+[PK-V1-RULES.md](PK-V1-RULES.md).
 
 Supabase may mirror these values for display, but battle code reads the SpeciesConfig accounts.
 

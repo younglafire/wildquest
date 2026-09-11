@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-  address,
-  unwrapOption,
-  type Address,
-} from "@solana/kit";
+import { address, unwrapOption, type Address } from "@solana/kit";
 import useSWR from "swr";
 import { fetchMaybeMatch, MatchStatus } from "../../generated/wildquest";
 import { MatchResult } from "../battle-content";

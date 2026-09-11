@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Garden lizard</title>
+  <path d="M213 58c-31 8-45 27-56 47" fill="none" stroke="#15803d" stroke-width="13" stroke-linecap="round"/>
+  <ellipse cx="125" cy="132" rx="72" ry="35" transform="rotate(-18 125 132)" fill="#22c55e"/>
+  <path fill="#16a34a" d="m59 142-48 25 56-8Zm118-39 54-7-48 25Z"/>
+  <path d="m95 148-35 51M142 143l25 56M101 111 60 75M151 116l42-40" fill="none" stroke="#15803d" stroke-width="13" stroke-linecap="round"/>
+  <circle cx="174" cy="103" r="6" fill="#f8fafc"/>
+</svg>

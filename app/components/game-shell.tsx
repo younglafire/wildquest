@@ -56,7 +56,10 @@ export function GameShell({ children }: { children: ReactNode }) {
       >
         <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
           {MOBILE_NAVIGATION.map(([href, label, icon]) => {
-            const active = pathname === href || pathname.startsWith(`${href}/`);
+            const active =
+              pathname === href ||
+              pathname.startsWith(`${href}/`) ||
+              (href === "/battle" && pathname.startsWith("/match/"));
             const capture = href === "/battle";
             return (
               <Link

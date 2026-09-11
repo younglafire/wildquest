@@ -57,7 +57,7 @@ The Anchor build emitted its existing crate-type and undefined-symbol warnings. 
 ## Day 1 acceptance is complete
 
 - VS-01 has a timed demonstration and a hard cut list in `PK-V1-RULES.md`.
-- VS-02 has six reserved numeric catalogue IDs, exact model classes, static stats, and balance version `1`.
+- VS-02 has 40 reserved numeric catalogue IDs, exact model classes, static stats, and balance version `1`.
 - VS-03 has one source-of-truth map plus API, signer, PDA, account, and handler contracts in `PK-VERTICAL-SLICE-ARCHITECTURE.md`.
 - VS-04 has a recorded frontend, API, Rust, LiteSVM, and production-build baseline with one program ID.
 

@@ -12,7 +12,7 @@ One Creature represents one exact catalogue entry owned by one wallet. The
 numeric key is named `catalogue_id` across the identification response, planned
 Creature account, and planned battle instructions.
 
-- `catalogue_id` is one of the reserved `u64` values `1001` through `1036`.
+- `catalogue_id` is one of the reserved `u64` values `1001` through `1040`.
 - `catalogue_id` matches the numeric `species.id` column in Supabase.
 - `species_slug` is the readable text key currently stored in
   `species.species_id`.
@@ -69,7 +69,7 @@ transaction:
 - The capture authority signs the same transaction and matches
   `game_config.capture_authority`.
 - The GameConfig PDA uses the canonical seed and accepted balance version.
-- `catalogue_id` is one of the 36 version-one catalogue IDs.
+- `catalogue_id` is one of the 40 version-one catalogue IDs.
 - The SpeciesConfig PDA matches `catalogue_id`, is active, and uses the accepted
   balance version.
 - The Creature PDA uses the canonical seeds and bump.

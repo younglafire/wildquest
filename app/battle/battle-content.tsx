@@ -182,7 +182,7 @@ export function BattleContent() {
         `wildquest:last-match:${cluster}:${signer.address}`,
         matchAddress,
       );
-    router.push(`/battle/${matchAddress}`);
+    router.push(`/match/${matchAddress}`);
   };
   const run = async (operation: () => Promise<Signature>) => {
     setError(null);
@@ -497,7 +497,7 @@ export function BattleContent() {
                   </div>
                   {claimable ? (
                     <Link
-                      href={`/battle/${match.address}`}
+                      href={`/match/${match.address}`}
                       className="flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
                     >
                       Watch result
@@ -505,7 +505,7 @@ export function BattleContent() {
                   ) : mine ? (
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        href={`/battle/${match.address}`}
+                        href={`/match/${match.address}`}
                         className="flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
                       >
                         Open battlefield
@@ -569,7 +569,7 @@ export function BattleContent() {
               return (
                 <Link
                   key={match.address}
-                  href={`/battle/${match.address}`}
+                  href={`/match/${match.address}`}
                   className="rounded-2xl border border-border p-5 transition hover:border-emerald-500"
                 >
                   <div className="flex items-center justify-between gap-3">

@@ -36,7 +36,9 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
           <div className="hidden items-center gap-1 md:flex">
             {NAVIGATION.map(([href, label]) => {
               const active =
-                pathname === href || pathname.startsWith(`${href}/`);
+                pathname === href ||
+                pathname.startsWith(`${href}/`) ||
+                (href === "/battle" && pathname.startsWith("/match/"));
               return (
                 <Link
                   key={href}
