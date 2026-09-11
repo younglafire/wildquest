@@ -287,44 +287,57 @@ export function BattleContent() {
     : [];
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-14">
-      <section className="rounded-3xl border border-border bg-card p-6 sm:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">
-          Deterministic arena · Devnet
+    <main className="mx-auto max-w-6xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
+      <section
+        className="rounded-xl p-4 sm:p-8"
+        style={{ background: "#1c1810", border: "1px solid #3a2e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
+      >
+        <p
+          className="text-[10px] font-bold uppercase tracking-[0.24em]"
+          style={{ color: "#6aab7a", fontFamily: "var(--font-display)" }}
+        >
+          Deterministic Arena · Devnet
         </p>
-        <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
+        <h1
+          className="mt-2 text-2xl font-black tracking-tight sm:mt-3 sm:text-5xl"
+          style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+        >
           Build your team
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-          Choose three different Creatures in order. Tap a card then a + slot,
-          or drag it on desktop. Every match stakes 0.01 SOL.
+        <p className="mt-2 max-w-2xl text-xs leading-relaxed sm:mt-3 sm:text-sm" style={{ color: "#8a7a62" }}>
+          Choose three different Creatures in order. Tap a card then a slot.
+          Every match stakes 0.01 SOL.
         </p>
 
         {creatures.length < 3 ? (
-          <div className="mt-7 rounded-2xl border border-border bg-cream p-5">
-            <h2 className="font-black">You need three Creatures</h2>
-            <p className="mt-2 text-sm text-muted">
+          <div
+            className="mt-5 rounded-xl p-4 sm:mt-7 sm:p-5"
+            style={{ background: "#221d14", border: "1px solid #3a2e1e" }}
+          >
+            <h2 className="font-black text-sm sm:text-base" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>You need three Creatures</h2>
+            <p className="mt-1.5 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
               You currently own {creatures.length}. Capture more exact supported
               species first.
             </p>
             <Link
               href="/capture"
-              className="mt-4 inline-flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+              className="btn-guild mt-4 w-full sm:w-auto inline-flex"
             >
-              Capture a Creature
+              ✦ Hunt & Capture
             </Link>
           </div>
         ) : battleCreatures.isLoading ? (
-          <p className="mt-7 text-sm text-muted">
+          <p className="mt-5 text-sm sm:mt-7" style={{ color: "#8a7a62" }}>
             Loading verified onchain stats…
           </p>
         ) : battleCreatures.error ? (
-          <p role="alert" className="mt-7 text-sm text-destructive">
+          <p role="alert" className="mt-5 text-sm sm:mt-7" style={{ color: "#f8c8c4" }}>
             Creature stats could not be loaded.
           </p>
         ) : (
           <>
-            <div className="mt-7 grid gap-3 md:grid-cols-3">
+            {/* 3 Team Slots side-by-side on mobile and desktop */}
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-7 sm:gap-3">
               {slots.map((slot, index) => {
                 const card = cardsByAddress.get(slot);
                 return (
@@ -341,23 +354,41 @@ export function BattleContent() {
                     }
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => handleDrop(event, index)}
-                    className="min-h-44 rounded-2xl border-2 border-dashed border-border bg-cream p-2 text-left transition hover:border-emerald-500"
+                    className="min-h-32 rounded-xl p-1 text-left transition-all sm:min-h-44 sm:p-2 active:scale-95"
+                    style={{
+                      border: card ? "1px solid rgba(200,169,110,0.6)" : "2px dashed rgba(200,169,110,0.25)",
+                      background: "#221d14",
+                    }}
                   >
                     {card ? (
                       <CreatureCard creature={card} compact />
                     ) : (
-                      <span className="flex min-h-40 items-center justify-center text-4xl font-light text-muted">
-                        +
-                      </span>
+                      <div className="flex min-h-28 flex-col items-center justify-center p-1 sm:min-h-40">
+                        <span
+                          className="text-2xl font-light sm:text-4xl"
+                          style={{ color: "rgba(200,169,110,0.35)" }}
+                        >
+                          +
+                        </span>
+                        <span
+                          className="mt-1 text-[8px] font-bold uppercase tracking-wider sm:text-[10px]"
+                          style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                        >
+                          Slot {index + 1}
+                        </span>
+                      </div>
                     )}
                   </button>
                 );
               })}
             </div>
-            <p className="mt-6 text-xs font-bold uppercase tracking-wider text-muted">
-              Your Creature cards
+            <p
+              className="mt-5 text-[10px] font-bold uppercase tracking-wider sm:mt-6"
+              style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+            >
+              Your Creature Cards {armed ? "(Tap a slot above to place)" : "(Tap to select)"}
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="mt-2.5 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {(battleCreatures.data ?? []).map((card) => {
                 const creatureAddress = card.creature.address;
                 const used = slots.includes(creatureAddress);
@@ -376,7 +407,7 @@ export function BattleContent() {
                         value === creatureAddress ? null : creatureAddress,
                       )
                     }
-                    className="rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-emerald-500"
+                    className="rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-emerald-500 active:scale-95"
                   >
                     <CreatureCard
                       creature={card}
@@ -394,7 +425,8 @@ export function BattleContent() {
         {error && (
           <p
             role="alert"
-            className="mt-5 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
+            className="mt-4 rounded-lg p-3 text-xs sm:mt-5 sm:p-4 sm:text-sm"
+            style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
           >
             {error}
           </p>
@@ -404,11 +436,11 @@ export function BattleContent() {
             type="button"
             onClick={() => void createMatch()}
             disabled={selected.length !== 3 || isSending}
-            className="mt-6 flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground disabled:opacity-50 sm:w-auto"
+            className="btn-guild mt-5 w-full sm:mt-6"
           >
             {isSending
               ? "Waiting for wallet…"
-              : "Create match · stake 0.01 SOL"}
+              : "✦ Create match · stake 0.01 SOL"}
           </button>
         )}
       </section>
@@ -441,30 +473,42 @@ export function BattleContent() {
         </a>
       )}
 
-      <section className="mt-6 rounded-3xl border border-border bg-card p-6 sm:p-8">
+      <section
+        className="mt-4 rounded-xl p-6 sm:p-8"
+        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+      >
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
-              Match lobby
+            <p
+              className="text-[10px] font-bold uppercase tracking-[0.22em]"
+              style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+            >
+              Match Lobby
             </p>
-            <h2 className="mt-2 text-2xl font-black">Challenges</h2>
+            <h2
+              className="mt-2 text-2xl font-black"
+              style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+            >
+              Challenges
+            </h2>
           </div>
           <button
             type="button"
             onClick={() => void matches.mutate()}
-            className="min-h-12 rounded-xl border border-border px-4 text-sm font-bold"
+            className="min-h-10 rounded-lg px-4 text-[11px] font-bold uppercase tracking-wide"
+            style={{ border: "1px solid #3a2e1e", color: "#c8a96e", fontFamily: "var(--font-display)", background: "rgba(200,169,110,0.06)" }}
           >
             Refresh
           </button>
         </div>
         {matches.isLoading ? (
-          <p className="mt-6 text-sm text-muted">Loading matches…</p>
+          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>Loading matches…</p>
         ) : matches.error ? (
-          <p className="mt-6 text-sm text-destructive">
+          <p className="mt-6 text-sm" style={{ color: "#f8c8c4" }}>
             The Devnet match lobby is unavailable.
           </p>
         ) : relevantMatches.length === 0 ? (
-          <p className="mt-6 rounded-xl bg-cream p-5 text-sm text-muted">
+          <p className="mt-6 rounded-xl p-5 text-sm" style={{ background: "#221d14", color: "#8a7a62" }}>
             No open challenge or unclaimed win yet.
           </p>
         ) : (
@@ -475,30 +519,39 @@ export function BattleContent() {
               return (
                 <article
                   key={match.address}
-                  className="flex flex-col gap-4 rounded-2xl border border-border p-5 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
+                  style={{ background: "#221d14", border: mine ? "1px solid rgba(200,169,110,0.3)" : "1px solid #3a2e1e", borderLeft: mine ? "3px solid #c8a96e" : "3px solid #3a2e1e" }}
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                      <span className="wax-badge wax-badge-forest">
                         {STATUS_LABEL[match.data.status]}
                       </span>
                       {mine && (
-                        <span className="text-xs font-bold">Your match</span>
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wide"
+                          style={{ color: "#c8a96e", fontFamily: "var(--font-display)" }}
+                        >
+                          Your match
+                        </span>
                       )}
                     </div>
-                    <p className="mt-3 text-sm font-bold">
+                    <p className="mt-3 text-sm font-bold" style={{ color: "#f0e8d4" }}>
                       3 Creatures ·{" "}
                       {Number(match.data.stakeLamports) / 1_000_000_000} SOL
                       stake
                     </p>
-                    <p className="mt-1 max-w-sm truncate font-mono text-[10px] text-muted">
+                    <p
+                      className="mt-1 max-w-sm truncate text-[10px]"
+                      style={{ fontFamily: "var(--font-mono)", color: "#8a7a62" }}
+                    >
                       {match.data.creator}
                     </p>
                   </div>
                   {claimable ? (
                     <Link
                       href={`/match/${match.address}`}
-                      className="flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+                      className="btn-guild"
                     >
                       Watch result
                     </Link>
@@ -506,7 +559,7 @@ export function BattleContent() {
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/match/${match.address}`}
-                        className="flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+                        className="btn-guild"
                       >
                         Open battlefield
                       </Link>
@@ -514,7 +567,8 @@ export function BattleContent() {
                         type="button"
                         onClick={() => void cancelMatch(match)}
                         disabled={isSending}
-                        className="min-h-12 rounded-xl border border-border px-5 text-sm font-bold disabled:opacity-50"
+                        className="min-h-12 rounded-lg px-5 text-sm font-bold disabled:opacity-50"
+                        style={{ border: "1px solid #3a2e1e", color: "#8a7a62", background: "transparent" }}
                       >
                         Cancel and refund
                       </button>
@@ -524,7 +578,7 @@ export function BattleContent() {
                       type="button"
                       onClick={() => void joinMatch(match)}
                       disabled={isSending || selected.length !== 3}
-                      className="min-h-12 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                      className="btn-guild"
                     >
                       Join · stake 0.01 SOL
                     </button>
@@ -538,20 +592,29 @@ export function BattleContent() {
 
       <section
         id="history"
-        className="mt-6 scroll-mt-24 rounded-3xl border border-border bg-card p-6 sm:p-8"
+        className="mt-4 scroll-mt-24 rounded-xl p-6 sm:p-8"
+        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
       >
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
-          Onchain history
+        <p
+          className="text-[10px] font-bold uppercase tracking-[0.22em]"
+          style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+        >
+          Onchain History
         </p>
-        <h2 className="mt-2 text-2xl font-black">Your matches</h2>
-        <p className="mt-2 text-sm text-muted">
+        <h2
+          className="mt-2 text-2xl font-black"
+          style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+        >
+          Your matches
+        </h2>
+        <p className="mt-2 text-sm" style={{ color: "#8a7a62" }}>
           Every row links to the Match account, deterministic replay, and its
           signed transaction receipts.
         </p>
         {matches.isLoading ? (
-          <p className="mt-6 text-sm text-muted">Loading history…</p>
+          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>Loading history…</p>
         ) : playerHistory.length === 0 ? (
-          <p className="mt-6 rounded-xl bg-cream p-5 text-sm text-muted">
+          <p className="mt-6 rounded-xl p-5 text-sm" style={{ background: "#221d14", color: "#8a7a62" }}>
             Your wallet has not opened or joined a match yet.
           </p>
         ) : (
@@ -566,24 +629,41 @@ export function BattleContent() {
                       ? "Cancelled"
                       : "Draw"
                     : "Lost";
+              const isWin = result === "Won";
               return (
                 <Link
                   key={match.address}
                   href={`/match/${match.address}`}
-                  className="rounded-2xl border border-border p-5 transition hover:border-emerald-500"
+                  className="rounded-xl p-5 transition-all"
+                  style={{
+                    background: "#221d14",
+                    border: "1px solid #3a2e1e",
+                    borderLeft: isWin ? "3px solid #c8a96e" : "3px solid #3a2e1e",
+                  }}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-black">{result}</span>
-                    <span className="rounded-full bg-cream px-3 py-1 text-xs font-bold">
+                    <span
+                      className="font-black"
+                      style={{ fontFamily: "var(--font-display)", color: isWin ? "#c8a96e" : "#f0e8d4" }}
+                    >
+                      {result}
+                    </span>
+                    <span
+                      className="rounded-full px-3 py-1 text-[10px] font-bold"
+                      style={{ background: "#100e09", color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                    >
                       {STATUS_LABEL[match.data.status]}
                     </span>
                   </div>
-                  <p className="mt-3 text-sm text-muted">
+                  <p className="mt-3 text-sm" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)", fontSize: "0.72rem" }}>
                     {new Date(
                       Number(match.data.createdAt) * 1_000,
                     ).toLocaleString()}
                   </p>
-                  <p className="mt-2 truncate font-mono text-[10px] text-muted">
+                  <p
+                    className="mt-2 truncate text-[10px]"
+                    style={{ fontFamily: "var(--font-mono)", color: "rgba(138,122,98,0.6)" }}
+                  >
                     {match.address}
                   </p>
                 </Link>

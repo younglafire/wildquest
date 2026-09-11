@@ -145,66 +145,112 @@ export function CaptureExperience() {
     return (
       <div className="mx-auto w-full max-w-3xl">
         <CaptureSteps current={3} />
-        <section className="mt-5 overflow-hidden rounded-3xl border border-border bg-card shadow-[0_24px_90px_-55px_rgba(0,0,0,0.65)]">
+        <section
+          className="mt-5 overflow-hidden rounded-2xl sm:rounded-3xl"
+          style={{
+            background: "#1c1810",
+            border: "1px solid #3a2e1e",
+            boxShadow: "0 24px 90px -55px rgba(0,0,0,0.8)",
+          }}
+        >
           <div className="grid md:grid-cols-[0.85fr_1.15fr]">
-            <div className="relative flex min-h-64 items-end overflow-hidden bg-cream p-6">
+            <div
+              className="relative flex min-h-52 items-end overflow-hidden p-5 sm:min-h-64 sm:p-6"
+              style={{ background: "#100e09" }}
+            >
               <SpeciesArt
                 src={species?.imageUrl ?? species?.iconUrl}
                 alt={result.common_name}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-              <div className="relative text-white">
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+              <div className="relative text-[#f0e8d4]">
+                <p className="wax-badge wax-badge-forest">
                   Creature identified
                 </p>
-                <p className="mt-3 text-5xl font-black tracking-tight">
+                <p
+                  className="mt-2 text-3xl font-black tracking-tight sm:text-5xl"
+                  style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+                >
                   Exact match
                 </p>
-                <p className="mt-1 text-sm text-muted">
+                <p className="mt-1 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
                   Catalogue #{result.catalogue_id}
                 </p>
               </div>
             </div>
 
-            <div className="p-6 sm:p-8">
+            <div className="p-5 sm:p-8">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                  ResNet class {result.model_class_id}
+                <span className="wax-badge wax-badge-forest">
+                  ResNet Class {result.model_class_id}
                 </span>
-                <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold">
+                <span
+                  className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase"
+                  style={{
+                    border: "1px solid #3a2e1e",
+                    color: "#8a7a62",
+                    background: "#100e09",
+                  }}
+                >
                   {result.rarity}
                 </span>
               </div>
 
-              <h1 className="mt-5 text-4xl font-black tracking-tight">
+              <h1
+                className="mt-4 text-3xl font-black tracking-tight sm:text-4xl"
+                style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+              >
                 {result.common_name}
               </h1>
               {species?.scientificName && (
-                <p className="mt-1 text-sm italic text-muted">
+                <p className="mt-1 text-xs italic sm:text-sm" style={{ color: "#8a7a62" }}>
                   {species.scientificName}
                 </p>
               )}
 
-              <dl className="mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-cream p-4">
-                  <dt className="text-xs text-muted">Confidence</dt>
-                  <dd className="mt-1 text-xl font-black tabular-nums">
+              <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
+                <div
+                  className="rounded-xl p-3 text-center sm:p-4 sm:text-left"
+                  style={{ background: "#100e09", border: "1px solid #3a2e1e" }}
+                >
+                  <dt className="text-[10px] uppercase tracking-wider" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
+                    Confidence
+                  </dt>
+                  <dd
+                    className="mt-1 text-lg font-black tabular-nums sm:text-xl"
+                    style={{ color: "#c8a96e", fontFamily: "var(--font-mono)" }}
+                  >
                     {(result.confidence * 100).toFixed(1)}%
                   </dd>
                 </div>
-                <div className="rounded-xl bg-cream p-4">
-                  <dt className="text-xs text-muted">Balance version</dt>
-                  <dd className="mt-1 text-xl font-black tabular-nums">
+                <div
+                  className="rounded-xl p-3 text-center sm:p-4 sm:text-left"
+                  style={{ background: "#100e09", border: "1px solid #3a2e1e" }}
+                >
+                  <dt className="text-[10px] uppercase tracking-wider" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
+                    Balance Version
+                  </dt>
+                  <dd
+                    className="mt-1 text-lg font-black tabular-nums sm:text-xl"
+                    style={{ color: "#c8a96e", fontFamily: "var(--font-mono)" }}
+                  >
                     v{result.balance_version}
                   </dd>
                 </div>
               </dl>
 
-              <p className="mt-4 text-xs leading-relaxed text-muted">
+              <p className="mt-3 text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}>
                 Model label: {result.model_label}
               </p>
 
-              <div className="mt-5 rounded-xl border border-border bg-cream p-4 text-sm text-muted">
+              <div
+                className="mt-4 rounded-xl p-3.5 text-xs leading-relaxed sm:text-sm"
+                style={{
+                  background: "rgba(200,169,110,0.06)",
+                  border: "1px solid rgba(200,169,110,0.15)",
+                  color: "#8a7a62",
+                }}
+              >
                 One wallet approval creates your Creature account on Solana
                 Devnet. You can own this exact catalogue creature only once.
               </div>
@@ -212,7 +258,12 @@ export function CaptureExperience() {
               {alreadyOwned && (
                 <p
                   role="status"
-                  className="mt-4 rounded-xl bg-amber-500/10 p-4 text-sm font-semibold text-amber-800 dark:text-amber-200"
+                  className="mt-4 rounded-xl p-3.5 text-xs font-semibold sm:text-sm"
+                  style={{
+                    background: "rgba(200,169,110,0.12)",
+                    color: "#e0c58a",
+                    border: "1px solid rgba(200,169,110,0.3)",
+                  }}
                 >
                   You already own this exact Creature. One wallet can own each
                   catalogue species only once.
@@ -221,30 +272,42 @@ export function CaptureExperience() {
 
               {species && battleStats && (
                 <div className="creature-reveal mt-5">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
-                    Your battle card
+                  <p
+                    className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em]"
+                    style={{ color: "#6aab7a", fontFamily: "var(--font-display)" }}
+                  >
+                    ✦ Your battle card preview
                   </p>
                   <CreatureCard species={species} stats={battleStats} />
                 </div>
               )}
 
               {error && (
-                <p role="alert" className="mt-5 text-sm text-destructive">
+                <p
+                  role="alert"
+                  className="mt-4 rounded-xl p-3.5 text-xs font-semibold sm:text-sm"
+                  style={{
+                    background: "rgba(192,57,43,0.12)",
+                    color: "#f8c8c4",
+                    border: "1px solid rgba(192,57,43,0.3)",
+                  }}
+                >
                   {error}
                 </p>
               )}
 
               {captureSignature ? (
-                <div className="mt-6 space-y-3">
+                <div className="mt-5 space-y-3">
                   <p
                     role="status"
-                    className="text-sm font-bold text-emerald-700 dark:text-emerald-300"
+                    className="text-sm font-bold"
+                    style={{ color: "#6aab7a", fontFamily: "var(--font-display)" }}
                   >
-                    Creature owned. Add it to your battle team.
+                    ✦ Creature owned! Add it to your battle team.
                   </p>
                   <Link
                     href="/battle"
-                    className="flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground"
+                    className="btn-guild w-full"
                   >
                     Build battle team
                   </Link>
@@ -252,18 +315,19 @@ export function CaptureExperience() {
                     href={`https://explorer.solana.com/tx/${captureSignature}?cluster=${cluster}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex min-h-12 items-center justify-center text-sm font-semibold underline"
+                    className="flex min-h-12 items-center justify-center text-xs font-bold underline"
+                    style={{ color: "#c8a96e" }}
                   >
-                    View transaction
+                    View transaction on Solana Explorer ↗
                   </a>
                 </div>
               ) : (
-                <div className="mt-6 space-y-3">
+                <div className="mt-5 space-y-3">
                   <button
                     type="button"
                     onClick={() => void handleOwnCreature()}
                     disabled={isSubmitting || alreadyOwned}
-                    className="flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+                    className="btn-guild w-full"
                   >
                     {alreadyOwned
                       ? "Already owned"
@@ -271,7 +335,7 @@ export function CaptureExperience() {
                         ? "Approve in wallet…"
                         : submitStage === "confirming"
                           ? "Submitted · confirming…"
-                          : "Own this Creature"}
+                          : "✦ Own this Creature"}
                   </button>
                   <button
                     type="button"
@@ -282,7 +346,13 @@ export function CaptureExperience() {
                       setBattleStats(null);
                       setError(null);
                     }}
-                    className="flex min-h-12 w-full items-center justify-center rounded-xl border border-border px-5 py-3 text-sm font-bold"
+                    className="flex min-h-12 w-full items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      border: "1px solid #3a2e1e",
+                      color: "#8a7a62",
+                      background: "transparent",
+                    }}
                   >
                     Retake photo
                   </button>
@@ -368,13 +438,24 @@ function CaptureSteps({ current }: { current: number }) {
     <ol aria-label="Capture progress" className="grid grid-cols-3 gap-2">
       {steps.map((step, index) => {
         const position = index + 1;
+        const active = position <= current;
         return (
           <li
             key={step}
             aria-current={position === current ? "step" : undefined}
-            className={`rounded-xl border px-2 py-3 text-center text-[10px] font-bold uppercase tracking-wider ${position <= current ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-border bg-card text-muted"}`}
+            className="rounded-xl px-2 py-2 text-center text-[10px] font-bold uppercase tracking-wider transition-all"
+            style={{
+              fontFamily: "var(--font-display)",
+              border: active
+                ? "1px solid rgba(200,169,110,0.5)"
+                : "1px solid #3a2e1e",
+              background: active
+                ? "rgba(200,169,110,0.12)"
+                : "#1c1810",
+              color: active ? "#c8a96e" : "#8a7a62",
+            }}
           >
-            <span className="block text-sm">{position}</span>
+            <span className="block text-sm font-black">{position}</span>
             {step}
           </li>
         );
