@@ -76,6 +76,22 @@ export const WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH = 0x178c; // 6028
 export const WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH = 0x178d; // 6029
 /** MatchEscrowOverflow: Match escrow arithmetic overflowed */
 export const WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW = 0x178e; // 6030
+/** MatchNotActive: The Match is not active */
+export const WILDQUEST_ERROR__MATCH_NOT_ACTIVE = 0x178f; // 6031
+/** MatchResolverMismatch: The configured authority did not sign this Match result */
+export const WILDQUEST_ERROR__MATCH_RESOLVER_MISMATCH = 0x1790; // 6032
+/** InvalidMatchResultHash: The Match result hash cannot be all zeroes */
+export const WILDQUEST_ERROR__INVALID_MATCH_RESULT_HASH = 0x1791; // 6033
+/** InvalidMatchTurnCount: The Match turn count is outside the supported range */
+export const WILDQUEST_ERROR__INVALID_MATCH_TURN_COUNT = 0x1792; // 6034
+/** InvalidMatchWinner: The Match winner must be one of its two players */
+export const WILDQUEST_ERROR__INVALID_MATCH_WINNER = 0x1793; // 6035
+/** MatchResolutionExpired: The active Match deadline has passed */
+export const WILDQUEST_ERROR__MATCH_RESOLUTION_EXPIRED = 0x1794; // 6036
+/** MatchRefundUnavailable: The active Match deadline has not passed */
+export const WILDQUEST_ERROR__MATCH_REFUND_UNAVAILABLE = 0x1795; // 6037
+/** MatchParticipantMismatch: Only a Match participant can request its stale refund */
+export const WILDQUEST_ERROR__MATCH_PARTICIPANT_MISMATCH = 0x1796; // 6038
 
 export type WildquestError =
   | typeof WILDQUEST_ERROR__BATTLE_ARITHMETIC_OVERFLOW
@@ -89,6 +105,9 @@ export type WildquestError =
   | typeof WILDQUEST_ERROR__INVALID_BATTLE_TEAM
   | typeof WILDQUEST_ERROR__INVALID_CAPTURE_GRADE
   | typeof WILDQUEST_ERROR__INVALID_CAPTURE_PROOF
+  | typeof WILDQUEST_ERROR__INVALID_MATCH_RESULT_HASH
+  | typeof WILDQUEST_ERROR__INVALID_MATCH_TURN_COUNT
+  | typeof WILDQUEST_ERROR__INVALID_MATCH_WINNER
   | typeof WILDQUEST_ERROR__INVALID_QUEST_DEFINITION
   | typeof WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY
   | typeof WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY_COUNT
@@ -96,8 +115,13 @@ export type WildquestError =
   | typeof WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH
   | typeof WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH
   | typeof WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW
+  | typeof WILDQUEST_ERROR__MATCH_NOT_ACTIVE
   | typeof WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE
   | typeof WILDQUEST_ERROR__MATCH_NOT_OPEN
+  | typeof WILDQUEST_ERROR__MATCH_PARTICIPANT_MISMATCH
+  | typeof WILDQUEST_ERROR__MATCH_REFUND_UNAVAILABLE
+  | typeof WILDQUEST_ERROR__MATCH_RESOLUTION_EXPIRED
+  | typeof WILDQUEST_ERROR__MATCH_RESOLVER_MISMATCH
   | typeof WILDQUEST_ERROR__MATCH_SELF_JOIN
   | typeof WILDQUEST_ERROR__MATCH_WINNER_MISMATCH
   | typeof WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH
@@ -124,6 +148,9 @@ if (process.env.NODE_ENV !== "production") {
     [WILDQUEST_ERROR__INVALID_BATTLE_TEAM]: `A battle team must contain three distinct Creature accounts`,
     [WILDQUEST_ERROR__INVALID_CAPTURE_GRADE]: `Capture grade must be Bronze, Silver, or Gold`,
     [WILDQUEST_ERROR__INVALID_CAPTURE_PROOF]: `The capture proof hash cannot be all zeroes`,
+    [WILDQUEST_ERROR__INVALID_MATCH_RESULT_HASH]: `The Match result hash cannot be all zeroes`,
+    [WILDQUEST_ERROR__INVALID_MATCH_TURN_COUNT]: `The Match turn count is outside the supported range`,
+    [WILDQUEST_ERROR__INVALID_MATCH_WINNER]: `The Match winner must be one of its two players`,
     [WILDQUEST_ERROR__INVALID_QUEST_DEFINITION]: `The quest definition is invalid`,
     [WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY]: `A submitted discovery account is invalid`,
     [WILDQUEST_ERROR__INVALID_QUEST_DISCOVERY_COUNT]: `The number of submitted discoveries does not match the quest target count`,
@@ -131,8 +158,13 @@ if (process.env.NODE_ENV !== "production") {
     [WILDQUEST_ERROR__MATCH_CONFIG_MISMATCH]: `The Match account does not match the active GameConfig`,
     [WILDQUEST_ERROR__MATCH_CREATOR_TEAM_MISMATCH]: `The submitted creator team does not match the Match account`,
     [WILDQUEST_ERROR__MATCH_ESCROW_OVERFLOW]: `Match escrow arithmetic overflowed`,
+    [WILDQUEST_ERROR__MATCH_NOT_ACTIVE]: `The Match is not active`,
     [WILDQUEST_ERROR__MATCH_NOT_CLAIMABLE]: `The Match payout is not ready to be claimed`,
     [WILDQUEST_ERROR__MATCH_NOT_OPEN]: `The Match account is not open`,
+    [WILDQUEST_ERROR__MATCH_PARTICIPANT_MISMATCH]: `Only a Match participant can request its stale refund`,
+    [WILDQUEST_ERROR__MATCH_REFUND_UNAVAILABLE]: `The active Match deadline has not passed`,
+    [WILDQUEST_ERROR__MATCH_RESOLUTION_EXPIRED]: `The active Match deadline has passed`,
+    [WILDQUEST_ERROR__MATCH_RESOLVER_MISMATCH]: `The configured authority did not sign this Match result`,
     [WILDQUEST_ERROR__MATCH_SELF_JOIN]: `The Match creator cannot join as the opponent`,
     [WILDQUEST_ERROR__MATCH_WINNER_MISMATCH]: `Only the stored Match winner can claim the payout`,
     [WILDQUEST_ERROR__PLAYER_WALLET_MISMATCH]: `Player account does not belong to the transaction signer`,

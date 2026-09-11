@@ -21,6 +21,8 @@ const STATUS_LABEL: Record<MatchStatus, string> = {
   [MatchStatus.Claimable]: "Payout ready",
   [MatchStatus.Settled]: "Settled",
   [MatchStatus.Cancelled]: "Cancelled",
+  [MatchStatus.Active]: "Battle in progress",
+  [MatchStatus.Refunded]: "Refunded",
 };
 
 export function MatchDetail({ matchAddress }: { matchAddress: string }) {

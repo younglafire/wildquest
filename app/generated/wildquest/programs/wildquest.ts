@@ -32,7 +32,9 @@ import {
   parseInitializeSpeciesConfigInstruction,
   parseJoinMatchInstruction,
   parseOpenMatchInstruction,
+  parseRefundStaleMatchInstruction,
   parseReleaseCreatureInstruction,
+  parseResolveMatchInstruction,
   type ParsedAdminCloseCreatureInstruction,
   type ParsedAdminCloseMatchInstruction,
   type ParsedCancelMatchInstruction,
@@ -48,7 +50,9 @@ import {
   type ParsedInitializeSpeciesConfigInstruction,
   type ParsedJoinMatchInstruction,
   type ParsedOpenMatchInstruction,
+  type ParsedRefundStaleMatchInstruction,
   type ParsedReleaseCreatureInstruction,
+  type ParsedResolveMatchInstruction,
 } from "../instructions";
 
 export const WILDQUEST_PROGRAM_ADDRESS =
@@ -190,7 +194,9 @@ export enum WildquestInstruction {
   InitializeSpeciesConfig,
   JoinMatch,
   OpenMatch,
+  RefundStaleMatch,
   ReleaseCreature,
+  ResolveMatch,
 }
 
 export function identifyWildquestInstruction(
@@ -366,12 +372,34 @@ export function identifyWildquestInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([122, 68, 199, 156, 243, 159, 29, 50]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.RefundStaleMatch;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([5, 94, 180, 100, 108, 136, 84, 214]),
       ),
       0,
     )
   ) {
     return WildquestInstruction.ReleaseCreature;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([73, 0, 15, 197, 178, 47, 21, 193]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.ResolveMatch;
   }
   throw new Error(
     "The provided instruction could not be identified as a wildquest instruction.",
@@ -427,8 +455,14 @@ export type ParsedWildquestInstruction<
       instructionType: WildquestInstruction.OpenMatch;
     } & ParsedOpenMatchInstruction<TProgram>)
   | ({
+      instructionType: WildquestInstruction.RefundStaleMatch;
+    } & ParsedRefundStaleMatchInstruction<TProgram>)
+  | ({
       instructionType: WildquestInstruction.ReleaseCreature;
-    } & ParsedReleaseCreatureInstruction<TProgram>);
+    } & ParsedReleaseCreatureInstruction<TProgram>)
+  | ({
+      instructionType: WildquestInstruction.ResolveMatch;
+    } & ParsedResolveMatchInstruction<TProgram>);
 
 export function parseWildquestInstruction<TProgram extends string>(
   instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
@@ -540,11 +574,25 @@ export function parseWildquestInstruction<TProgram extends string>(
         ...parseOpenMatchInstruction(instruction),
       };
     }
+    case WildquestInstruction.RefundStaleMatch: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.RefundStaleMatch,
+        ...parseRefundStaleMatchInstruction(instruction),
+      };
+    }
     case WildquestInstruction.ReleaseCreature: {
       assertIsInstructionWithAccounts(instruction);
       return {
         instructionType: WildquestInstruction.ReleaseCreature,
         ...parseReleaseCreatureInstruction(instruction),
+      };
+    }
+    case WildquestInstruction.ResolveMatch: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.ResolveMatch,
+        ...parseResolveMatchInstruction(instruction),
       };
     }
     default:

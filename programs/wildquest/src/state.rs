@@ -92,6 +92,8 @@ pub enum MatchStatus {
     Settled,
     Cancelled,
     Claimable,
+    Active,
+    Refunded,
 }
 
 #[account]
@@ -109,5 +111,8 @@ pub struct Match {
     pub winner: Option<Pubkey>,
     pub created_at: i64,
     pub settled_at: Option<i64>,
+    pub result_hash: [u8; 32],
+    pub turn_count: u16,
+    pub active_expires_at: Option<i64>,
     pub bump: u8,
 }

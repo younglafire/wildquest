@@ -44,6 +44,8 @@ const STATUS_LABEL: Record<MatchStatus, string> = {
   [MatchStatus.Settled]: "Paid",
   [MatchStatus.Cancelled]: "Cancelled",
   [MatchStatus.Claimable]: "Winner can claim",
+  [MatchStatus.Active]: "Battle in progress",
+  [MatchStatus.Refunded]: "Refunded",
 };
 
 export function BattleContent() {

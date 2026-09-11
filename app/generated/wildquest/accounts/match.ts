@@ -77,6 +77,9 @@ export type Match = {
   winner: Option<Address>;
   createdAt: bigint;
   settledAt: Option<bigint>;
+  resultHash: ReadonlyUint8Array;
+  turnCount: number;
+  activeExpiresAt: Option<bigint>;
   bump: number;
 };
 
@@ -93,6 +96,9 @@ export type MatchArgs = {
   winner: OptionOrNullable<Address>;
   createdAt: number | bigint;
   settledAt: OptionOrNullable<number | bigint>;
+  resultHash: ReadonlyUint8Array;
+  turnCount: number;
+  activeExpiresAt: OptionOrNullable<number | bigint>;
   bump: number;
 };
 
@@ -113,6 +119,9 @@ export function getMatchEncoder(): Encoder<MatchArgs> {
       ["winner", getOptionEncoder(getAddressEncoder())],
       ["createdAt", getI64Encoder()],
       ["settledAt", getOptionEncoder(getI64Encoder())],
+      ["resultHash", fixEncoderSize(getBytesEncoder(), 32)],
+      ["turnCount", getU16Encoder()],
+      ["activeExpiresAt", getOptionEncoder(getI64Encoder())],
       ["bump", getU8Encoder()],
     ]),
     (value) => ({ ...value, discriminator: MATCH_DISCRIMINATOR }),
@@ -135,6 +144,9 @@ export function getMatchDecoder(): Decoder<Match> {
     ["winner", getOptionDecoder(getAddressDecoder())],
     ["createdAt", getI64Decoder()],
     ["settledAt", getOptionDecoder(getI64Decoder())],
+    ["resultHash", fixDecoderSize(getBytesDecoder(), 32)],
+    ["turnCount", getU16Decoder()],
+    ["activeExpiresAt", getOptionDecoder(getI64Decoder())],
     ["bump", getU8Decoder()],
   ]);
 }

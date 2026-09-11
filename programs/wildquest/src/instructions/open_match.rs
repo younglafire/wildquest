@@ -83,6 +83,9 @@ pub fn handle_open_match(
     match_account.winner = None;
     match_account.created_at = Clock::get()?.unix_timestamp;
     match_account.settled_at = None;
+    match_account.result_hash = [0; 32];
+    match_account.turn_count = 0;
+    match_account.active_expires_at = None;
     match_account.bump = context.bumps.match_account;
     Ok(())
 }
