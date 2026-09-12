@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./activateTurnCombat";
 export * from "./adminCloseCreature";
 export * from "./adminCloseMatch";
 export * from "./cancelMatch";

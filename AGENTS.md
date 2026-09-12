@@ -11,8 +11,9 @@ Build WildQuest as one truthful battle loop:
 2. capture and identify one of 40 exact supported creatures;
 3. create one Creature account for that wallet and catalogue ID;
 4. choose three distinct owned Creatures in order;
-5. open or join a fixed-stake deterministic Match;
-6. replay the result and let only the winner sign to claim the pot.
+5. open or join a fixed-stake simultaneous-turn Match;
+6. choose Strike, Guard, or Recharge on a shared authoritative clock;
+7. let only the recorded winner sign to claim the pot.
 
 Prefer the smallest implementation that completes this loop. Do not add screens,
 accounts, fields, rewards, or claims that the current code cannot support.

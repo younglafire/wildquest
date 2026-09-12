@@ -8,6 +8,7 @@ import {
   type Address,
   type Base58EncodedBytes,
   type Instruction,
+  type ReadonlyUint8Array,
   type TransactionSigner,
 } from "@solana/kit";
 import {
@@ -18,6 +19,7 @@ import {
   getMatchDiscriminatorBytes,
   getOpenMatchInstructionAsync,
   getRefundStaleMatchInstruction,
+  getResolveMatchInstructionAsync,
   MatchStatus,
   WILDQUEST_PROGRAM_ADDRESS,
   type Match,
@@ -166,6 +168,41 @@ export function buildRefundStaleMatchInstruction(
   });
 }
 
+export async function buildResolveMatchInstruction(
+  resolver: TransactionSigner,
+  matchAccount: GameMatch,
+  winner: Address | null,
+  turnCount: number,
+  resultHash: ReadonlyUint8Array,
+): Promise<Instruction> {
+  const opponent = unwrapOption(matchAccount.data.opponent);
+  if (!opponent || matchAccount.data.status !== MatchStatus.Active) {
+    throw new Error("This Match is not active.");
+  }
+  if (
+    winner !== null &&
+    winner !== matchAccount.data.creator &&
+    winner !== opponent
+  ) {
+    throw new Error("The winner must be a Match participant.");
+  }
+  if (!Number.isInteger(turnCount) || turnCount < 1 || turnCount > 30) {
+    throw new Error("The turn count must be between 1 and 30.");
+  }
+  if (resultHash.length !== 32 || resultHash.every((byte) => byte === 0)) {
+    throw new Error("The battle result needs a nonzero SHA-256 hash.");
+  }
+  return getResolveMatchInstructionAsync({
+    resolver,
+    creator: matchAccount.data.creator,
+    opponent,
+    matchAccount: matchAccount.address,
+    winner,
+    turnCount,
+    resultHash,
+  });
+}
+
 export function getMatchFilters() {
   return [
     {
@@ -191,9 +228,14 @@ export async function fetchMatches(
       filters: getMatchFilters(),
     })
     .send();
-  return accounts.map(({ pubkey, account }) =>
-    decodeMatch(parseBase64RpcAccount(pubkey, account)),
-  );
+  return accounts.flatMap(({ pubkey, account }) => {
+    try {
+      return [decodeMatch(parseBase64RpcAccount(pubkey, account))];
+    } catch {
+      // Rules version 1 accounts have the smaller legacy layout.
+      return [];
+    }
+  });
 }
 
 export function getPlayerMatches(

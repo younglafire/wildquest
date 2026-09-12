@@ -20,7 +20,11 @@ const CAMERA_GUIDANCE_COPY: Record<CameraGuidance, string> = {
 };
 
 function isMobileCaptureDevice() {
-  return /Android.*Mobile|iPhone|iPod/i.test(navigator.userAgent);
+  if (typeof window === "undefined") return false;
+  return (
+    /Android.*Mobile|iPhone|iPod/i.test(navigator.userAgent) ||
+    (/Android|Mobile/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0)
+  );
 }
 
 function getCameraError(error: unknown) {
@@ -225,18 +229,26 @@ export function CaptureForm({
 
   if (device === "desktop") {
     return (
-      <section className="mx-auto w-full max-w-2xl rounded-3xl border border-border-low bg-card p-6 text-center shadow-[0_24px_90px_-55px_rgba(0,0,0,0.55)] sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-          Expedition capture
-        </p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight">
+      <section
+        className="mx-auto w-full max-w-2xl rounded-2xl p-6 text-center sm:rounded-3xl sm:p-8"
+        style={{
+          background: "#1c1810",
+          border: "1px solid #3a2e1e",
+          boxShadow: "0 24px 90px -55px rgba(0,0,0,0.8)",
+        }}
+      >
+        <p className="wax-badge wax-badge-forest">Neural Bio-Scanner</p>
+        <h1
+          className="mt-3 text-3xl font-black tracking-tight"
+          style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+        >
           Capture is available on a phone
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Upload a photo here, or open WildQuest on your phone to scan an
-          animal with its rear camera.
+        <p className="mt-3 text-sm leading-relaxed" style={{ color: "#8a7a62" }}>
+          Upload a photo here, or open WildQuest on your mobile phone to scan
+          wildlife directly with your phone camera.
         </p>
-        <label className="mt-6 inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground">
+        <label className="btn-guild mt-6 cursor-pointer">
           Choose an image
           <input
             type="file"
@@ -247,7 +259,10 @@ export function CaptureForm({
         </label>
         {state.status === "ready" && (
           <div className="mt-6 text-left">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-background">
+            <div
+              className="relative aspect-[4/3] overflow-hidden rounded-xl"
+              style={{ background: "#100e09", border: "1px solid #3a2e1e" }}
+            >
               <Image
                 src={state.previewUrl}
                 alt="Selected animal photo"
@@ -261,7 +276,7 @@ export function CaptureForm({
                 type="button"
                 disabled={isIdentifying}
                 onClick={() => onIdentify(state.file)}
-                className="mt-4 min-h-12 w-full rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground disabled:pointer-events-none disabled:opacity-60"
+                className="btn-guild mt-4 w-full"
               >
                 {isIdentifying ? "Identifying creature…" : "Identify creature"}
               </button>
@@ -275,28 +290,42 @@ export function CaptureForm({
   return (
     <section
       aria-labelledby="capture-heading"
-      className="mx-auto w-full max-w-2xl rounded-3xl border border-border-low bg-card p-5 shadow-[0_24px_90px_-55px_rgba(0,0,0,0.55)] sm:p-8"
+      className="mx-auto w-full max-w-2xl rounded-2xl p-4 sm:rounded-3xl sm:p-7"
+      style={{
+        background: "#1c1810",
+        border: "1px solid #3a2e1e",
+        boxShadow: "0 24px 90px -55px rgba(0,0,0,0.8)",
+      }}
     >
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-          Expedition capture
-        </p>
+      <div className="space-y-1.5 text-center sm:text-left">
+        <div className="inline-flex">
+          <p className="wax-badge wax-badge-forest">Neural Bio-Scanner</p>
+        </div>
         <h1
           id="capture-heading"
-          className="text-3xl font-black tracking-tight sm:text-4xl"
+          className="text-2xl font-black tracking-tight sm:text-3xl"
+          style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
         >
           Scan your discovery
         </h1>
-        <p id="capture-help" className="text-sm leading-relaxed text-muted">
-          Use the rear camera. The selected frame stays in memory until you
-          identify it.
+        <p id="capture-help" className="text-xs leading-relaxed sm:text-sm" style={{ color: "#8a7a62" }}>
+          Target one animal in frame. Keep steady to lock the neural scan.
         </p>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border-low bg-cream/40">
+      <div
+        className="mt-4 overflow-hidden rounded-2xl"
+        style={{
+          background: "#100e09",
+          border: "1px solid #3a2e1e",
+        }}
+      >
         {state.status === "ready" ? (
           <div className="p-3 sm:p-4">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-background">
+            <div
+              className="relative aspect-[4/3] max-h-[50vh] overflow-hidden rounded-xl"
+              style={{ background: "#0a0805", border: "1px solid #3a2e1e" }}
+            >
               <Image
                 src={state.previewUrl}
                 alt="Captured camera frame"
@@ -305,15 +334,24 @@ export function CaptureForm({
                 className="object-contain"
               />
             </div>
-            <p className="mt-4 text-sm font-semibold">
+            <p
+              className="mt-3 text-center text-xs font-bold uppercase tracking-wider sm:text-left"
+              style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+            >
               Frame ready to identify
             </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={resetCapture}
                 disabled={isIdentifying}
-                className="min-h-12 rounded-xl border border-border px-4 py-2.5 text-sm font-bold"
+                className="flex min-h-14 items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  border: "1px solid #3a2e1e",
+                  color: "#8a7a62",
+                  background: "rgba(58,46,30,0.2)",
+                }}
               >
                 Scan again
               </button>
@@ -322,7 +360,7 @@ export function CaptureForm({
                   type="button"
                   disabled={isIdentifying}
                   onClick={() => onIdentify(state.file)}
-                  className="min-h-12 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground disabled:pointer-events-none disabled:opacity-60"
+                  className="btn-guild w-full"
                 >
                   {isIdentifying ? "Identifying creature…" : "Identify creature"}
                 </button>
@@ -330,14 +368,14 @@ export function CaptureForm({
             </div>
           </div>
         ) : cameraStatus !== "off" ? (
-          <div className="relative min-h-72 overflow-hidden bg-slate-950">
+          <div className="relative h-[55vh] min-h-[340px] max-h-[520px] w-full overflow-hidden bg-[#0a0805]">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
               aria-label="Live rear camera preview"
-              className="absolute inset-0 h-full min-h-72 w-full object-contain"
+              className="absolute inset-0 h-full w-full object-cover"
               onLoadedMetadata={(event) => {
                 void event.currentTarget.play().catch(() => {
                   stopCamera();
@@ -345,66 +383,103 @@ export function CaptureForm({
                 });
               }}
             />
-            <div className="pointer-events-none absolute inset-5 rounded-3xl border-2 border-white/70 shadow-[0_0_0_999px_rgba(0,0,0,0.25)]">
-              <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-300 shadow-[0_0_24px_8px_rgba(110,231,183,0.6)]" />
-              <span
+            {/* Tactical HUD Reticle Viewfinder */}
+            <div className="pointer-events-none absolute inset-4 rounded-2xl sm:inset-6">
+              {/* Corner brackets */}
+              <div className="absolute -left-0.5 -top-0.5 h-4 w-4 border-l-2 border-t-2 border-[#c8a96e]" />
+              <div className="absolute -right-0.5 -top-0.5 h-4 w-4 border-r-2 border-t-2 border-[#c8a96e]" />
+              <div className="absolute -bottom-0.5 -left-0.5 h-4 w-4 border-b-2 border-l-2 border-[#c8a96e]" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 border-b-2 border-r-2 border-[#c8a96e]" />
+
+              {/* Crosshair point */}
+              <span className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#c8a96e] shadow-[0_0_16px_4px_rgba(200,169,110,0.8)]" />
+
+              {/* Guidance status pill */}
+              <div
                 aria-live="polite"
-                className="absolute left-1/2 top-3 -translate-x-1/2 text-center text-xs font-bold uppercase tracking-[0.2em] text-white drop-shadow"
+                className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full px-3 py-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] backdrop-blur-md"
+                style={{
+                  background: "rgba(16,14,9,0.88)",
+                  color: guidance === "ready" ? "#6aab7a" : "#c8a96e",
+                  border: "1px solid rgba(200,169,110,0.35)",
+                }}
               >
                 {cameraStatus === "starting"
                   ? "Opening camera…"
                   : isCapturingFrame
-                    ? "Preparing frame…"
+                    ? "Locking frame…"
                     : CAMERA_GUIDANCE_COPY[guidance]}
-              </span>
+              </div>
+
+              {/* Animated scan line */}
               {cameraStatus === "ready" && !isCapturingFrame && (
-                <span className="scan-line absolute inset-x-2 top-1/2 h-0.5 bg-emerald-300/90 shadow-[0_0_12px_4px_rgba(110,231,183,0.6)]" />
+                <span className="scan-line absolute inset-x-3 top-1/2 h-[2px] bg-gradient-to-r from-transparent via-[#c8a96e] to-transparent shadow-[0_0_12px_2px_rgba(200,169,110,0.6)]" />
               )}
             </div>
-            <div className="absolute inset-x-5 bottom-5 flex gap-3">
+
+            {/* Bottom action controls */}
+            <div className="absolute inset-x-4 bottom-4 flex gap-2.5 sm:gap-3">
               <button
                 type="button"
                 disabled={cameraStatus !== "ready" || isCapturingFrame}
                 onClick={captureFrame}
-                className="min-h-12 flex-1 rounded-xl bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-lg disabled:opacity-50"
+                className="btn-guild min-h-14 flex-1 text-xs font-black uppercase tracking-wider shadow-2xl"
               >
-                {isCapturingFrame ? "Preparing…" : "Scan this animal"}
+                {isCapturingFrame ? "Locking target…" : "Scan this animal"}
               </button>
               <button
                 type="button"
                 onClick={stopCamera}
-                className="min-h-12 rounded-xl border border-white/70 bg-black/40 px-4 py-3 text-sm font-bold text-white"
+                className="min-h-14 rounded-xl border border-[#3a2e1e] bg-[#100e09]/90 px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#f0e8d4] backdrop-blur-md transition-colors hover:border-[#c8a96e]"
               >
                 Close
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex min-h-72 flex-col items-center justify-center gap-4 p-8 text-center">
-            <span
-              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm"
+          <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-6 text-center sm:p-8">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl"
+              style={{
+                background: "linear-gradient(135deg, rgba(200,169,110,0.2), rgba(200,169,110,0.05))",
+                border: "1px solid rgba(200,169,110,0.3)",
+                color: "#c8a96e",
+              }}
               aria-hidden="true"
             >
               ⌁
-            </span>
-            <div className="max-w-sm">
-              <p className="text-lg font-semibold">Scan with camera</p>
-              <p className="mt-1 text-sm text-muted">
-                Point the rear camera at one animal, keep it centered, then hold
-                still.
+            </div>
+            <div className="w-full max-w-sm space-y-2">
+              <p
+                className="text-base font-bold sm:text-lg"
+                style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+              >
+                Live Camera Scanner
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: "#8a7a62" }}>
+                Point rear camera at the creature. Photos are processed locally in memory.
               </p>
               <button
                 type="button"
                 onClick={() => void startCamera()}
-                className="mt-4 min-h-12 w-full rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground"
+                className="btn-guild mt-3 w-full"
               >
                 Start camera
               </button>
-              <label className="mt-2 flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-border px-5 py-3 text-sm font-bold">
+              <label
+                className="mt-2 flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition-colors active:scale-98"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  border: "1px solid #3a2e1e",
+                  color: "#c8a96e",
+                  background: "rgba(200,169,110,0.06)",
+                }}
+              >
                 Choose from library
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
+                  capture="environment"
                   className="sr-only"
                   onChange={(event) => selectImage(event.target.files?.[0])}
                 />
@@ -414,7 +489,15 @@ export function CaptureForm({
         )}
       </div>
       {cameraError && (
-        <p role="alert" className="mt-3 text-sm font-semibold text-destructive">
+        <p
+          role="alert"
+          className="mt-3 rounded-lg p-3 text-xs font-semibold sm:text-sm"
+          style={{
+            background: "rgba(192,57,43,0.12)",
+            color: "#f8c8c4",
+            border: "1px solid rgba(192,57,43,0.3)",
+          }}
+        >
           {cameraError}
         </p>
       )}

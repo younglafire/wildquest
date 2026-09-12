@@ -24,42 +24,70 @@ export default function Home() {
           {/* Hero Section: Centered Cinematic Layout */}
           <section className="flex flex-col items-center text-center space-y-4 sm:space-y-5">
             {/* Top Badge & Titles */}
-            <div className="space-y-2.5 max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700 dark:text-emerald-300">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                WildQuest · Season 01 // Solana Devnet
-              </div>
-
-              <h1 className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-6xl lg:text-7xl">
-                <span className="block bg-gradient-to-br from-amber-500 via-emerald-500 to-teal-600 bg-clip-text text-transparent dark:from-amber-200 dark:via-emerald-400 dark:to-teal-300">
-                  WILDQUEST
-                </span>
-                <span className="mt-1.5 block text-xl font-black tracking-tight sm:text-2xl lg:text-3xl text-foreground">
-                  The Real-World Wildlife RPG on Solana
-                </span>
-              </h1>
-
-              <p className="mx-auto max-w-xl text-xs leading-relaxed text-muted sm:text-sm">
-                Step outside, hunt real animals with your phone camera, and
-                prove your finds with on-device AI vision.
-              </p>
-
-              {/* Feature Tags */}
-              <div className="flex flex-wrap justify-center gap-1.5 pt-1 text-[11px] font-bold text-muted">
-                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
-                  🐾 8 Species
-                </span>
-                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
-                  ⚡ ResNet-50 Vision
-                </span>
-                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
-                  🛡️ Anti-Cheat pHash
-                </span>
-                <span className="rounded-lg border border-border bg-card/60 px-2.5 py-1 backdrop-blur">
-                  🏆 Onchain Quests
-                </span>
-              </div>
+          <div className="space-y-3 max-w-3xl mx-auto">
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em]"
+              style={{ background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", color: "#c8a96e" }}
+            >
+              <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#c8a96e" }} />
+              WildQuest · Season 01 // Solana Devnet
             </div>
+
+            <h1
+              className="text-3xl font-black leading-none sm:text-6xl lg:text-7xl"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              <span
+                className="block"
+                style={{
+                  background: "linear-gradient(135deg, #e0c58a 0%, #c8a96e 40%, #a07d48 70%, #c8a96e 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                WILDQUEST
+              </span>
+              <span
+                className="mt-1.5 block text-lg font-black tracking-tight sm:text-2xl lg:text-3xl"
+                style={{ color: "#f0e8d4" }}
+              >
+                The Real-World Wildlife RPG on Solana
+              </span>
+            </h1>
+
+            <p
+              className="mx-auto max-w-xl text-xs leading-relaxed sm:text-sm"
+              style={{ color: "#8a7a62" }}
+            >
+              Step outside, hunt real animals with your phone camera, and
+              prove your finds with on-device AI vision.
+            </p>
+
+            {/* Feature Tags — leather bordered */}
+            <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+              {[
+                "🐾 8 Species",
+                "⚡ ResNet-50 Vision",
+                "🛡️ Anti-Cheat pHash",
+                "🏆 Onchain Quests",
+              ].map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                  style={{
+                    background: "rgba(58,46,30,0.6)",
+                    border: "1px solid rgba(200,169,110,0.2)",
+                    color: "#8a7a62",
+                    fontFamily: "var(--font-display)",
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
 
             {/* Centerpiece Visual: Frameless 3D Bio-Scanner & Cards */}
             <div className="w-full">
@@ -91,18 +119,32 @@ export default function Home() {
           <GameSystemsGrid />
 
           {/* Section: Active Bounty Quest Highlight */}
-          <section className="mt-28 overflow-hidden rounded-3xl border-2 border-emerald-900/30 bg-gradient-to-r from-emerald-950/20 via-card to-background p-6 shadow-xl sm:p-8 dark:border-emerald-500/30">
+          <section
+            className="mt-28 overflow-hidden rounded-xl p-6 shadow-xl sm:p-8"
+            style={{
+              background: "linear-gradient(135deg, rgba(74,124,89,0.12) 0%, #1c1810 60%)",
+              border: "1px solid rgba(200,169,110,0.2)",
+            }}
+          >
+            {/* Top gold rule */}
+            <div
+              className="mb-5 h-[1px]"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.4), transparent)" }}
+            />
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                  <span>🎯 ACTIVE BOUNTY QUEST</span>
+                <div className="wax-badge wax-badge-forest inline-flex">
+                  🎯 Active Bounty Quest
                 </div>
-                <h3 className="mt-2 text-2xl font-black sm:text-3xl">
+                <h3
+                  className="mt-3 text-2xl font-black sm:text-3xl"
+                  style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+                >
                   Campus Field Survey #01
                 </h3>
-                <p className="mt-1.5 text-sm text-muted">
+                <p className="mt-1.5 text-sm" style={{ color: "#8a7a62" }}>
                   Locate all 5 target species:{" "}
-                  <strong>Bee, Chicken, Butterfly, Dragonfly, and Frog</strong>{" "}
+                  <strong style={{ color: "#c8a96e" }}>Bee, Chicken, Butterfly, Dragonfly, and Frog</strong>{" "}
                   to earn the Founder Badge and +100 XP.
                 </p>
               </div>
@@ -116,21 +158,44 @@ export default function Home() {
           <FieldDispatches />
 
           {/* Pre-Footer Call to Action Banner */}
-          <section className="mt-28 relative overflow-hidden rounded-3xl border-2 border-emerald-500/30 bg-gradient-to-b from-card via-card to-background p-8 text-center shadow-[0_20px_80px_-20px_rgba(16,185,129,0.25)] sm:p-12">
-            {/* Ambient Background Glow */}
+          <section
+            className="mt-28 relative overflow-hidden rounded-xl p-8 text-center sm:p-12"
+            style={{
+              background: "linear-gradient(180deg, #1c1810 0%, #221d14 100%)",
+              border: "1px solid rgba(200,169,110,0.2)",
+              boxShadow: "0 20px 80px -20px rgba(200,169,110,0.15)",
+            }}
+          >
+            {/* Ambient gold glow */}
             <div
-              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full bg-emerald-500/20 blur-3xl"
+              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full blur-3xl"
+              style={{ background: "rgba(200,169,110,0.12)" }}
               aria-hidden="true"
+            />
+            {/* Gold ornamental rules */}
+            <div
+              className="absolute inset-x-8 top-0 h-[1px]"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent)" }}
+            />
+            <div
+              className="absolute inset-x-8 bottom-0 h-[1px]"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.25), transparent)" }}
             />
 
             <div className="relative z-10 max-w-2xl mx-auto space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
-                <span>⚡ SEASON 01 IS LIVE</span>
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-widest"
+                style={{ background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", color: "#c8a96e" }}
+              >
+                <span>✦ SEASON 01 IS LIVE</span>
               </div>
-              <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
+              <h2
+                className="text-3xl font-black tracking-tight sm:text-5xl"
+                style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+              >
                 Ready to Step Into the Wild?
               </h2>
-              <p className="text-sm text-muted sm:text-base leading-relaxed">
+              <p className="text-sm leading-relaxed sm:text-base" style={{ color: "#8a7a62" }}>
                 Your mobile phone is your neural scanner. Solana is your
                 immutable ledger. Begin tracking local wildlife, level up your
                 Explorer Passport, and mint your discoveries today.

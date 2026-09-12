@@ -323,6 +323,15 @@ fn write_player(svm: &mut LiteSVM, player: Pubkey, state: &wildquest::state::Pla
     svm.set_account(player, account).unwrap();
 }
 
+fn write_game_config(svm: &mut LiteSVM, game_config: Pubkey, state: &wildquest::state::GameConfig) {
+    let mut account = svm.get_account(&game_config).unwrap();
+    let mut data = Vec::with_capacity(account.data.len());
+    state.try_serialize(&mut data).unwrap();
+    assert_eq!(data.len(), account.data.len());
+    account.data = data;
+    svm.set_account(game_config, account).unwrap();
+}
+
 fn capture_creature(
     svm: &mut LiteSVM,
     owner: &Keypair,
@@ -392,8 +401,8 @@ fn join_match_instruction(
     match_account: Pubkey,
     creator_creatures: [Pubkey; 3],
     opponent_creatures: [Pubkey; 3],
-    creator_species: [Pubkey; 3],
-    opponent_species: [Pubkey; 3],
+    _creator_species: [Pubkey; 3],
+    _opponent_species: [Pubkey; 3],
 ) -> Instruction {
     let mut account_metas = wildquest::accounts::JoinMatchAccountConstraints {
         opponent,
@@ -406,8 +415,6 @@ fn join_match_instruction(
         creator_creatures
             .into_iter()
             .chain(opponent_creatures)
-            .chain(creator_species)
-            .chain(opponent_species)
             .map(|account| AccountMeta::new_readonly(account, false)),
     );
     account_metas.push(AccountMeta::new_readonly(system_program::ID, false));
@@ -415,6 +422,33 @@ fn join_match_instruction(
         wildquest::id(),
         &wildquest::instruction::JoinMatch {}.data(),
         account_metas,
+    )
+}
+
+fn resolve_match_instruction(
+    resolver: Pubkey,
+    game_config: Pubkey,
+    creator: Pubkey,
+    opponent: Pubkey,
+    match_account: Pubkey,
+    winner: Option<Pubkey>,
+) -> Instruction {
+    Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::ResolveMatch {
+            winner,
+            turn_count: 3,
+            result_hash: [7; 32],
+        }
+        .data(),
+        wildquest::accounts::ResolveMatchAccountConstraints {
+            resolver,
+            game_config,
+            creator,
+            opponent,
+            match_account,
+        }
+        .to_account_metas(None),
     )
 }
 
@@ -436,6 +470,25 @@ fn claim_match_payout_instruction(winner: Pubkey, match_account: Pubkey) -> Inst
         &wildquest::instruction::ClaimMatchPayout {}.data(),
         wildquest::accounts::ClaimMatchPayoutAccountConstraints {
             winner,
+            match_account,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn refund_stale_match_instruction(
+    participant: Pubkey,
+    creator: Pubkey,
+    opponent: Pubkey,
+    match_account: Pubkey,
+) -> Instruction {
+    Instruction::new_with_bytes(
+        wildquest::id(),
+        &wildquest::instruction::RefundStaleMatch {}.data(),
+        wildquest::accounts::RefundStaleMatchAccountConstraints {
+            participant,
+            creator,
+            opponent,
             match_account,
         }
         .to_account_metas(None),
@@ -973,6 +1026,58 @@ fn test_complete_quest_rolls_back_progression_overflow() {
 }
 
 #[test]
+fn test_activate_turn_combat_requires_admin_and_updates_existing_config() {
+    let admin = Keypair::new();
+    let wrong_admin = Keypair::new();
+    let capture_authority = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&admin.pubkey(), 2_000_000_000).unwrap();
+    svm.airdrop(&wrong_admin.pubkey(), 2_000_000_000).unwrap();
+    let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
+    let account = svm.get_account(&game_config).unwrap();
+    let mut data: &[u8] = &account.data;
+    let mut state = wildquest::state::GameConfig::try_deserialize(&mut data).unwrap();
+    state.rules_version = 1;
+    write_game_config(&mut svm, game_config, &state);
+
+    let instruction = |signer: Pubkey| {
+        Instruction::new_with_bytes(
+            wildquest::id(),
+            &wildquest::instruction::ActivateTurnCombat {}.data(),
+            wildquest::accounts::ActivateTurnCombatAccountConstraints {
+                admin: signer,
+                game_config,
+            }
+            .to_account_metas(None),
+        )
+    };
+    assert!(!send_instruction(
+        &mut svm,
+        &wrong_admin,
+        instruction(wrong_admin.pubkey())
+    ));
+    assert_eq!(
+        {
+            let account = svm.get_account(&game_config).unwrap();
+            let mut data: &[u8] = &account.data;
+            wildquest::state::GameConfig::try_deserialize(&mut data)
+                .unwrap()
+                .rules_version
+        },
+        1
+    );
+    assert!(send_instruction(
+        &mut svm,
+        &admin,
+        instruction(admin.pubkey())
+    ));
+    let account = svm.get_account(&game_config).unwrap();
+    let mut data: &[u8] = &account.data;
+    let updated = wildquest::state::GameConfig::try_deserialize(&mut data).unwrap();
+    assert_eq!(updated.rules_version, wildquest::constants::RULES_VERSION);
+}
+
+#[test]
 fn test_initialize_battle_species_configs() {
     let admin = Keypair::new();
     let capture_authority = Keypair::new();
@@ -1222,6 +1327,8 @@ fn test_match_requires_winner_claim_and_rejects_replay() {
     for wallet in [&admin, &creator, &opponent] {
         svm.airdrop(&wallet.pubkey(), 2_000_000_000).unwrap();
     }
+    svm.airdrop(&capture_authority.pubkey(), 10_000_000)
+        .unwrap();
 
     let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
     let species = initialize_battle_configs(&mut svm, &admin, game_config);
@@ -1277,6 +1384,18 @@ fn test_match_requires_winner_claim_and_rejects_replay() {
         join_instruction.clone()
     ));
 
+    let active = read_match(&svm, &match_account);
+    assert_eq!(active.status, wildquest::state::MatchStatus::Active);
+    assert_eq!(active.winner, None);
+    let resolve = resolve_match_instruction(
+        capture_authority.pubkey(),
+        game_config,
+        creator.pubkey(),
+        opponent.pubkey(),
+        match_account,
+        Some(creator.pubkey()),
+    );
+    assert!(send_instruction(&mut svm, &capture_authority, resolve));
     let claimable = read_match(&svm, &match_account);
     assert_eq!(claimable.status, wildquest::state::MatchStatus::Claimable);
     assert_eq!(claimable.opponent, Some(opponent.pubkey()));
@@ -1341,6 +1460,8 @@ fn test_match_tie_refunds_both_stakes() {
     for wallet in [&admin, &creator, &opponent] {
         svm.airdrop(&wallet.pubkey(), 2_000_000_000).unwrap();
     }
+    svm.airdrop(&capture_authority.pubkey(), 10_000_000)
+        .unwrap();
 
     let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
     let species = initialize_battle_configs(&mut svm, &admin, game_config);
@@ -1382,6 +1503,16 @@ fn test_match_tie_refunds_both_stakes() {
     );
     assert!(send_instruction(&mut svm, &opponent, join_instruction));
 
+    let resolve = resolve_match_instruction(
+        capture_authority.pubkey(),
+        game_config,
+        creator.pubkey(),
+        opponent.pubkey(),
+        match_account,
+        None,
+    );
+    assert!(send_instruction(&mut svm, &capture_authority, resolve));
+
     let settled = read_match(&svm, &match_account);
     assert_eq!(settled.status, wildquest::state::MatchStatus::Settled);
     assert_eq!(settled.winner, None);
@@ -1393,6 +1524,101 @@ fn test_match_tie_refunds_both_stakes() {
         svm.get_balance(&match_account).unwrap(),
         open_match_balance - wildquest::constants::MATCH_STAKE_LAMPORTS
     );
+}
+
+#[test]
+fn test_active_match_refunds_after_expiry_and_cannot_resolve() {
+    let admin = Keypair::new();
+    let creator = Keypair::new();
+    let opponent = Keypair::new();
+    let capture_authority = Keypair::new();
+    let mut svm = create_test_svm();
+    for wallet in [&admin, &creator, &opponent] {
+        svm.airdrop(&wallet.pubkey(), 2_000_000_000).unwrap();
+    }
+    svm.airdrop(&capture_authority.pubkey(), 10_000_000)
+        .unwrap();
+
+    let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
+    let species = initialize_battle_configs(&mut svm, &admin, game_config);
+    let creator_indexes = [0, 1, 2];
+    let opponent_indexes = [3, 4, 5];
+    let creator_team = capture_team(
+        &mut svm,
+        &creator,
+        &capture_authority,
+        game_config,
+        &species,
+        creator_indexes,
+        130,
+    );
+    let opponent_team = capture_team(
+        &mut svm,
+        &opponent,
+        &capture_authority,
+        game_config,
+        &species,
+        opponent_indexes,
+        140,
+    );
+    let (open, match_account) =
+        open_match_instruction(creator.pubkey(), game_config, 57, creator_team);
+    assert!(send_instruction(&mut svm, &creator, open));
+    assert!(send_instruction(
+        &mut svm,
+        &opponent,
+        join_match_instruction(
+            opponent.pubkey(),
+            creator.pubkey(),
+            game_config,
+            match_account,
+            creator_team,
+            opponent_team,
+            creator_indexes.map(|index| species[index]),
+            opponent_indexes.map(|index| species[index]),
+        ),
+    ));
+
+    let active = read_match(&svm, &match_account);
+    let expires_at = active.active_expires_at.unwrap();
+    let early = refund_stale_match_instruction(
+        creator.pubkey(),
+        creator.pubkey(),
+        opponent.pubkey(),
+        match_account,
+    );
+    assert!(!send_instruction(&mut svm, &creator, early));
+    let creator_before = svm.get_balance(&creator.pubkey()).unwrap();
+    let opponent_before = svm.get_balance(&opponent.pubkey()).unwrap();
+
+    let mut clock = svm.get_sysvar::<anchor_lang::prelude::Clock>();
+    clock.unix_timestamp = expires_at + 1;
+    svm.set_sysvar(&clock);
+    let refund = refund_stale_match_instruction(
+        opponent.pubkey(),
+        creator.pubkey(),
+        opponent.pubkey(),
+        match_account,
+    );
+    assert!(send_instruction(&mut svm, &opponent, refund));
+    assert_eq!(
+        read_match(&svm, &match_account).status,
+        wildquest::state::MatchStatus::Refunded
+    );
+    assert_eq!(
+        svm.get_balance(&creator.pubkey()).unwrap(),
+        creator_before + wildquest::constants::MATCH_STAKE_LAMPORTS
+    );
+    assert!(svm.get_balance(&opponent.pubkey()).unwrap() > opponent_before);
+    let resolve = resolve_match_instruction(
+        capture_authority.pubkey(),
+        game_config,
+        creator.pubkey(),
+        opponent.pubkey(),
+        match_account,
+        Some(creator.pubkey()),
+    );
+    assert!(!send_instruction(&mut svm, &capture_authority, resolve));
 }
 
 #[test]
@@ -1603,6 +1829,8 @@ fn test_admin_reset_pays_claimable_match_winner() {
     for wallet in [&admin, &creator, &opponent] {
         svm.airdrop(&wallet.pubkey(), 2_000_000_000).unwrap();
     }
+    svm.airdrop(&capture_authority.pubkey(), 10_000_000)
+        .unwrap();
     let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
     let species = initialize_battle_configs(&mut svm, &admin, game_config);
     let creator_indexes = [1, 2, 4];
@@ -1639,6 +1867,15 @@ fn test_admin_reset_pays_claimable_match_winner() {
         opponent_indexes.map(|index| species[index]),
     );
     assert!(send_instruction(&mut svm, &opponent, join));
+    let resolve = resolve_match_instruction(
+        capture_authority.pubkey(),
+        game_config,
+        creator.pubkey(),
+        opponent.pubkey(),
+        match_account,
+        Some(creator.pubkey()),
+    );
+    assert!(send_instruction(&mut svm, &capture_authority, resolve));
     assert_eq!(
         read_match(&svm, &match_account).winner,
         Some(creator.pubkey())

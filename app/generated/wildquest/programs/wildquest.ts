@@ -17,6 +17,7 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  parseActivateTurnCombatInstruction,
   parseAdminCloseCreatureInstruction,
   parseAdminCloseMatchInstruction,
   parseCancelMatchInstruction,
@@ -35,6 +36,7 @@ import {
   parseRefundStaleMatchInstruction,
   parseReleaseCreatureInstruction,
   parseResolveMatchInstruction,
+  type ParsedActivateTurnCombatInstruction,
   type ParsedAdminCloseCreatureInstruction,
   type ParsedAdminCloseMatchInstruction,
   type ParsedCancelMatchInstruction,
@@ -179,6 +181,7 @@ export function identifyWildquestAccount(
 }
 
 export enum WildquestInstruction {
+  ActivateTurnCombat,
   AdminCloseCreature,
   AdminCloseMatch,
   CancelMatch,
@@ -203,6 +206,17 @@ export function identifyWildquestInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): WildquestInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([30, 160, 174, 201, 183, 55, 171, 132]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.ActivateTurnCombat;
+  }
   if (
     containsBytes(
       data,
@@ -410,6 +424,9 @@ export type ParsedWildquestInstruction<
   TProgram extends string = "3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF",
 > =
   | ({
+      instructionType: WildquestInstruction.ActivateTurnCombat;
+    } & ParsedActivateTurnCombatInstruction<TProgram>)
+  | ({
       instructionType: WildquestInstruction.AdminCloseCreature;
     } & ParsedAdminCloseCreatureInstruction<TProgram>)
   | ({
@@ -469,6 +486,13 @@ export function parseWildquestInstruction<TProgram extends string>(
 ): ParsedWildquestInstruction<TProgram> {
   const instructionType = identifyWildquestInstruction(instruction);
   switch (instructionType) {
+    case WildquestInstruction.ActivateTurnCombat: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.ActivateTurnCombat,
+        ...parseActivateTurnCombatInstruction(instruction),
+      };
+    }
     case WildquestInstruction.AdminCloseCreature: {
       assertIsInstructionWithAccounts(instruction);
       return {

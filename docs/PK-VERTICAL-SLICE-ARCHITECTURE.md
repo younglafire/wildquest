@@ -93,7 +93,7 @@ The program derives the GameConfig PDA from `[b"game_config"]`. Its account stor
 - `stake_lamports: u64`
 - `bump: u8`
 
-`initialize_game_config()` requires the admin signer and stores `stake_lamports = 10_000_000`, `balance_version = 1`, and `rules_version = 1`. A later admin update path is outside the five-day slice.
+`initialize_game_config()` requires the admin signer and stores `stake_lamports = 10_000_000`, `balance_version = 1`, and the current rules version. Existing deployments use the admin-only `activate_turn_combat()` instruction to move `GameConfig` to simultaneous-turn rules version 2 without deleting the PDA account.
 
 ## SpeciesConfig stores authoritative battle stats
 

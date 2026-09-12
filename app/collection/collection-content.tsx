@@ -174,54 +174,61 @@ export function CollectionContent() {
     game.catalogue.error ?? game.creatures.error ?? battleCatalogue.error;
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pb-20 pt-8 sm:px-6 sm:pt-14">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <main className="mx-auto max-w-6xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-5">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.26em] text-muted">
-            Battle roster
+          <p className="text-[10px] font-bold uppercase tracking-[0.26em]" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
+            Battle Roster
           </p>
-          <h1 className="mt-2 text-5xl font-black tracking-tight">
+          <h1 className="mt-1 text-3xl font-black tracking-tight sm:mt-2 sm:text-5xl" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>
             Collection
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
-            Your onchain Creature cards use the same stats and artwork shown in
-            team selection and battle.
+          <p className="mt-2 max-w-xl text-xs leading-relaxed sm:mt-3 sm:text-sm" style={{ color: "#8a7a62" }}>
+            Your onchain Creature cards for deterministic 3v3 arena battle.
           </p>
         </div>
-        <div className="rounded-2xl border border-border bg-card px-5 py-3">
-          <p className="text-xs text-muted">Creatures owned</p>
-          <p className="text-2xl font-black tabular-nums">
-            {ownedByCatalogueId.size}/{battleCatalogue.data?.length ?? "–"}
+        <div className="flex items-center justify-between rounded-xl px-4 py-2.5 sm:block sm:px-5 sm:py-3" style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}>
+          <p className="text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>Creatures Owned</p>
+          <p className="text-xl font-black tabular-nums sm:text-2xl" style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}>
+            {ownedByCatalogueId.size} / {battleCatalogue.data?.length ?? "–"}
           </p>
         </div>
       </div>
 
       <section
         aria-label="Collection filters"
-        className="mt-8 rounded-2xl border border-border bg-card p-4"
+        className="mt-4 rounded-xl p-3 sm:mt-6 sm:p-4"
+        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
       >
-        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
           {FILTERS.map((option) => (
             <button
               key={option}
               type="button"
               aria-pressed={filter === option}
               onClick={() => setFilter(option)}
-              className={`min-h-11 shrink-0 rounded-xl px-4 text-sm font-bold ${filter === option ? "bg-primary text-primary-foreground" : "bg-cream text-muted"}`}
+              className="min-h-10 shrink-0 rounded-lg px-4 text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95"
+              style={{
+                fontFamily: "var(--font-display)",
+                background: filter === option ? "linear-gradient(135deg, #c8a96e, #a07d48)" : "rgba(58,46,30,0.5)",
+                color: filter === option ? "#100e09" : "#8a7a62",
+                border: filter === option ? "1px solid #c8a96e" : "1px solid transparent",
+              }}
             >
               {option}
             </button>
           ))}
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:ml-auto sm:max-w-md">
-          <label className="text-xs text-muted">
+        <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:mt-3 sm:ml-auto sm:max-w-md sm:gap-3">
+          <label className="text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             Rarity
             <select
               value={rarity}
               onChange={(event) =>
                 setRarity(event.target.value as Rarity | "All")
               }
-              className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground"
+              className="mt-1 block min-h-10 w-full rounded-lg px-3 text-xs sm:text-sm"
+              style={{ background: "#100e09", border: "1px solid #3a2e1e", color: "#f0e8d4" }}
             >
               <option>All</option>
               {Object.keys(RARITY_ORDER).map((value) => (
@@ -229,14 +236,15 @@ export function CollectionContent() {
               ))}
             </select>
           </label>
-          <label className="text-xs text-muted">
+          <label className="text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             Sort
             <select
               value={sort}
               onChange={(event) =>
                 setSort(event.target.value as (typeof SORTS)[number])
               }
-              className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground"
+              className="mt-1 block min-h-10 w-full rounded-lg px-3 text-xs sm:text-sm"
+              style={{ background: "#100e09", border: "1px solid #3a2e1e", color: "#f0e8d4" }}
             >
               {SORTS.map((value) => (
                 <option key={value}>{value}</option>
@@ -249,28 +257,30 @@ export function CollectionContent() {
       {error && (
         <p
           role="alert"
-          className="mt-6 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
+          className="mt-6 rounded-lg p-4 text-sm"
+          style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
         >
           {error}
         </p>
       )}
       {loading ? (
-        <p className="mt-10 text-sm text-muted">Loading Creature cards…</p>
+        <p className="mt-10 text-sm" style={{ color: "#8a7a62" }}>Consulting the Codex…</p>
       ) : loadError ? (
-        <section className="mt-10 rounded-2xl border border-destructive/30 bg-destructive/10 p-5">
-          <p className="text-sm text-destructive">
+        <section className="mt-10 rounded-xl p-5" style={{ background: "rgba(192,57,43,0.1)", border: "1px solid rgba(192,57,43,0.25)" }}>
+          <p className="text-sm" style={{ color: "#f8c8c4" }}>
             Your Creature cards could not be loaded.
           </p>
           <button
             type="button"
             onClick={() => void game.refresh()}
             className="mt-3 text-sm font-bold underline"
+            style={{ color: "#c8a96e" }}
           >
             Try again
           </button>
         </section>
       ) : cards.length === 0 ? (
-        <p className="mt-10 rounded-2xl bg-card p-6 text-sm text-muted">
+        <p className="mt-10 rounded-xl p-6 text-sm" style={{ background: "#1c1810", color: "#8a7a62" }}>
           No Creature cards match these filters.
         </p>
       ) : (
@@ -290,7 +300,8 @@ export function CollectionContent() {
               <div key={String(species.id)}>
                 <Link
                   href={`/collection/${species.speciesId}`}
-                  className="block rounded-2xl focus-visible:ring-2 focus-visible:ring-emerald-500"
+                  className="block rounded-xl"
+                  style={{ outline: "none" }}
                 >
                   {battleCreature ? (
                     <CreatureCard creature={battleCreature} />
@@ -307,7 +318,8 @@ export function CollectionContent() {
                     type="button"
                     disabled={isSending || locked}
                     onClick={() => setReleaseCandidate(owned)}
-                    className="mt-2 min-h-11 w-full rounded-xl border border-destructive/40 px-4 text-sm font-bold text-destructive disabled:cursor-not-allowed disabled:opacity-45"
+                    className="mt-2 min-h-10 w-full rounded-lg px-4 text-[11px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45"
+                    style={{ border: "1px solid rgba(192,57,43,0.4)", color: "#f8c8c4", background: "rgba(192,57,43,0.08)", fontFamily: "var(--font-display)" }}
                   >
                     {locked ? "Card locked in active Match" : "Release card"}
                   </button>
@@ -315,19 +327,21 @@ export function CollectionContent() {
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     <Link
                       href="/capture"
-                      className="flex min-h-11 items-center justify-center rounded-xl border border-border text-sm font-bold"
+                      className="flex min-h-10 items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors"
+                      style={{ border: "1px solid #3a2e1e", color: "#c8a96e", fontFamily: "var(--font-display)", background: "rgba(200,169,110,0.06)" }}
                     >
-                      Capture this Creature
+                      Capture
                     </Link>
                     <button
                       type="button"
                       disabled={isGenerating || generatingId !== null}
                       onClick={() => void generateAnimal(String(species.id))}
-                      className="min-h-11 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 text-sm font-bold text-amber-800 disabled:opacity-50 dark:text-amber-200"
+                      className="min-h-10 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wide disabled:opacity-50"
+                      style={{ border: "1px solid rgba(200,169,110,0.3)", color: "#c8a96e", background: "rgba(200,169,110,0.08)", fontFamily: "var(--font-display)" }}
                     >
                       {generatingId === String(species.id)
                         ? "Generating…"
-                        : "Generate pet"}
+                        : "Generate"}
                     </button>
                   </div>
                 )}
@@ -342,12 +356,13 @@ export function CollectionContent() {
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="release-title"
-          className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-2xl border border-border bg-background p-5 shadow-2xl"
+          className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-xl p-5 shadow-2xl"
+          style={{ background: "#1c1810", border: "1px solid #3a2e1e", boxShadow: "0 20px 60px rgba(0,0,0,0.8)" }}
         >
-          <h2 id="release-title" className="text-xl font-black">
+          <h2 id="release-title" className="text-xl font-black" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>
             Release this Creature?
           </h2>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm" style={{ color: "#8a7a62" }}>
             The card will leave your onchain roster. You can capture this exact
             species again later with a new photo.
           </p>
@@ -355,7 +370,8 @@ export function CollectionContent() {
             <button
               type="button"
               onClick={() => setReleaseCandidate(null)}
-              className="min-h-12 rounded-xl border border-border text-sm font-bold"
+              className="min-h-12 rounded-lg text-sm font-bold"
+              style={{ border: "1px solid #3a2e1e", color: "#f0e8d4", background: "transparent" }}
             >
               Keep card
             </button>
@@ -363,7 +379,8 @@ export function CollectionContent() {
               type="button"
               disabled={isSending}
               onClick={() => void releaseCreature()}
-              className="min-h-12 rounded-xl bg-destructive px-4 text-sm font-bold text-white disabled:opacity-50"
+              className="min-h-12 rounded-lg px-4 text-sm font-bold disabled:opacity-50"
+              style={{ background: "#c0392b", color: "#fff" }}
             >
               {isSending ? "Waiting for wallet…" : "Release on Solana"}
             </button>

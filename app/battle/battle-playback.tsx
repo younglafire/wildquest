@@ -102,33 +102,48 @@ export function BattlePlayback({
         : "Opponent wins";
 
   return (
-    <section className="mt-6 overflow-hidden rounded-3xl border border-border bg-card p-5 sm:p-8">
+    <section
+      className="mt-5 overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-8"
+      style={{
+        background: "#1c1810",
+        border: "1px solid #3a2e1e",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+      }}
+    >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
+          <p className="wax-badge wax-badge-forest">
             Battle replay
           </p>
-          <h2 className="mt-2 text-3xl font-black">
+          <h2
+            className="mt-2 text-2xl font-black sm:text-3xl"
+            style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+          >
             {frame.countdownSeconds > 0
-              ? `Battle starts in ${frame.countdownSeconds}`
+              ? `Battle starts in ${frame.countdownSeconds}s`
               : finished
                 ? outcome
                 : `Round ${current?.round ?? 1}`}
           </h2>
         </div>
-        <p className="max-w-xs text-xs leading-relaxed text-muted">
-          Live timeline · synchronized from the confirmed Match account
+        <p className="max-w-xs text-xs leading-relaxed" style={{ color: "#8a7a62" }}>
+          Live deterministic timeline from Solana Devnet
         </p>
       </div>
 
-      <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6">
+      <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6">
         <Combatant
           creature={creatorTeam[creatorSlot]!}
           state={health.creator[creatorSlot]!}
           attacking={current?.attackerSide === "creator" && !finished}
           side="creator"
         />
-        <div className="text-center text-lg font-black text-muted">VS</div>
+        <div
+          className="text-center text-sm font-black sm:text-lg"
+          style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+        >
+          VS
+        </div>
         <Combatant
           creature={opponentTeam[opponentSlot]!}
           state={health.opponent[opponentSlot]!}
@@ -137,21 +152,26 @@ export function BattlePlayback({
         />
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 text-center text-xs font-bold text-muted">
+      <div className="mt-4 grid grid-cols-2 gap-2 text-center text-[10px] font-bold uppercase tracking-wider sm:text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
         <p>Creator · slot {creatorSlot + 1}</p>
         <p>Opponent · slot {opponentSlot + 1}</p>
       </div>
       {current && !finished && (
-        <p aria-live="polite" className="mt-4 text-center text-sm font-bold">
+        <p
+          aria-live="polite"
+          className="mt-3 text-center text-xs font-bold sm:text-sm"
+          style={{ color: "#c8a96e", fontFamily: "var(--font-display)" }}
+        >
           {current.attackerSide === "creator" ? "Creator" : "Opponent"} dealt{" "}
-          {current.damage} damage
+          {current.damage} damage ✦
         </p>
       )}
 
       {!replayMatchesAccount && (
         <p
           role="alert"
-          className="mt-5 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
+          className="mt-4 rounded-xl p-3 text-xs font-semibold sm:text-sm"
+          style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
         >
           Replay rules do not match the recorded onchain winner. Claim is
           disabled; refresh the app before continuing.
@@ -159,23 +179,31 @@ export function BattlePlayback({
       )}
 
       {finished && (
-        <div className="mt-6 rounded-2xl bg-cream p-5 text-center">
-          <p className="font-black">{outcome}</p>
+        <div
+          className="mt-5 rounded-xl p-4 text-center sm:p-6"
+          style={{ background: "#221d14", border: "1px solid #3a2e1e" }}
+        >
+          <p
+            className="text-lg font-black"
+            style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+          >
+            {outcome}
+          </p>
           {canClaim ? (
             <button
               type="button"
               onClick={onClaim}
               disabled={isSending}
-              className="mt-4 min-h-12 w-full rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground disabled:opacity-50 sm:w-auto"
+              className="btn-guild mt-4 w-full sm:w-auto"
             >
-              {isSending ? "Waiting for wallet…" : "Claim 0.02 SOL pot"}
+              {isSending ? "Waiting for wallet…" : "✦ Claim 0.02 SOL pot"}
             </button>
           ) : match.data.status === MatchStatus.Claimable ? (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-2 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
               The recorded winner must sign to claim the pot.
             </p>
           ) : (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-2 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
               Payout settlement is complete.
             </p>
           )}

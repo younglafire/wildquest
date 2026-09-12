@@ -239,16 +239,44 @@ The earlier Counter instructions remain as scaffold functionality.
 - **Match PDA** uses `["match", creator, match_id_le]` and stores both ordered
   teams, stake, lifecycle status, winner, and timestamps.
 
-A Match moves from `Open` to `Claimable` when combat has a winner. The winner
-must sign `claim_match_payout` to receive both stakes and move it to `Settled`.
-A tie is refunded immediately and becomes `Settled`; an unmatched creator can
-cancel and recover the opening stake.
+A Match moves from `Open` to `Active` after the second stake is deposited. A
+dedicated authoritative server runs five-second simultaneous turns and commits
+the winner, turn count, and SHA-256 result hash with `resolve_match`. A winning
+Match becomes `Claimable`; its winner signs `claim_match_payout` to receive both
+stakes. A draw is refunded during resolution. An unmatched creator can cancel,
+and either participant can refund an Active Match after its server timeout.
 
 Opening or joining a Match routes both wallets to the same battlefield address.
-Each browser subscribes to that Match account at confirmed commitment and uses
-its `settled_at` timestamp as the shared animation clock. Battle progress is
-derived from time, so the live view has no pause, skip, or replay controls.
-Confirmed polling covers temporary WebSocket disconnects.
+Each browser connects to the same battle room. Participants authenticate with a
+wallet-signed message, while spectators have read-only access. The server owns
+the deadline and broadcasts snapshots, so the live view has no pause or skip
+control and one player's choice remains hidden until both choices resolve.
+
+The development command starts the web app and battle process together:
+
+```sh
+npm run dev
+```
+
+Use `npm run dev:web` only when the battle server is intentionally running in
+another terminal or environment.
+
+`NEXT_PUBLIC_BATTLE_SERVER_URL` defaults to `ws://localhost:3001`. Production
+must use a TLS WebSocket URL and run one sticky room owner per Match, or move the
+room state to a shared authoritative service before horizontal scaling.
+
+Check the rules-version 2 roster before a demo or deployment:
+
+```sh
+npm run battle:balance
+```
+
+The deterministic matrix fails the command unless median length is 12 to 24
+turns, draws remain below 10%, no action exceeds 65% usage, and no creature
+exceeds a 65% sample win rate. Supabase stores creature presentation metadata;
+the program's `SpeciesConfig` accounts remain authoritative for battle stats.
+After deploying a program build with new stats, rerun `npm run setup:pk-config`
+with the configured admin so Devnet has every supported SpeciesConfig.
 
 `discover_species` derives XP from the validated grade code inside the program:
 Bronze awards 50 XP, Silver 75 XP, and Gold 100 XP. It updates Player

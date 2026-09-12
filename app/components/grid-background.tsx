@@ -39,20 +39,19 @@ export function GridBackground() {
     };
     setupCanvas();
 
-    // Safari/Cyber-jungle palette: emerald, amber, cyber lime, electric cyan
+    // Forest Guild Codex palette: amber gold, forest green, warm cream
     const colors = [
-      { r: 16, g: 185, b: 129, glow: "rgba(52, 211, 153, 0.95)" }, // emerald
-      { r: 52, g: 211, b: 153, glow: "rgba(110, 231, 183, 0.95)" }, // light emerald
-      { r: 245, g: 158, b: 11, glow: "rgba(251, 191, 36, 0.95)" }, // amber
-      { r: 251, g: 191, b: 36, glow: "rgba(253, 230, 138, 0.95)" }, // gold
-      { r: 163, g: 230, b: 53, glow: "rgba(190, 242, 100, 0.95)" }, // lime
-      { r: 56, g: 189, b: 248, glow: "rgba(125, 211, 252, 0.95)" }, // cyan
+      { r: 200, g: 169, b: 110, glow: "rgba(224, 197, 138, 0.9)" }, // aged gold
+      { r: 224, g: 197, b: 138, glow: "rgba(200, 169, 110, 0.9)" }, // gold light
+      { r: 160, g: 125, b: 72,  glow: "rgba(200, 169, 110, 0.8)" }, // gold dim
+      { r: 74,  g: 124, b: 89,  glow: "rgba(106, 171, 122, 0.85)" }, // forest deep
+      { r: 106, g: 171, b: 122, glow: "rgba(74, 124, 89, 0.85)" },  // forest light
+      { r: 240, g: 220, b: 180, glow: "rgba(240, 232, 212, 0.7)" }, // parchment cream
     ];
 
-    // Rich density across the entire screen
     const particleCount = Math.min(
-      110,
-      Math.max(50, Math.floor((width * height) / 16000)),
+      90,
+      Math.max(40, Math.floor((width * height) / 18000)),
     );
     const particles: Particle[] = [];
 
@@ -61,18 +60,17 @@ export function GridBackground() {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        radius: Math.random() * 1.8 + 1.4, // 1.4px to 3.2px
-        vx: (Math.random() - 0.5) * 0.4, // gentle drift
-        vy: -(Math.random() * 0.5 + 0.25), // upward float (-0.25 to -0.75)
+        radius: Math.random() * 1.6 + 1.0,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -(Math.random() * 0.4 + 0.15),
         color: `rgb(${c.r}, ${c.g}, ${c.b})`,
         glowColor: c.glow,
-        baseAlpha: Math.random() * 0.4 + 0.45, // 0.45 to 0.85
+        baseAlpha: Math.random() * 0.35 + 0.35,
         pulsePhase: Math.random() * Math.PI * 2,
-        pulseSpeed: Math.random() * 0.025 + 0.015,
+        pulseSpeed: Math.random() * 0.02 + 0.012,
       });
     }
 
-    // Gentle cursor interaction
     const mouse = { x: -1000, y: -1000 };
     const handleMouseMove = (e: MouseEvent) => {
       mouse.x = e.clientX;
@@ -103,24 +101,21 @@ export function GridBackground() {
         const p = particles[i];
 
         if (!prefersReducedMotion) {
-          // Floating physics
-          p.x += p.vx + Math.sin(p.pulsePhase) * 0.35;
+          p.x += p.vx + Math.sin(p.pulsePhase) * 0.28;
           p.y += p.vy;
           p.pulsePhase += p.pulseSpeed;
 
-          // Gentle mouse reaction (particles softly part around cursor)
           const dx = p.x - mouse.x;
           const dy = p.y - mouse.y;
           const distSq = dx * dx + dy * dy;
-          const minDist = 130;
+          const minDist = 110;
           if (distSq < minDist * minDist && distSq > 0) {
             const dist = Math.sqrt(distSq);
-            const force = (1 - dist / minDist) * 1.5;
+            const force = (1 - dist / minDist) * 1.2;
             p.x += (dx / dist) * force;
             p.y += (dy / dist) * force;
           }
 
-          // Screen boundaries wrap
           if (p.y < -20) {
             p.y = height + 20;
             p.x = Math.random() * width;
@@ -129,28 +124,25 @@ export function GridBackground() {
           if (p.x > width + 20) p.x = -20;
         }
 
-        // Bioluminescent pulsating glow
         const currentAlpha = Math.max(
-          0.15,
-          Math.min(1, p.baseAlpha + Math.sin(p.pulsePhase) * 0.3),
+          0.1,
+          Math.min(0.9, p.baseAlpha + Math.sin(p.pulsePhase) * 0.25),
         );
 
         ctx.save();
         ctx.globalAlpha = currentAlpha;
 
-        // Glowing outer halo
         ctx.shadowColor = p.glowColor;
-        ctx.shadowBlur = p.radius * 6;
+        ctx.shadowBlur = p.radius * 5;
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Luminous bright center spark
         ctx.shadowBlur = 0;
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.fillStyle = "rgba(255, 245, 220, 0.85)";
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius * 0.45, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.radius * 0.4, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
@@ -184,37 +176,37 @@ export function GridBackground() {
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
     >
-      {/* Jungle & Safari ambient aura glow */}
+      {/* Warm amber & forest ambient aura */}
       <div
         className="absolute inset-0 transition-opacity duration-700"
         style={{
           background: [
-            "radial-gradient(ellipse 45% 40% at 20% 35%, rgba(16,185,129,0.14) 0%, transparent 70%)",
-            "radial-gradient(ellipse 40% 40% at 80% 45%, rgba(245,158,11,0.12) 0%, transparent 70%)",
-            "radial-gradient(ellipse 50% 30% at 50% 90%, rgba(5,150,105,0.08) 0%, transparent 60%)",
+            "radial-gradient(ellipse 50% 45% at 20% 30%, rgba(200,169,110,0.1) 0%, transparent 70%)",
+            "radial-gradient(ellipse 40% 40% at 80% 50%, rgba(74,124,89,0.09) 0%, transparent 70%)",
+            "radial-gradient(ellipse 60% 35% at 50% 95%, rgba(160,125,72,0.08) 0%, transparent 60%)",
           ].join(", "),
         }}
       />
 
-      {/* Subtle jungle canopy vignette */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)] dark:bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.65)_100%)]" />
+      {/* Vignette — deep forest darkness at edges */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.7)_100%)]" />
 
-      {/* Explorer coordinates grid — subtle adventure map lines */}
+      {/* Aged map grid lines — warm amber */}
       <div
-        className="absolute inset-0 opacity-40 dark:opacity-30"
+        className="absolute inset-0 opacity-20"
         style={{
           backgroundImage: `
-            linear-gradient(to right, rgba(16,185,129,0.12) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(16,185,129,0.12) 1px, transparent 1px)
+            linear-gradient(to right, rgba(200,169,110,0.15) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(200,169,110,0.15) 1px, transparent 1px)
           `,
-          backgroundSize: "64px 64px",
-          mask: "radial-gradient(ellipse 55% 55% at 50% 45%, black 20%, transparent 80%)",
+          backgroundSize: "72px 72px",
+          mask: "radial-gradient(ellipse 60% 50% at 50% 45%, black 20%, transparent 80%)",
           WebkitMask:
-            "radial-gradient(ellipse 55% 55% at 50% 45%, black 20%, transparent 80%)",
+            "radial-gradient(ellipse 60% 50% at 50% 45%, black 20%, transparent 80%)",
         }}
       />
 
-      {/* Floating bioluminescent spores canvas */}
+      {/* Floating amber spores / fireflies */}
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
     </div>
   );

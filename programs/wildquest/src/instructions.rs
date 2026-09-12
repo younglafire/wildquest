@@ -1,3 +1,4 @@
+pub mod activate_turn_combat;
 pub mod admin;
 pub mod cancel_match;
 pub mod capture_creature;
@@ -16,6 +17,7 @@ pub mod refund_stale_match;
 pub mod release_creature;
 pub mod resolve_match;
 
+pub use activate_turn_combat::*;
 pub use admin::*;
 pub use cancel_match::*;
 pub use capture_creature::*;
