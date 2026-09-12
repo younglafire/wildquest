@@ -218,9 +218,14 @@ function TeamPanel({
             className={`relative h-12 flex-1 overflow-hidden rounded-lg border bg-cream ${index === activeSlot ? "border-emerald-500" : "border-border"} ${index < activeSlot ? "grayscale opacity-40" : ""}`}
           >
             <SpeciesArt
-              src={creature.species?.iconUrl ?? creature.species?.imageUrl}
+              src={creature.species?.imageUrl ?? creature.species?.iconUrl}
               alt={creature.species?.name ?? `Creature slot ${index + 1}`}
-              className="object-contain p-1"
+              className={
+                creature.species?.imageUrl &&
+                !creature.species.imageUrl.endsWith(".svg")
+                  ? "object-cover"
+                  : "object-contain p-1"
+              }
             />
             <span className="absolute bottom-0 right-0 rounded-tl bg-black/70 px-1 text-[9px] font-bold text-white">
               {index + 1}

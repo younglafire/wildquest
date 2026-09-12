@@ -44,7 +44,7 @@ export function WalletButton() {
       <div className="relative">
         <button
           onClick={() => (isOpen ? close() : open())}
-          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90"
+          className="cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 whitespace-nowrap sm:px-4 sm:py-2 sm:text-xs"
         >
           Connect Wallet
         </button>
@@ -57,14 +57,14 @@ export function WalletButton() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => (isOpen ? close() : open())}
-        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium transition hover:bg-cream"
+        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border-low bg-card px-2.5 py-1.5 text-[11px] font-medium transition hover:bg-cream sm:px-3 sm:py-2 sm:text-xs"
       >
         <span className="h-2 w-2 rounded-full bg-green-500" />
         <span className="font-mono">{ellipsify(address!, 4)}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border-low bg-card p-4 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] max-w-xs rounded-xl border border-border-low bg-card p-4 shadow-xl sm:w-72">
           <div className="mb-3">
             <p className="text-xs text-muted">Balance</p>
             <p className="text-lg font-bold tabular-nums">

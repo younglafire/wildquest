@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
-import { SpeciesArt } from "../../components/species-art";
+import { CreatureHologramStage } from "../../components/creature-hologram-stage";
 import { fetchCatalogueSpecies } from "../../lib/catalogue-client";
 import { formatDiscoveryDate } from "../../lib/game";
 import { useGameData } from "../../lib/hooks/use-game-data";
+import { isLocallyCapturedCreature } from "../../lib/captured-photo-storage";
 
 export function SpeciesDetail({ speciesId }: { speciesId: string }) {
   const species = useSWR(["catalogue-species", speciesId], () =>
@@ -34,8 +35,11 @@ export function SpeciesDetail({ speciesId }: { speciesId: string }) {
   const card = game.cards.find(
     (candidate) => candidate.species.speciesId === speciesId,
   );
-  const discovered = (card?.count ?? 0) > 0;
+  const discovered =
+    (card?.count ?? 0) > 0 ||
+    isLocallyCapturedCreature(speciesId, species.data?.id);
   const quiz = species.data.quiz;
+  const displayImageUrl = species.data.imageUrl ?? species.data.iconUrl;
 
   return (
     <main className="mx-auto max-w-5xl px-5 pb-20 pt-8 sm:px-6 sm:pt-14">
@@ -46,17 +50,43 @@ export function SpeciesDetail({ speciesId }: { speciesId: string }) {
         ← Back to collection
       </Link>
       <article className="overflow-hidden rounded-3xl border border-border bg-card">
-        <div className="grid md:grid-cols-[0.9fr_1.1fr]">
-          <div className="relative min-h-80 overflow-hidden bg-cream">
-            <SpeciesArt
-              src={species.data.imageUrl ?? species.data.iconUrl}
-              alt={species.data.name}
-              className={discovered ? "" : "grayscale"}
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-6 pt-20 text-white">
-              <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-bold">
-                {discovered ? `${card?.count} captured` : "Not discovered"}
+        <div className="grid md:grid-cols-[1fr_1fr]">
+          <div
+            className="relative flex flex-col justify-between overflow-hidden p-4 sm:p-6"
+            style={{ background: "#100e09", borderRight: "1px solid #3a2e1e" }}
+          >
+            <div className="flex items-center justify-between gap-2 z-10">
+              <span
+                className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  background: "rgba(16,14,9,0.85)",
+                  color: "#c8a96e",
+                  border: "1px solid rgba(200,169,110,0.35)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                {species.data.battleRole ?? "Creature"}
               </span>
+              <span
+                className="rounded-full bg-black/60 px-3 py-1 text-xs font-bold border border-[#3a2e1e]"
+                style={{ color: "#c8a96e" }}
+              >
+                {discovered ? `${card?.count ?? 1} captured` : "Not discovered"}
+              </span>
+            </div>
+
+            <div className="my-2 flex w-full items-center justify-center">
+              <CreatureHologramStage
+                speciesId={species.data.speciesId}
+                speciesName={species.data.name}
+                catalogueId={species.data.id}
+                rarity={species.data.rarity}
+                role={species.data.battleRole}
+                imageUrl={displayImageUrl}
+                summary={species.data.cardSummary ?? species.data.description}
+                habitat={species.data.habitat}
+              />
             </div>
           </div>
           <div className="p-6 sm:p-9">

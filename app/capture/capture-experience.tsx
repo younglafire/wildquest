@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { WalletChooser } from "../components/wallet-chooser";
-import { SpeciesArt } from "../components/species-art";
 import { CreatureCard } from "../components/creature-card";
+import { CreatureHologramStage } from "../components/creature-hologram-stage";
 import {
   fetchMaybeSpeciesConfig,
   findSpeciesConfigPda,
@@ -13,12 +13,14 @@ import {
   fetchCatalogueSpecies,
   type CatalogueSpecies,
 } from "../lib/catalogue-client";
+import { getSpeciesArtworkUrl } from "../lib/species";
 import {
   clearPendingIdentification,
   createPendingIdentification,
   identifyImage,
   loadPendingIdentification,
   savePendingIdentification,
+  saveConfirmedDiscovery,
   IdentifyRequestError,
   type PendingIdentification,
 } from "../lib/expedition";
@@ -29,6 +31,7 @@ import { useCluster } from "../components/cluster-context";
 import { useSolanaClient } from "../lib/solana-client-context";
 import Link from "next/link";
 import { CaptureForm } from "./capture-form";
+import { saveCapturedCreature } from "../lib/captured-photo-storage";
 
 export function CaptureExperience() {
   const { wallet, status } = useWallet();
@@ -57,9 +60,9 @@ export function CaptureExperience() {
       if (stored && address && stored.wallet !== address) {
         clearPendingIdentification();
         setPending(null);
-        return;
+      } else if (stored) {
+        setPending(stored);
       }
-      setPending(stored);
     });
     return () => {
       cancelled = true;
@@ -117,6 +120,10 @@ export function CaptureExperience() {
       );
       savePendingIdentification(nextPending);
       setPending(nextPending);
+      saveCapturedCreature(
+        identification.species_id,
+        identification.catalogue_id,
+      );
     } catch (thrownObject) {
       setError(getIdentificationError(thrownObject));
     } finally {
@@ -130,7 +137,11 @@ export function CaptureExperience() {
     try {
       const signature = await submit(pending.captureTransaction);
       setCaptureSignature(signature);
-      clearPendingIdentification();
+      saveConfirmedDiscovery(pending, signature);
+      saveCapturedCreature(
+        pending.identification.species_id,
+        pending.identification.catalogue_id,
+      );
       await game.refresh();
     } catch (thrownObject) {
       setError(getCaptureTransactionError(thrownObject));
@@ -144,36 +155,64 @@ export function CaptureExperience() {
     );
     return (
       <div className="mx-auto w-full max-w-3xl">
-        <CaptureSteps current={3} />
         <section
-          className="mt-5 overflow-hidden rounded-2xl sm:rounded-3xl"
+          className="overflow-hidden rounded-2xl sm:rounded-3xl"
           style={{
             background: "#1c1810",
             border: "1px solid #3a2e1e",
             boxShadow: "0 24px 90px -55px rgba(0,0,0,0.8)",
           }}
         >
-          <div className="grid md:grid-cols-[0.85fr_1.15fr]">
+          <div className="grid md:grid-cols-[1fr_1fr]">
             <div
-              className="relative flex min-h-52 items-end overflow-hidden p-5 sm:min-h-64 sm:p-6"
-              style={{ background: "#100e09" }}
+              className="relative flex flex-col justify-between overflow-hidden p-4 sm:p-5"
+              style={{
+                background: "#100e09",
+                borderRight: "1px solid #3a2e1e",
+              }}
             >
-              <SpeciesArt
-                src={species?.imageUrl ?? species?.iconUrl}
-                alt={result.common_name}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-              <div className="relative text-[#f0e8d4]">
+              {/* Status Header Badge */}
+              <div className="flex items-center justify-end gap-2 z-10">
                 <p className="wax-badge wax-badge-forest">
                   Creature identified
                 </p>
+              </div>
+
+              {/* 3D Hologram Card */}
+              <div className="my-2 flex w-full items-center justify-center">
+                <CreatureHologramStage
+                  speciesId={result.species_id}
+                  speciesName={result.common_name}
+                  catalogueId={result.catalogue_id}
+                  rarity={result.rarity}
+                  role={species?.battleRole}
+                  imageUrl={
+                    species?.imageUrl ??
+                    getSpeciesArtworkUrl(result.species_id) ??
+                    species?.iconUrl
+                  }
+                  confidence={result.confidence}
+                  stats={battleStats}
+                  summary={species?.cardSummary ?? species?.description}
+                  habitat={species?.habitat}
+                  compact
+                />
+              </div>
+
+              <div className="relative text-[#f0e8d4] pt-2 border-t border-[#3a2e1e]/60">
                 <p
-                  className="mt-2 text-3xl font-black tracking-tight sm:text-5xl"
-                  style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+                  className="text-2xl font-black tracking-tight sm:text-3xl"
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "#f0e8d4",
+                  }}
                 >
                   Exact match
                 </p>
-                <p className="mt-1 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
+                <p
+                  className="mt-0.5 text-xs sm:text-sm"
+                  style={{ color: "#8a7a62" }}
+                >
                   Catalogue #{result.catalogue_id}
                 </p>
               </div>
@@ -203,7 +242,10 @@ export function CaptureExperience() {
                 {result.common_name}
               </h1>
               {species?.scientificName && (
-                <p className="mt-1 text-xs italic sm:text-sm" style={{ color: "#8a7a62" }}>
+                <p
+                  className="mt-1 text-xs italic sm:text-sm"
+                  style={{ color: "#8a7a62" }}
+                >
                   {species.scientificName}
                 </p>
               )}
@@ -213,7 +255,13 @@ export function CaptureExperience() {
                   className="rounded-xl p-3 text-center sm:p-4 sm:text-left"
                   style={{ background: "#100e09", border: "1px solid #3a2e1e" }}
                 >
-                  <dt className="text-[10px] uppercase tracking-wider" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
+                  <dt
+                    className="text-[10px] uppercase tracking-wider"
+                    style={{
+                      color: "#8a7a62",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
                     Confidence
                   </dt>
                   <dd
@@ -227,7 +275,13 @@ export function CaptureExperience() {
                   className="rounded-xl p-3 text-center sm:p-4 sm:text-left"
                   style={{ background: "#100e09", border: "1px solid #3a2e1e" }}
                 >
-                  <dt className="text-[10px] uppercase tracking-wider" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
+                  <dt
+                    className="text-[10px] uppercase tracking-wider"
+                    style={{
+                      color: "#8a7a62",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
                     Balance Version
                   </dt>
                   <dd
@@ -239,7 +293,10 @@ export function CaptureExperience() {
                 </div>
               </dl>
 
-              <p className="mt-3 text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}>
+              <p
+                className="mt-3 text-xs"
+                style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}
+              >
                 Model label: {result.model_label}
               </p>
 
@@ -274,7 +331,10 @@ export function CaptureExperience() {
                 <div className="creature-reveal mt-5">
                   <p
                     className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em]"
-                    style={{ color: "#6aab7a", fontFamily: "var(--font-display)" }}
+                    style={{
+                      color: "#6aab7a",
+                      fontFamily: "var(--font-display)",
+                    }}
                   >
                     ✦ Your battle card preview
                   </p>
@@ -301,14 +361,14 @@ export function CaptureExperience() {
                   <p
                     role="status"
                     className="text-sm font-bold"
-                    style={{ color: "#6aab7a", fontFamily: "var(--font-display)" }}
+                    style={{
+                      color: "#6aab7a",
+                      fontFamily: "var(--font-display)",
+                    }}
                   >
                     ✦ Creature owned! Add it to your battle team.
                   </p>
-                  <Link
-                    href="/battle"
-                    className="btn-guild w-full"
-                  >
+                  <Link href="/battle" className="btn-guild w-full">
                     Build battle team
                   </Link>
                   <a
@@ -449,9 +509,7 @@ function CaptureSteps({ current }: { current: number }) {
               border: active
                 ? "1px solid rgba(200,169,110,0.5)"
                 : "1px solid #3a2e1e",
-              background: active
-                ? "rgba(200,169,110,0.12)"
-                : "#1c1810",
+              background: active ? "rgba(200,169,110,0.12)" : "#1c1810",
               color: active ? "#c8a96e" : "#8a7a62",
             }}
           >

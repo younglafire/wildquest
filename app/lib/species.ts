@@ -114,7 +114,21 @@ function parseBattleRole(value: string | null): BattleRole | null {
   throw new Error(`Unsupported battle role: ${value}`);
 }
 
+export const SPECIES_LOCAL_ARTWORK: Record<string, string> = {
+  chihuahua: "/creatures/chihuahua.png",
+  golden_retriever: "/creatures/golden_retriever.png",
+  german_shepherd: "/creatures/german_shepherd.png",
+  staffordshire_bull_terrier: "/creatures/staffordshire_bull_terrier.png",
+  toy_terrier: "/creatures/toy_terrier.png",
+};
+
+export function getSpeciesArtworkUrl(speciesId?: string | null): string | null {
+  if (!speciesId) return null;
+  return SPECIES_LOCAL_ARTWORK[speciesId.toLowerCase()] ?? null;
+}
+
 export function mapSpeciesRow(row: SpeciesRow): Species {
+  const localArtwork = SPECIES_LOCAL_ARTWORK[row.species_id];
   return {
     id: row.id,
     speciesId: row.species_id,
@@ -123,7 +137,7 @@ export function mapSpeciesRow(row: SpeciesRow): Species {
     rarity: parseRarity(row.rarity),
     habitat: row.habitat,
     description: row.description,
-    imageUrl: row.image_url,
+    imageUrl: localArtwork ?? row.image_url,
     iconUrl: row.icon_url,
     iconAttributionUrl: row.icon_attribution_url,
     iconLicense: row.icon_license,

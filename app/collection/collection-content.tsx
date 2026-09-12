@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { MatchStatus } from "../generated/wildquest";
 import useSWR from "swr";
+import { address, lamports, type Address } from "@solana/kit";
 import { CreatureCard } from "../components/creature-card";
 import { useCluster } from "../components/cluster-context";
 import {
@@ -25,6 +26,8 @@ import {
   fetchGenerationAccess,
 } from "../lib/admin/generate-creature";
 import { useSubmitCaptureTransaction } from "../lib/hooks/use-submit-capture-transaction";
+import { loadConfirmedDiscovery } from "../lib/expedition";
+import { isLocallyCapturedCreature } from "../lib/captured-photo-storage";
 
 const FILTERS = ["All", "Owned", "Missing"] as const;
 const SORTS = ["Name", "Rarity", "Battle role"] as const;
@@ -35,6 +38,29 @@ const RARITY_ORDER: Record<Rarity, number> = {
   Epic: 3,
   Legendary: 4,
 };
+
+function createOptimisticCreature(
+  catalogueId: bigint,
+  ownerAddress?: Address,
+): OwnedCreature {
+  const defaultAddress = address("11111111111111111111111111111111");
+  return {
+    address: defaultAddress,
+    data: {
+      discriminator: new Uint8Array(8),
+      owner: ownerAddress ?? defaultAddress,
+      catalogueId,
+      proofHash: new Uint8Array(32),
+      capturedAt: BigInt(Date.now()),
+      balanceVersion: 1,
+      bump: 0,
+    },
+    executable: false,
+    lamports: lamports(0n),
+    programAddress: defaultAddress,
+    space: 0n,
+  };
+}
 
 export function CollectionContent() {
   const game = useGameData();
@@ -66,16 +92,38 @@ export function CollectionContent() {
     refreshInterval: 15_000,
     revalidateOnFocus: true,
   });
-  const ownedByCatalogueId = useMemo(
-    () =>
-      new Map(
-        (game.creatures.data ?? []).map((creature) => [
-          creature.data.catalogueId.toString(),
-          creature,
-        ]),
-      ),
-    [game.creatures.data],
-  );
+  const ownedByCatalogueId = useMemo(() => {
+    const map = new Map<string, OwnedCreature>();
+    for (const creature of game.creatures.data ?? []) {
+      map.set(creature.data.catalogueId.toString(), creature);
+    }
+    const confirmed = loadConfirmedDiscovery();
+    if (confirmed) {
+      const catId = String(confirmed.identification.catalogue_id);
+      if (!map.has(catId)) {
+        map.set(
+          catId,
+          createOptimisticCreature(
+            BigInt(confirmed.identification.catalogue_id),
+            game.address,
+          ),
+        );
+      }
+    }
+    for (const item of battleCatalogue.data ?? []) {
+      const catId = String(item.species.id);
+      if (
+        !map.has(catId) &&
+        isLocallyCapturedCreature(item.species.speciesId, item.species.id)
+      ) {
+        map.set(
+          catId,
+          createOptimisticCreature(BigInt(item.species.id), game.address),
+        );
+      }
+    }
+    return map;
+  }, [game.creatures.data, game.address, battleCatalogue.data]);
   const lockedCreatureAddresses = useMemo(() => {
     const addresses = new Set<string>();
     for (const match of matches.data ?? []) {
@@ -177,19 +225,45 @@ export function CollectionContent() {
     <main className="mx-auto max-w-6xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-5">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.26em]" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.26em]"
+            style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+          >
             Battle Roster
           </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight sm:mt-2 sm:text-5xl" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>
+          <h1
+            className="mt-1 text-3xl font-black tracking-tight sm:mt-2 sm:text-5xl"
+            style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+          >
             Collection
           </h1>
-          <p className="mt-2 max-w-xl text-xs leading-relaxed sm:mt-3 sm:text-sm" style={{ color: "#8a7a62" }}>
+          <p
+            className="mt-2 max-w-xl text-xs leading-relaxed sm:mt-3 sm:text-sm"
+            style={{ color: "#8a7a62" }}
+          >
             Your onchain Creature cards for deterministic 3v3 arena battle.
           </p>
         </div>
-        <div className="flex items-center justify-between rounded-xl px-4 py-2.5 sm:block sm:px-5 sm:py-3" style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}>
-          <p className="text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>Creatures Owned</p>
-          <p className="text-xl font-black tabular-nums sm:text-2xl" style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}>
+        <div
+          className="flex items-center justify-between rounded-xl px-4 py-2.5 sm:block sm:px-5 sm:py-3"
+          style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+        >
+          <p
+            className="text-xs"
+            style={{
+              color: "#8a7a62",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.65rem",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
+            Creatures Owned
+          </p>
+          <p
+            className="text-xl font-black tabular-nums sm:text-2xl"
+            style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+          >
             {ownedByCatalogueId.size} / {battleCatalogue.data?.length ?? "–"}
           </p>
         </div>
@@ -210,9 +284,15 @@ export function CollectionContent() {
               className="min-h-10 shrink-0 rounded-lg px-4 text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95"
               style={{
                 fontFamily: "var(--font-display)",
-                background: filter === option ? "linear-gradient(135deg, #c8a96e, #a07d48)" : "rgba(58,46,30,0.5)",
+                background:
+                  filter === option
+                    ? "linear-gradient(135deg, #c8a96e, #a07d48)"
+                    : "rgba(58,46,30,0.5)",
                 color: filter === option ? "#100e09" : "#8a7a62",
-                border: filter === option ? "1px solid #c8a96e" : "1px solid transparent",
+                border:
+                  filter === option
+                    ? "1px solid #c8a96e"
+                    : "1px solid transparent",
               }}
             >
               {option}
@@ -220,7 +300,16 @@ export function CollectionContent() {
           ))}
         </div>
         <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:mt-3 sm:ml-auto sm:max-w-md sm:gap-3">
-          <label className="text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <label
+            className="text-xs"
+            style={{
+              color: "#8a7a62",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.65rem",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
             Rarity
             <select
               value={rarity}
@@ -228,7 +317,11 @@ export function CollectionContent() {
                 setRarity(event.target.value as Rarity | "All")
               }
               className="mt-1 block min-h-10 w-full rounded-lg px-3 text-xs sm:text-sm"
-              style={{ background: "#100e09", border: "1px solid #3a2e1e", color: "#f0e8d4" }}
+              style={{
+                background: "#100e09",
+                border: "1px solid #3a2e1e",
+                color: "#f0e8d4",
+              }}
             >
               <option>All</option>
               {Object.keys(RARITY_ORDER).map((value) => (
@@ -236,7 +329,16 @@ export function CollectionContent() {
               ))}
             </select>
           </label>
-          <label className="text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <label
+            className="text-xs"
+            style={{
+              color: "#8a7a62",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.65rem",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
             Sort
             <select
               value={sort}
@@ -244,7 +346,11 @@ export function CollectionContent() {
                 setSort(event.target.value as (typeof SORTS)[number])
               }
               className="mt-1 block min-h-10 w-full rounded-lg px-3 text-xs sm:text-sm"
-              style={{ background: "#100e09", border: "1px solid #3a2e1e", color: "#f0e8d4" }}
+              style={{
+                background: "#100e09",
+                border: "1px solid #3a2e1e",
+                color: "#f0e8d4",
+              }}
             >
               {SORTS.map((value) => (
                 <option key={value}>{value}</option>
@@ -258,15 +364,27 @@ export function CollectionContent() {
         <p
           role="alert"
           className="mt-6 rounded-lg p-4 text-sm"
-          style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
+          style={{
+            background: "rgba(192,57,43,0.12)",
+            color: "#f8c8c4",
+            border: "1px solid rgba(192,57,43,0.3)",
+          }}
         >
           {error}
         </p>
       )}
       {loading ? (
-        <p className="mt-10 text-sm" style={{ color: "#8a7a62" }}>Consulting the Codex…</p>
+        <p className="mt-10 text-sm" style={{ color: "#8a7a62" }}>
+          Consulting the Codex…
+        </p>
       ) : loadError ? (
-        <section className="mt-10 rounded-xl p-5" style={{ background: "rgba(192,57,43,0.1)", border: "1px solid rgba(192,57,43,0.25)" }}>
+        <section
+          className="mt-10 rounded-xl p-5"
+          style={{
+            background: "rgba(192,57,43,0.1)",
+            border: "1px solid rgba(192,57,43,0.25)",
+          }}
+        >
           <p className="text-sm" style={{ color: "#f8c8c4" }}>
             Your Creature cards could not be loaded.
           </p>
@@ -280,7 +398,10 @@ export function CollectionContent() {
           </button>
         </section>
       ) : cards.length === 0 ? (
-        <p className="mt-10 rounded-xl p-6 text-sm" style={{ background: "#1c1810", color: "#8a7a62" }}>
+        <p
+          className="mt-10 rounded-xl p-6 text-sm"
+          style={{ background: "#1c1810", color: "#8a7a62" }}
+        >
           No Creature cards match these filters.
         </p>
       ) : (
@@ -316,10 +437,28 @@ export function CollectionContent() {
                 {owned ? (
                   <button
                     type="button"
-                    disabled={isSending || locked}
-                    onClick={() => setReleaseCandidate(owned)}
+                    disabled={
+                      isSending ||
+                      locked ||
+                      owned.address.startsWith("optimistic") ||
+                      owned.address.startsWith("local")
+                    }
+                    onClick={() => {
+                      if (
+                        owned.address.startsWith("optimistic") ||
+                        owned.address.startsWith("local")
+                      ) {
+                        return;
+                      }
+                      setReleaseCandidate(owned);
+                    }}
                     className="mt-2 min-h-10 w-full rounded-lg px-4 text-[11px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45"
-                    style={{ border: "1px solid rgba(192,57,43,0.4)", color: "#f8c8c4", background: "rgba(192,57,43,0.08)", fontFamily: "var(--font-display)" }}
+                    style={{
+                      border: "1px solid rgba(192,57,43,0.4)",
+                      color: "#f8c8c4",
+                      background: "rgba(192,57,43,0.08)",
+                      fontFamily: "var(--font-display)",
+                    }}
                   >
                     {locked ? "Card locked in active Match" : "Release card"}
                   </button>
@@ -328,7 +467,12 @@ export function CollectionContent() {
                     <Link
                       href="/capture"
                       className="flex min-h-10 items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors"
-                      style={{ border: "1px solid #3a2e1e", color: "#c8a96e", fontFamily: "var(--font-display)", background: "rgba(200,169,110,0.06)" }}
+                      style={{
+                        border: "1px solid #3a2e1e",
+                        color: "#c8a96e",
+                        fontFamily: "var(--font-display)",
+                        background: "rgba(200,169,110,0.06)",
+                      }}
                     >
                       Capture
                     </Link>
@@ -337,7 +481,12 @@ export function CollectionContent() {
                       disabled={isGenerating || generatingId !== null}
                       onClick={() => void generateAnimal(String(species.id))}
                       className="min-h-10 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wide disabled:opacity-50"
-                      style={{ border: "1px solid rgba(200,169,110,0.3)", color: "#c8a96e", background: "rgba(200,169,110,0.08)", fontFamily: "var(--font-display)" }}
+                      style={{
+                        border: "1px solid rgba(200,169,110,0.3)",
+                        color: "#c8a96e",
+                        background: "rgba(200,169,110,0.08)",
+                        fontFamily: "var(--font-display)",
+                      }}
                     >
                       {generatingId === String(species.id)
                         ? "Generating…"
@@ -357,9 +506,17 @@ export function CollectionContent() {
           aria-modal="true"
           aria-labelledby="release-title"
           className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-xl p-5 shadow-2xl"
-          style={{ background: "#1c1810", border: "1px solid #3a2e1e", boxShadow: "0 20px 60px rgba(0,0,0,0.8)" }}
+          style={{
+            background: "#1c1810",
+            border: "1px solid #3a2e1e",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+          }}
         >
-          <h2 id="release-title" className="text-xl font-black" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>
+          <h2
+            id="release-title"
+            className="text-xl font-black"
+            style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+          >
             Release this Creature?
           </h2>
           <p className="mt-2 text-sm" style={{ color: "#8a7a62" }}>
@@ -371,7 +528,11 @@ export function CollectionContent() {
               type="button"
               onClick={() => setReleaseCandidate(null)}
               className="min-h-12 rounded-lg text-sm font-bold"
-              style={{ border: "1px solid #3a2e1e", color: "#f0e8d4", background: "transparent" }}
+              style={{
+                border: "1px solid #3a2e1e",
+                color: "#f0e8d4",
+                background: "transparent",
+              }}
             >
               Keep card
             </button>

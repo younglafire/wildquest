@@ -17,7 +17,6 @@ export default function CapturePage() {
           <Link href="/home" className="transition hover:text-foreground">
             ← Back to home
           </Link>
-          <span>Photos are processed in memory</span>
         </div>
       </main>
     </GameShell>

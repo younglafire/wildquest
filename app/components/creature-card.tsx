@@ -31,12 +31,15 @@ export function CreatureCard(props: Props | PreviewProps) {
       ? props.creature.config.data
       : props.stats;
   const name = species?.name ?? `Creature #${config.catalogueId}`;
+  const imageSrc = species?.imageUrl ?? species?.iconUrl;
+  const isVectorIcon =
+    typeof imageSrc === "string" && imageSrc.endsWith(".svg");
   const stats = [
-    ["HP",      config.hp],
-    ["Damage",  config.attack],
+    ["HP", config.hp],
+    ["Damage", config.attack],
     ["Defense", config.defense],
-    ["Speed",   config.speed],
-    ["Shield",  config.shield],
+    ["Speed", config.speed],
+    ["Shield", config.shield],
   ] as const;
 
   return (
@@ -44,9 +47,7 @@ export function CreatureCard(props: Props | PreviewProps) {
       className={`overflow-hidden rounded-xl text-left transition-all ${disabled ? "opacity-40 grayscale" : ""} ${className}`}
       style={{
         background: "#1c1810",
-        border: selected
-          ? "1px solid #c8a96e"
-          : "1px solid #3a2e1e",
+        border: selected ? "1px solid #c8a96e" : "1px solid #3a2e1e",
         boxShadow: selected
           ? "0 0 0 2px rgba(200,169,110,0.2), 0 4px 20px rgba(200,169,110,0.15)"
           : "0 2px 12px rgba(0,0,0,0.4)",
@@ -59,9 +60,9 @@ export function CreatureCard(props: Props | PreviewProps) {
         style={{ background: "#221d14" }}
       >
         <SpeciesArt
-          src={species?.iconUrl ?? species?.imageUrl}
+          src={imageSrc}
           alt={name}
-          className="object-contain p-3"
+          className={isVectorIcon ? "object-contain p-3" : "object-cover"}
         />
         {/* Role badge — wax pill */}
         <span
@@ -79,7 +80,11 @@ export function CreatureCard(props: Props | PreviewProps) {
         {/* Gold shimmer accent top border */}
         <div
           className="absolute inset-x-0 top-0 h-[1px]"
-          style={{ background: selected ? "linear-gradient(90deg, transparent, #c8a96e, transparent)" : "linear-gradient(90deg, transparent, rgba(200,169,110,0.2), transparent)" }}
+          style={{
+            background: selected
+              ? "linear-gradient(90deg, transparent, #c8a96e, transparent)"
+              : "linear-gradient(90deg, transparent, rgba(200,169,110,0.2), transparent)",
+          }}
         />
       </div>
 
