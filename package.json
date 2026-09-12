@@ -3,6 +3,8 @@
   "scripts": {
     "anchor-build": "anchor build --ignore-keys",
     "anchor-test": "anchor build --ignore-keys && cargo test",
+    "battle-server": "tsx --env-file=.env.local scripts/battle-realtime-server.ts",
+    "battle:balance": "tsx --env-file=.env.local scripts/simulate-battle-balance.ts",
     "build": "next build",
     "ci": "npm run build && npm run lint && npm run format:check",
     "codama:js": "codama run js",
@@ -75,6 +77,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.185.4",
+    "@types/ws": "^8.18.1",
     "codama": "1.10.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",

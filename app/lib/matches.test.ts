@@ -8,7 +8,6 @@ import {
 } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import {
-  findSpeciesConfigPda,
   MatchStatus,
   WILDQUEST_PROGRAM_ADDRESS,
   type Creature,
@@ -123,7 +122,7 @@ describe("Match transaction builders", () => {
     ).toEqual(creatorTeam.map((item) => item.address));
   });
 
-  it("appends the exact Creature, SpeciesConfig, and System Program order", async () => {
+  it("appends both exact Creature teams and the System Program", async () => {
     const matchAccount = openMatch(creatorTeam);
     const instruction = await buildJoinMatchInstruction(
       createNoopSigner(opponent),
@@ -131,28 +130,9 @@ describe("Match transaction builders", () => {
       creatorTeam,
       opponentTeam,
     );
-    const creatorConfigs = await Promise.all(
-      creatorTeam.map(
-        async (item) =>
-          (
-            await findSpeciesConfigPda({ catalogueId: item.data.catalogueId })
-          )[0],
-      ),
-    );
-    const opponentConfigs = await Promise.all(
-      opponentTeam.map(
-        async (item) =>
-          (
-            await findSpeciesConfigPda({ catalogueId: item.data.catalogueId })
-          )[0],
-      ),
-    );
-
     expect(instruction.accounts?.slice(4).map((meta) => meta.address)).toEqual([
       ...creatorTeam.map((item) => item.address),
       ...opponentTeam.map((item) => item.address),
-      ...creatorConfigs,
-      ...opponentConfigs,
       owner,
     ]);
   });

@@ -73,7 +73,8 @@ function createFighter(stats: BattleStats): SimultaneousFighter {
 }
 
 function createTeam(stats: readonly BattleStats[]): SimultaneousTeam {
-  if (stats.length !== 3) throw new Error("A battle team needs three creatures.");
+  if (stats.length !== 3)
+    throw new Error("A battle team needs three creatures.");
   return {
     fighters: stats.map(createFighter) as SimultaneousTeam["fighters"],
     activeSlot: 0,
@@ -190,14 +191,20 @@ export function resolveSimultaneousTurn(
   creatorAction: BattleAction,
   opponentAction: BattleAction,
 ): { state: SimultaneousBattleState; event: TurnEvent } {
-  if (state.status !== "active") throw new Error("The battle is already finished.");
+  if (state.status !== "active")
+    throw new Error("The battle is already finished.");
   if (state.turn < 1 || state.turn > MAX_MATCH_TURNS) {
     throw new Error("The battle turn is outside the supported range.");
   }
   const next = cloneState(state);
   const creator = next.creator.fighters[next.creator.activeSlot];
   const opponent = next.opponent.fighters[next.opponent.activeSlot];
-  if (!creator || !opponent || creator.currentHp === 0 || opponent.currentHp === 0) {
+  if (
+    !creator ||
+    !opponent ||
+    creator.currentHp === 0 ||
+    opponent.currentHp === 0
+  ) {
     throw new Error("Both teams need a living active creature.");
   }
   if (!canUseAction(creator, creatorAction)) {

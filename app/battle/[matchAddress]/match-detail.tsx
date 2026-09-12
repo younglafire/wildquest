@@ -6,11 +6,14 @@ import { address, unwrapOption, type Address } from "@solana/kit";
 import useSWR from "swr";
 import { fetchMaybeMatch, MatchStatus } from "../../generated/wildquest";
 import { MatchResult } from "../battle-content";
+import { LiveBattlefield } from "./live-battlefield";
 import { useCluster } from "../../components/cluster-context";
 import { useGameData } from "../../lib/hooks/use-game-data";
+import { fetchMatchBattleCreatures } from "../../lib/battle-creatures";
 import { useSendTransaction } from "../../lib/hooks/use-send-transaction";
 import {
   buildClaimMatchPayoutInstruction,
+  buildRefundStaleMatchInstruction,
   type GameMatch,
 } from "../../lib/matches";
 import { useSolanaClient } from "../../lib/solana-client-context";
@@ -35,7 +38,7 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
   }, [matchAddress]);
   const client = useSolanaClient();
   const game = useGameData();
-  const { signer } = useWallet();
+  const { signer, wallet } = useWallet();
   const { cluster } = useCluster();
   const { send, isSending } = useSendTransaction();
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +70,34 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
         })
         .send(),
     { revalidateOnFocus: true },
+  );
+  const opponentAddress = match.data
+    ? unwrapOption(match.data.data.opponent)
+    : null;
+  const liveTeams = useSWR(
+    match.data &&
+      opponentAddress &&
+      match.data.data.rulesVersion === 2 &&
+      game.catalogue.data
+      ? (["live-match-teams", cluster, match.data.address] as const)
+      : null,
+    async () => {
+      const [creator, opponentTeam] = await Promise.all([
+        fetchMatchBattleCreatures(
+          client.rpc,
+          match.data!.data.creator,
+          match.data!.data.creatorCreatures,
+          game.catalogue.data!,
+        ),
+        fetchMatchBattleCreatures(
+          client.rpc,
+          opponentAddress!,
+          match.data!.data.opponentCreatures,
+          game.catalogue.data!,
+        ),
+      ]);
+      return { creator, opponent: opponentTeam };
+    },
   );
 
   useEffect(() => {
@@ -102,6 +133,23 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
         thrownObject instanceof Error
           ? thrownObject.message
           : "The payout transaction failed.",
+      );
+    }
+  };
+
+  const refund = async (matchAccount: GameMatch) => {
+    if (!signer) return;
+    setError(null);
+    try {
+      await send({
+        instructions: [buildRefundStaleMatchInstruction(signer, matchAccount)],
+      });
+      await Promise.all([match.mutate(), receipts.mutate(), game.refresh()]);
+    } catch (thrownObject) {
+      setError(
+        thrownObject instanceof Error
+          ? thrownObject.message
+          : "The refund transaction failed.",
       );
     }
   };
@@ -199,13 +247,55 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
         </dl>
       </section>
 
-      <MatchResult
-        match={match.data}
-        wallet={signer?.address ?? null}
-        catalogue={game.catalogue.data ?? []}
-        isSending={isSending}
-        onClaim={() => void claim(match.data!)}
-      />
+      {match.data.data.rulesVersion === 2 &&
+      match.data.data.status === MatchStatus.Active ? (
+        liveTeams.data ? (
+          <LiveBattlefield
+            matchAddress={match.data.address}
+            wallet={wallet}
+            isParticipant={
+              signer?.address === match.data.data.creator ||
+              signer?.address === opponent
+            }
+            playerSide={
+              signer?.address === match.data.data.creator
+                ? "creator"
+                : signer?.address === opponent
+                  ? "opponent"
+                  : null
+            }
+            creator={liveTeams.data.creator}
+            opponent={liveTeams.data.opponent}
+            activeExpiresAt={unwrapOption(match.data.data.activeExpiresAt)}
+            isSending={isSending}
+            onRefund={() => void refund(match.data!)}
+          />
+        ) : (
+          <MatchMessage
+            title="Preparing live teams"
+            copy={
+              liveTeams.error
+                ? "The battle creatures or their onchain stats could not be loaded."
+                : "Reading the six creature accounts and battle stats…"
+            }
+          />
+        )
+      ) : match.data.data.rulesVersion === 2 && opponent ? (
+        <TurnBattleResult
+          match={match.data}
+          wallet={signer?.address ?? null}
+          isSending={isSending}
+          onClaim={() => void claim(match.data!)}
+        />
+      ) : (
+        <MatchResult
+          match={match.data}
+          wallet={signer?.address ?? null}
+          catalogue={game.catalogue.data ?? []}
+          isSending={isSending}
+          onClaim={() => void claim(match.data!)}
+        />
+      )}
 
       {error && (
         <p
@@ -269,6 +359,52 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
         )}
       </section>
     </main>
+  );
+}
+
+function TurnBattleResult({
+  match,
+  wallet,
+  isSending,
+  onClaim,
+}: {
+  match: GameMatch;
+  wallet: Address | null;
+  isSending: boolean;
+  onClaim: () => void;
+}) {
+  const winner = unwrapOption(match.data.winner);
+  const canClaim =
+    match.data.status === MatchStatus.Claimable && winner === wallet;
+  return (
+    <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center sm:p-10">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-600">
+        {match.data.turnCount} turns completed
+      </p>
+      <h2 className="mt-3 text-3xl font-black">
+        {winner ? (winner === wallet ? "Victory" : "Battle complete") : "Draw"}
+      </h2>
+      <p className="mx-auto mt-3 max-w-lg text-sm text-muted">
+        The authoritative server committed the battle result hash onchain. The
+        full action log is not trusted as payout authority.
+      </p>
+      {canClaim ? (
+        <button
+          type="button"
+          onClick={onClaim}
+          disabled={isSending}
+          className="mt-5 min-h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground disabled:opacity-50"
+        >
+          {isSending ? "Waiting for wallet…" : "Claim 0.02 SOL pot"}
+        </button>
+      ) : match.data.status === MatchStatus.Claimable ? (
+        <p className="mt-5 text-sm text-muted">
+          The recorded winner can claim this pot.
+        </p>
+      ) : (
+        <p className="mt-5 text-sm text-muted">Settlement is complete.</p>
+      )}
+    </section>
   );
 }
 

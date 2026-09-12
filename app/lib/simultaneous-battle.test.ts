@@ -36,9 +36,20 @@ describe("simultaneous battle", () => {
     ["recharge", "recharge", 0, 0, 5, 5],
   ])(
     "%s versus %s resolves the action matrix",
-    (creatorAction, opponentAction, damageToCreator, damageToOpponent, creatorMana, opponentMana) => {
+    (
+      creatorAction,
+      opponentAction,
+      damageToCreator,
+      damageToOpponent,
+      creatorMana,
+      opponentMana,
+    ) => {
       const initial = createSimultaneousBattle(team(), team());
-      const result = resolveSimultaneousTurn(initial, creatorAction, opponentAction);
+      const result = resolveSimultaneousTurn(
+        initial,
+        creatorAction,
+        opponentAction,
+      );
       expect(result.event.damageToCreator).toBe(damageToCreator);
       expect(result.event.damageToOpponent).toBe(damageToOpponent);
       expect(result.event.creatorManaAfter).toBe(creatorMana);

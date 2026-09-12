@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -20,6 +21,7 @@ import {
   buildClaimMatchPayoutInstruction,
   buildJoinMatchInstruction,
   buildOpenMatchInstruction,
+  buildResolveMatchInstruction,
 } from "../app/lib/matches";
 
 const DEFAULT_RPC_URL = "https://api.devnet.solana.com";
@@ -74,6 +76,10 @@ async function main() {
     process.env.WQ_DEMO_WALLET_B_KEYPAIR_PATH ??
       ".wildquest-keys/demo-wallet-b.json",
   );
+  const resolver = await loadSigner(
+    process.env.WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH ??
+      ".wildquest-keys/capture-authority.json",
+  );
   const clientA = createClient({ url: devnet(rpcUrl), payer: walletA });
   const clientB = createClient({ url: devnet(rpcUrl), payer: walletB });
   const teamA = await fetchTeam(clientA, walletA, TEAM_A);
@@ -107,6 +113,28 @@ async function main() {
         teamB,
       );
       const joined = await clientB.sendTransaction([join]);
+      const active = await fetchMatch(clientB.rpc, matchAddress, {
+        commitment: "confirmed",
+      });
+      if (active.data.status !== MatchStatus.Active) {
+        throw new Error("The joined Match did not become active.");
+      }
+      const resolve = await buildResolveMatchInstruction(
+        resolver,
+        active,
+        walletA.address,
+        1,
+        new Uint8Array(
+          createHash("sha256")
+            .update(`wildquest-devnet-smoke:${matchAddress}`)
+            .digest(),
+        ),
+      );
+      const resolverClient = createClient({
+        url: devnet(rpcUrl),
+        payer: resolver,
+      });
+      const resolution = await resolverClient.sendTransaction([resolve]);
       const resolved = await fetchMatch(clientB.rpc, matchAddress, {
         commitment: "confirmed",
       });
@@ -164,7 +192,7 @@ async function main() {
       const outcome = winner ? `winner ${winner}` : "tie/refund";
       results.push({ ok: true });
       console.info(
-        `Run ${index + 1}: PASS (${outcome})\n  open ${opened.context.signature}\n  resolve ${joined.context.signature}${claimSignature ? `\n  claim ${claimSignature}` : ""}`,
+        `Run ${index + 1}: PASS (${outcome})\n  open ${opened.context.signature}\n  join ${joined.context.signature}\n  resolve ${resolution.context.signature}${claimSignature ? `\n  claim ${claimSignature}` : ""}`,
       );
     } catch (thrownObject) {
       const detail =

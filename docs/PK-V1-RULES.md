@@ -9,8 +9,9 @@ The five-day build has one player journey:
 3. The wallet signs and creates one Creature for that catalogue ID.
 4. The wallet selects three distinct owned Creatures in an ordered team.
 5. A second wallet joins the open Match with another ordered team.
-6. The program runs deterministic combat and records the winner or refunds a tie.
-7. The UI replays the exact result; the winner signs once to claim the fixed Devnet SOL pot.
+6. Both players choose Strike, Guard, or Recharge during each five-second turn.
+7. The authoritative server resolves both choices simultaneously and commits the result onchain.
+8. The winner signs once to claim the fixed Devnet SOL pot; a draw refunds both stakes.
 
 The demo uses the deployed Devnet program ID
 `3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF`.
@@ -42,24 +43,26 @@ facts, roles, and artwork live in the Supabase migrations.
 - **Catalogue 1006, Monarch Butterfly:** ImageNet class `323`, HP `75`, Attack `55`, Defense `35`, Speed `100`, Shield `35`.
 
 Catalogue IDs `1001` through `1040` cover 40 exact ImageNet classes. All 40
-SpeciesConfig accounts use `balance_version = 1`. The first Match rules use
-`rules_version = 1`. The numeric catalogue ID crosses the API and Solana
+SpeciesConfig accounts use `balance_version = 1`. Simultaneous turns use
+`rules_version = 2`. The numeric catalogue ID crosses the API and Solana
 boundary. Each slug remains offchain display and lookup data.
 
 ## Combat is deterministic
 
 - A team contains three distinct Creature accounts owned by the same wallet.
 - Team order is visible before the second wallet joins.
-- The active Creature with greater Speed attacks first.
-- Equal-Speed attacks use the same pre-attack state and resolve simultaneously.
-- Damage is `max(1, floor(Attack * 100 / (100 + Defense)))`.
-- Shield absorbs damage before HP.
+- Each turn lasts five seconds and both choices resolve from the same pre-turn state.
+- Strike costs 2 Mana and deals `max(1, floor((Attack + floor(Speed / 5)) * 100 / (100 + Defense)))` damage.
+- Guard costs 1 Mana and reduces incoming damage by that Creature's Shield stat for the turn.
+- Recharge restores 3 Mana up to the maximum of 5. It never restores HP or Shield.
+- An unusable, invalid, or missing choice becomes Recharge.
+- Three consecutive missed choices forfeit the Match.
 - A Creature at zero HP is knocked out and the next team slot enters.
 - The first team with no living Creature loses.
-- Combat stops after 50 rounds. The program compares remaining HP plus Shield as a ratio of the starting total with integer cross-multiplication.
-- Equal remaining ratios produce a tie and refund both stakes.
+- Simultaneous final knockouts produce a draw.
+- Combat stops after 30 turns. Remaining HP percentage breaks the tie, then total Mana; an exact tie is a draw.
 
-The same teams, order, balance version, and rules version always produce the same result. Combat has no random numbers, critical hits, dodges, hidden modifiers, or client-selected outcomes.
+The same teams, order, choices, balance version, and rules version always produce the same result. Combat has no random numbers, critical hits, dodges, or hidden modifiers.
 
 ## The stake has one safe prototype path
 

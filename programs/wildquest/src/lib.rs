@@ -17,6 +17,12 @@ declare_id!("3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF");
 pub mod wildquest {
     use super::*;
 
+    pub fn activate_turn_combat(
+        context: Context<ActivateTurnCombatAccountConstraints>,
+    ) -> Result<()> {
+        handle_activate_turn_combat(context)
+    }
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         crate::instructions::initialize::handle_initialize(ctx)
     }

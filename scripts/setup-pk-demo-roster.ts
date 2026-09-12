@@ -16,6 +16,7 @@ import {
   findCreaturePda,
   findGameConfigPda,
   findSpeciesConfigPda,
+  getActivateTurnCombatInstruction,
   getCaptureCreatureInstructionAsync,
   getInitializeGameConfigInstructionAsync,
   getInitializeSpeciesConfigInstructionAsync,
@@ -87,6 +88,16 @@ async function ensureGameConfig(
       );
     }
     console.info(`GameConfig already exists: ${address}`);
+    if (existing.data.rulesVersion !== 2) {
+      const instruction = getActivateTurnCombatInstruction({
+        admin,
+        gameConfig: address,
+      });
+      const result = await client.sendTransaction([instruction]);
+      console.info(
+        `Activated simultaneous turn rules: ${result.context.signature}`,
+      );
+    }
     return;
   }
 

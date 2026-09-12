@@ -12,11 +12,7 @@ import {
   type TurnEvent,
 } from "./simultaneous-battle";
 
-export type BattleRoomPhase =
-  | "waiting"
-  | "choosing"
-  | "resolving"
-  | "finished";
+export type BattleRoomPhase = "waiting" | "choosing" | "resolving" | "finished";
 
 export type BattleRoomSnapshot = {
   matchAddress: string;
@@ -32,6 +28,8 @@ export type BattleRoomSnapshot = {
   opponentMissedTurns: number;
   battle: SimultaneousBattleState;
   events: Array<TurnEvent>;
+  settlementStatus: "idle" | "pending" | "confirmed" | "failed";
+  settlementError: string | null;
 };
 
 export type BattleRoomConfig = {
@@ -62,8 +60,14 @@ export class BattleRoom {
   #choices: Partial<Record<BattleSide, BattleAction>> = {};
   #missedTurns: Record<BattleSide, number> = { creator: 0, opponent: 0 };
   #finishNotified = false;
+  #settlementStatus: BattleRoomSnapshot["settlementStatus"] = "idle";
+  #settlementError: string | null = null;
+  #nextSettlementAttemptAt: number | null = null;
 
-  constructor(config: BattleRoomConfig, finishHandler: FinishHandler = () => {}) {
+  constructor(
+    config: BattleRoomConfig,
+    finishHandler: FinishHandler = () => {},
+  ) {
     this.#matchAddress = config.matchAddress;
     this.#battle = createSimultaneousBattle(
       config.creatorStats,
@@ -91,18 +95,29 @@ export class BattleRoom {
     return this.snapshot();
   }
 
-  submit(side: BattleSide, action: BattleAction, turn: number, now = Date.now()) {
+  submit(
+    side: BattleSide,
+    action: BattleAction,
+    turn: number,
+    now = Date.now(),
+  ) {
     this.#advanceClock(now);
     if (this.#phase !== "choosing" || this.#deadline === null) {
       throw new Error("The room is not accepting a turn choice.");
     }
-    if (turn !== this.#battle.turn) throw new Error("The turn choice is stale.");
-    if (now >= this.#deadline) throw new Error("The turn choice arrived after the deadline.");
+    if (turn !== this.#battle.turn)
+      throw new Error("The turn choice is stale.");
+    if (now >= this.#deadline)
+      throw new Error("The turn choice arrived after the deadline.");
+    if (this.#choices[side]) {
+      throw new Error("The turn choice is already locked.");
+    }
     const team = this.#battle[side];
     const fighter = team.fighters[team.activeSlot];
     if (!fighter) throw new Error("The active creature is unavailable.");
     const choice = normalizeAction(fighter, action);
-    if (choice.missed) throw new Error(`The active creature cannot use ${action}.`);
+    if (choice.missed)
+      throw new Error(`The active creature cannot use ${action}.`);
     this.#choices[side] = action;
     this.#sequence += 1;
     if (this.#choices.creator && this.#choices.opponent) {
@@ -113,6 +128,14 @@ export class BattleRoom {
 
   tick(now = Date.now()) {
     this.#advanceClock(now);
+    if (
+      this.#phase === "finished" &&
+      this.#settlementStatus === "failed" &&
+      this.#nextSettlementAttemptAt !== null &&
+      now >= this.#nextSettlementAttemptAt
+    ) {
+      this.#runSettlement(now);
+    }
     return this.snapshot();
   }
 
@@ -131,6 +154,8 @@ export class BattleRoom {
       opponentMissedTurns: this.#missedTurns.opponent,
       battle: this.#battle,
       events: this.#events,
+      settlementStatus: this.#settlementStatus,
+      settlementError: this.#settlementError,
     });
   }
 
@@ -210,20 +235,43 @@ export class BattleRoom {
     if (this.#battle.status === "finished") {
       this.#phase = "finished";
       this.#turnStartsAt = null;
-      this.#notifyFinish();
+      this.#notifyFinish(now);
       return;
     }
     this.#phase = "resolving";
     this.#turnStartsAt = now + TURN_ANIMATION_DURATION_MS;
   }
 
-  #notifyFinish() {
+  #notifyFinish(now: number) {
     if (this.#finishNotified || !this.#battle.outcome) return;
     this.#finishNotified = true;
-    void this.#finishHandler(
-      this.#battle.outcome,
-      this.#events.at(-1)?.turn ?? this.#battle.turn,
-      structuredClone(this.#events),
+    this.#runSettlement(now);
+  }
+
+  #runSettlement(now: number) {
+    if (!this.#battle.outcome || this.#settlementStatus === "pending") return;
+    this.#settlementStatus = "pending";
+    this.#settlementError = null;
+    this.#nextSettlementAttemptAt = null;
+    this.#sequence += 1;
+    void Promise.resolve(
+      this.#finishHandler(
+        this.#battle.outcome,
+        this.#events.at(-1)?.turn ?? this.#battle.turn,
+        structuredClone(this.#events),
+      ),
+    ).then(
+      () => {
+        this.#settlementStatus = "confirmed";
+        this.#sequence += 1;
+      },
+      (error: unknown) => {
+        this.#settlementStatus = "failed";
+        this.#settlementError =
+          error instanceof Error ? error.message : "Settlement failed.";
+        this.#nextSettlementAttemptAt = now + 3_000;
+        this.#sequence += 1;
+      },
     );
   }
 }
