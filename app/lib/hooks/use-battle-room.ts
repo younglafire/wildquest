@@ -31,6 +31,7 @@ export function useBattleRoom(input: {
     url.searchParams.set("match", input.matchAddress);
     const sessionKey = `wildquest:battle-session:${input.matchAddress}:${input.wallet?.account.address ?? "spectator"}`;
     let stopped = false;
+    let retryable = true;
     let reconnectTimer: number | null = null;
 
     const connect = () => {
@@ -80,9 +81,13 @@ export function useBattleRoom(input: {
           setSnapshot(message.snapshot);
         } else if (message.type === "error") {
           setError(message.message);
-          if (message.message.includes("session expired")) {
+          if (message.code === "SESSION_EXPIRED") {
             sessionStorage.removeItem(sessionKey);
             socket.close();
+          } else if (message.code === "MATCH_NOT_ACTIVE") {
+            retryable = false;
+            setStatus("unavailable");
+            socket.close(1000, "Match is no longer active");
           }
         }
       };
@@ -90,7 +95,7 @@ export function useBattleRoom(input: {
         setError("The live battle server is unavailable. Reconnecting…");
       };
       socket.onclose = () => {
-        if (stopped) return;
+        if (stopped || !retryable) return;
         setStatus("reconnecting");
         reconnectTimer = window.setTimeout(connect, 1_000);
       };

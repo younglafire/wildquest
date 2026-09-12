@@ -7,6 +7,9 @@ export type BattleClientMessage =
   | { type: "watch" }
   | { type: "choose"; turn: number; action: BattleAction };
 
+export type BattleServerErrorCode =
+  "INVALID_MESSAGE" | "MATCH_NOT_ACTIVE" | "SESSION_EXPIRED";
+
 export type BattleServerMessage =
   | { type: "challenge"; nonce: string; message: string }
   | {
@@ -16,7 +19,7 @@ export type BattleServerMessage =
     }
   | { type: "snapshot"; snapshot: BattleRoomSnapshot }
   | { type: "turn"; event: TurnEvent }
-  | { type: "error"; code: string; message: string };
+  | { type: "error"; code: BattleServerErrorCode; message: string };
 
 export function battleAuthenticationMessage(
   matchAddress: string,

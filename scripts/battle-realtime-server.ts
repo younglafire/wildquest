@@ -342,10 +342,17 @@ async function main() {
         }
         session.room.submit(state.side, input.action, input.turn);
       } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Invalid message.";
+        const code = message.includes("session expired")
+          ? "SESSION_EXPIRED"
+          : message === "The onchain Match is not active."
+            ? "MATCH_NOT_ACTIVE"
+            : "INVALID_MESSAGE";
         send(socket, {
           type: "error",
-          code: "INVALID_MESSAGE",
-          message: error instanceof Error ? error.message : "Invalid message.",
+          code,
+          message,
         });
       }
     });
@@ -353,7 +360,11 @@ async function main() {
     socket.on("close", async () => {
       const pending = rooms.get(state.matchAddress);
       if (!pending) return;
-      const session = await pending;
+      // The socket can close while an onchain room lookup is still rejecting.
+      // That rejection was already returned to the message handler, so there is
+      // no participant state to clean up here.
+      const session = await pending.catch(() => null);
+      if (!session) return;
       session.sockets.delete(socket);
       if (!state.side) return;
       const sideSockets =
@@ -367,7 +378,11 @@ async function main() {
 
   const timer = setInterval(async () => {
     for (const pending of rooms.values()) {
-      const session = await pending;
+      // A stale Match can disappear from the map while this tick still holds
+      // its rejected promise. Never let that socket-scoped failure terminate
+      // the process-wide room clock.
+      const session = await pending.catch(() => null);
+      if (!session) continue;
       const snapshot = session.room.tick();
       if (snapshot.sequence === session.lastSequence) continue;
       session.lastSequence = snapshot.sequence;
