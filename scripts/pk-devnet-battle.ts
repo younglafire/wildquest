@@ -119,10 +119,12 @@ async function main() {
       if (active.data.status !== MatchStatus.Active) {
         throw new Error("The joined Match did not become active.");
       }
+      const expectedWinner =
+        index % 2 === 0 ? walletA.address : walletB.address;
       const resolve = await buildResolveMatchInstruction(
         resolver,
         active,
-        walletA.address,
+        expectedWinner,
         1,
         new Uint8Array(
           createHash("sha256")
@@ -139,6 +141,11 @@ async function main() {
         commitment: "confirmed",
       });
       const winner = unwrapOption(resolved.data.winner);
+      if (winner !== expectedWinner) {
+        throw new Error(
+          "The resolved winner did not match the submitted result.",
+        );
+      }
       let claimSignature: string | null = null;
       if (winner === null) {
         if (resolved.data.status !== MatchStatus.Settled) {

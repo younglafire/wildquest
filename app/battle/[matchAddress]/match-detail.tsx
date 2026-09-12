@@ -18,6 +18,7 @@ import {
 } from "../../lib/matches";
 import { useSolanaClient } from "../../lib/solana-client-context";
 import { useWallet } from "../../lib/wallet/context";
+import { getPlayerMatchResult } from "../../lib/match-presentation";
 
 const STATUS_LABEL: Record<MatchStatus, string> = {
   [MatchStatus.Open]: "Waiting for opponent",
@@ -191,14 +192,12 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
 
   const opponent = unwrapOption(match.data.data.opponent);
   const winner = unwrapOption(match.data.data.winner);
-  const playerResult =
-    !game.address || !opponent
-      ? null
-      : winner === game.address
-        ? "Victory"
-        : winner === null
-          ? "Draw"
-          : "Defeat";
+  const playerResult = getPlayerMatchResult({
+    status: match.data.data.status,
+    player: game.address ?? null,
+    opponent,
+    winner,
+  });
 
   return (
     <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-14">

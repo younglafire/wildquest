@@ -252,12 +252,14 @@ wallet-signed message, while spectators have read-only access. The server owns
 the deadline and broadcasts snapshots, so the live view has no pause or skip
 control and one player's choice remains hidden until both choices resolve.
 
-Run the web app and battle process in separate terminals:
+The development command starts the web app and battle process together:
 
 ```sh
 npm run dev
-npm run battle-server
 ```
+
+Use `npm run dev:web` only when the battle server is intentionally running in
+another terminal or environment.
 
 `NEXT_PUBLIC_BATTLE_SERVER_URL` defaults to `ws://localhost:3001`. Production
 must use a TLS WebSocket URL and run one sticky room owner per Match, or move the
