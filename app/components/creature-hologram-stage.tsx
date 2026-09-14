@@ -332,9 +332,9 @@ export function CreatureHologramStage({
     const height = canvasMount.clientHeight || 380;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    // Adjusted camera distance so the entire card, flames, and pedestal base fit completely in view
-    camera.position.set(0, 0.02, compact ? 4.0 : 3.8);
-    camera.lookAt(0, -0.06, 0);
+    // Lowered camera and shifted target to center the floating card with ample top margin
+    camera.position.set(0, -0.05, compact ? 4.15 : 3.95);
+    camera.lookAt(0, -0.15, 0);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -367,119 +367,52 @@ export function CreatureHologramStage({
     topCyanLight.position.set(0, 3, 1);
     scene.add(topCyanLight);
 
-    // --- 3. Hologram Pedestal Base ---
-    const pedestalGroup = new THREE.Group();
-    pedestalGroup.position.set(0, -1.25, 0);
-
-    const baseGeo = new THREE.CylinderGeometry(1.6, 1.8, 0.14, 32);
-    const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x16120c,
-      metalness: 0.85,
-      roughness: 0.25,
-    });
-    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-    baseMesh.receiveShadow = true;
-    pedestalGroup.add(baseMesh);
-
-    // Outer Glow Ring in Gold
-    const goldRingGeo = new THREE.TorusGeometry(1.65, 0.035, 16, 64);
-    const goldRingMat = new THREE.MeshBasicMaterial({ color: 0xc8a96e });
-    const goldRing = new THREE.Mesh(goldRingGeo, goldRingMat);
-    goldRing.rotation.x = Math.PI / 2;
-    goldRing.position.y = 0.08;
-    pedestalGroup.add(goldRing);
-
-    // Holographic Polar Grid
-    const polarGrid = new THREE.PolarGridHelper(
-      1.55,
-      8,
-      6,
-      32,
-      0xc8a96e,
-      0x3a2e1e,
-    );
-    polarGrid.position.y = 0.09;
-    pedestalGroup.add(polarGrid);
-
-    scene.add(pedestalGroup);
-
-    // --- 4. Main Swivel Pivot (Contains 3D Card) ---
+    // --- 3. Main Swivel Pivot (Floating 3D Card lowered for top clearance) ---
     const mainPivot = new THREE.Group();
+    mainPivot.position.set(0, -0.15, 0);
     scene.add(mainPivot);
     cardGroupRef.current = mainPivot;
 
-    // --- 5. Generate 3D Holographic Trading Card Canvas Textures (High-Res 1024x1432 for Mobile Clarity) ---
+    // --- 5. Generate 3D Holographic Trading Card Canvas Textures (2:3 Aspect 1024x1536) ---
     const displayStats = deriveDisplayStats(role, stats);
 
-    // Canvas 1: Front of Card (1024 x 1432 px - Ultra crisp text)
+    // Canvas 1: Front of Card (1024 x 1536 px - Matches 2:3 nature frame overlay)
     const frontCanvas = document.createElement("canvas");
     frontCanvas.width = 1024;
-    frontCanvas.height = 1432;
+    frontCanvas.height = 1536;
     const ctx = frontCanvas.getContext("2d");
 
-    const drawCardFront = (imageElem?: HTMLImageElement) => {
+    let creatureImg: HTMLImageElement | null = null;
+    let frameImg: HTMLImageElement | null = null;
+
+    const drawCardFront = (
+      imageElem?: HTMLImageElement | null,
+      frameElem?: HTMLImageElement | null,
+    ) => {
       if (!ctx) return;
 
-      // Deep obsidian gold background
-      const bgGrad = ctx.createLinearGradient(0, 0, 1024, 1432);
-      bgGrad.addColorStop(0, "#1c1810");
-      bgGrad.addColorStop(0.5, "#120f0a");
-      bgGrad.addColorStop(1, "#0c0a07");
+      // 1. Base dark obsidian woodland background
+      const bgGrad = ctx.createLinearGradient(0, 0, 1024, 1536);
+      bgGrad.addColorStop(0, "#14100b");
+      bgGrad.addColorStop(0.5, "#0b0907");
+      bgGrad.addColorStop(1, "#080605");
       ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 1024, 1432);
+      ctx.fillRect(0, 0, 1024, 1536);
 
-      // Thick Gold ornate border
-      ctx.strokeStyle = "#c8a96e";
-      ctx.lineWidth = 26;
-      ctx.strokeRect(20, 20, 984, 1392);
-
-      ctx.strokeStyle = "#a07d48";
-      ctx.lineWidth = 5;
-      ctx.strokeRect(44, 44, 936, 1344);
-
-      // Corner Runes
-      ctx.fillStyle = "#c8a96e";
-      ctx.font = "bold 32px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("✦", 60, 84);
-      ctx.fillText("✦", 964, 84);
-      ctx.fillText("✦", 60, 1370);
-      ctx.fillText("✦", 964, 1370);
-
-      // ==========================================
-      // 1. TOP SECTION: CREATURE NAME & RARITY TAG (BIG & PROMINENT)
-      // ==========================================
-      ctx.fillStyle = "#f59e0b";
-      ctx.font = "900 24px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        `[ ${rarity.toUpperCase()} · ${role ? role.toUpperCase() : "CREATURE"} ]`,
-        512,
-        86,
-      );
-
-      // Main Creature Name (Extra Large, Ultra Readable on Phones)
-      const nameStr = speciesName.toUpperCase();
-      ctx.font =
-        nameStr.length > 16 ? "900 42px sans-serif" : "900 48px sans-serif";
-      ctx.fillStyle = "#ffffff";
-      ctx.shadowColor = "#c8a96e";
-      ctx.shadowBlur = 10;
-      ctx.fillText(nameStr, 512, 142);
-      ctx.shadowBlur = 0; // reset shadow
-
-      // ==========================================
-      // 2. CENTER SECTION: ARTWORK SHOWCASE
-      // ==========================================
-      const artX = 64;
-      const artY = 168;
-      const artW = 896;
-      const artH = 630;
+      // =========================================================================
+      // 2. UPPER WINDOW: CREATURE ARTWORK SHOWCASE
+      // (Drawn underneath the master template so the ornate gold borders,
+      //  ivy leaves and gemstones frame the photo with zero gaps)
+      // =========================================================================
+      const artX = 82;
+      const artY = 150;
+      const artW = 860;
+      const artH = 620;
 
       if (imageElem) {
         ctx.save();
         ctx.beginPath();
-        ctx.roundRect(artX, artY, artW, artH, 20);
+        ctx.rect(artX, artY, artW, artH);
         ctx.clip();
 
         const imgW = imageElem.naturalWidth || imageElem.width || 1;
@@ -512,32 +445,68 @@ export function CreatureHologramStage({
           artH,
         );
         ctx.restore();
-
-        // Inner frame border
-        ctx.strokeStyle = "#c8a96e";
-        ctx.lineWidth = 6;
-        ctx.strokeRect(artX, artY, artW, artH);
       } else {
         // Fallback specimen scanning box
-        ctx.fillStyle = "rgba(200, 169, 110, 0.12)";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
         ctx.fillRect(artX, artY, artW, artH);
-        ctx.strokeStyle = "#c8a96e";
-        ctx.lineWidth = 4;
-        ctx.strokeRect(artX, artY, artW, artH);
-
         ctx.fillStyle = "#c8a96e";
-        ctx.font = "bold 36px sans-serif";
+        ctx.font = "bold 32px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("SCANNING SPECIMEN…", 512, 480);
+        ctx.fillText("SCANNING SPECIMEN…", 512, 450);
       }
 
-      // ==========================================
-      // 3. BELOW ARTWORK: 4 CARD BATTLE STATS (CRISP, HUGE & ULTRA-READABLE)
-      // ==========================================
-      const statY = 820;
-      const statH = 145;
-      const statGap = 16;
-      const statW = Math.floor((artW - statGap * 3) / 4); // ~212px each
+      // =========================================================================
+      // 3. MASTER RARITY TEMPLATE OVERLAY (common.png, rare.png, legend.png, etc.)
+      // (Upper window is transparent, revealing creature photo through the frame)
+      // =========================================================================
+      if (frameElem) {
+        ctx.drawImage(frameElem, 0, 0, 1024, 1536);
+      } else {
+        // Fallback gold ornate border if template is still loading
+        ctx.strokeStyle = "#c8a96e";
+        ctx.lineWidth = 26;
+        ctx.strokeRect(20, 20, 984, 1496);
+      }
+
+      // =========================================================================
+      // 4. TOP HEADER: RARITY & CREATURE NAME
+      // (Resting in the header bar with dark backing panel for high contrast)
+      // =========================================================================
+      ctx.fillStyle = "rgba(8, 6, 4, 0.92)";
+      ctx.beginPath();
+      ctx.roundRect(212, 88, 600, 86, 10);
+      ctx.fill();
+      ctx.strokeStyle = "#c8a96e";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = "900 23px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(
+        `[ ${rarity.toUpperCase()} · ${role ? role.toUpperCase() : "CREATURE"} ]`,
+        512,
+        118,
+      );
+
+      // Main Creature Name (Bold, Prominent, Gold-glow)
+      const nameStr = speciesName.toUpperCase();
+      ctx.font =
+        nameStr.length > 18 ? "900 38px sans-serif" : "900 44px sans-serif";
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "#f59e0b";
+      ctx.shadowBlur = 8;
+      ctx.fillText(nameStr, 512, 156);
+      ctx.shadowBlur = 0; // reset shadow
+
+      // =========================================================================
+      // 5. LOWER PANEL: 4 CARD BATTLE STATS
+      // (Mounted seamlessly onto the slate stone panel texture at y = 880)
+      // =========================================================================
+      const statY = 880;
+      const statH = 126;
+      const statGap = 14;
+      const statW = Math.floor((artW - statGap * 3) / 4); // ~204px each
 
       const statItems = [
         {
@@ -545,110 +514,110 @@ export function CreatureHologramStage({
           value: displayStats.hp,
           color: "#4ade80",
           border: "#22c55e",
-          bg: "rgba(34, 197, 94, 0.15)",
+          bg: "rgba(34, 197, 94, 0.16)",
         },
         {
           label: "ATK",
           value: displayStats.attack,
           color: "#f87171",
           border: "#ef4444",
-          bg: "rgba(239, 68, 68, 0.15)",
+          bg: "rgba(239, 68, 68, 0.16)",
         },
         {
           label: "DEF",
           value: displayStats.defense,
           color: "#60a5fa",
           border: "#3b82f6",
-          bg: "rgba(59, 130, 246, 0.15)",
+          bg: "rgba(59, 130, 246, 0.16)",
         },
         {
           label: "SPD",
           value: displayStats.speed,
           color: "#facc15",
           border: "#eab308",
-          bg: "rgba(234, 179, 8, 0.15)",
+          bg: "rgba(234, 179, 8, 0.16)",
         },
       ];
 
       statItems.forEach((stat, idx) => {
         const x = artX + idx * (statW + statGap);
 
-        // Deep solid black box background for maximum contrast
-        ctx.fillStyle = "rgba(10, 8, 5, 0.98)";
+        // Dark matte badge background
+        ctx.fillStyle = "#0c0f0d";
         ctx.beginPath();
-        ctx.roundRect(x, statY, statW, statH, 16);
+        ctx.roundRect(x, statY, statW, statH, 14);
         ctx.fill();
 
         // Inner tint
         ctx.fillStyle = stat.bg;
         ctx.beginPath();
-        ctx.roundRect(x, statY, statW, statH, 16);
+        ctx.roundRect(x, statY, statW, statH, 14);
         ctx.fill();
 
         // Colored border
         ctx.strokeStyle = stat.border;
-        ctx.lineWidth = 3.5;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
 
         // Stat Label
         ctx.fillStyle = stat.color;
-        ctx.font = "900 26px monospace";
+        ctx.font = "900 24px monospace";
         ctx.textAlign = "center";
-        ctx.fillText(stat.label, x + statW / 2, statY + 44);
+        ctx.fillText(stat.label, x + statW / 2, statY + 36);
 
         // Stat Value (Huge, Ultra High-Contrast White)
         ctx.fillStyle = "#ffffff";
-        ctx.font = "900 66px sans-serif";
+        ctx.font = "900 62px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(String(stat.value), x + statW / 2, statY + 118);
+        ctx.fillText(String(stat.value), x + statW / 2, statY + 104);
       });
 
-      // ==========================================
-      // 4. BOTTOM SECTION: LORE SUMMARY & VERIFICATION (RAZOR SHARP HIGH-CONTRAST)
-      // ==========================================
-      const infoBoxY = 985;
-      const infoBoxH = 375;
+      // =========================================================================
+      // 6. LOWER PANEL: LORE SUMMARY & VERIFICATION
+      // (Clean matte backing plate for high contrast and crystal-clear readability)
+      // =========================================================================
+      const loreY = 1022;
+      const loreH = 300;
 
-      // Solid dark obsidian panel (no semi-transparency that washes out text)
-      ctx.fillStyle = "rgba(8, 6, 4, 0.98)";
+      // Clean matte slate backing plate
+      ctx.fillStyle = "rgba(6, 5, 4, 0.78)";
       ctx.beginPath();
-      ctx.roundRect(artX, infoBoxY, artW, infoBoxH, 18);
+      ctx.roundRect(artX, loreY, artW, loreH, 14);
       ctx.fill();
-
-      ctx.strokeStyle = "rgba(200, 169, 110, 0.6)";
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(200, 169, 110, 0.35)";
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // Habitat / Biome tag (Bold, bright gold)
       const habitatStr = habitat
         ? `🌍 HABITAT: ${habitat.toUpperCase()}`
         : "🌍 HABITAT: WILD HARMONY SANCTUARY";
-      ctx.fillStyle = "#fbbf24";
+      ctx.fillStyle = "#fef08a";
       ctx.font = "900 28px monospace";
       ctx.textAlign = "left";
-      ctx.fillText(habitatStr, artX + 28, infoBoxY + 48);
+      ctx.fillText(habitatStr, artX + 28, loreY + 44);
 
       // Trait / Specialty highlight
       const traitStr = `⚡ TRAIT: ${role ? role.toUpperCase() : "BALANCED CREATURE"} · ${rarity.toUpperCase()}`;
-      ctx.fillStyle = "#34d399";
-      ctx.font = "900 24px monospace";
+      ctx.fillStyle = "#4ade80";
+      ctx.font = "900 25px monospace";
       ctx.textAlign = "left";
-      ctx.fillText(traitStr, artX + 28, infoBoxY + 86);
+      ctx.fillText(traitStr, artX + 28, loreY + 84);
 
-      // Brief summary / lore description (Pure solid white #ffffff, large 28px font, maximum clarity)
+      // Brief summary / lore description
       const summaryText =
         summary ||
         `An authentic specimen from the WildQuest wilderness. Possesses sharp instincts and natural balance in the arena.`;
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
+      ctx.font = "700 26px system-ui, -apple-system, sans-serif";
       ctx.textAlign = "left";
       wrapCanvasText(
         ctx,
         summaryText,
         artX + 28,
-        infoBoxY + 135,
+        loreY + 134,
         artW - 56,
-        42,
+        38,
         3,
       );
 
@@ -658,13 +627,19 @@ export function CreatureHologramStage({
           ? `✦ SPECIES #${catalogueId} · SOLANA DEVNET ONCHAIN ✦`
           : "✦ WILDQUEST ONCHAIN SPECIMEN ✦";
       ctx.fillStyle = "#f3ba63";
-      ctx.font = "900 24px monospace";
+      ctx.font = "900 22px monospace";
       ctx.textAlign = "center";
-      ctx.fillText(authStr, 512, infoBoxY + 340);
+      ctx.fillText(authStr, 512, loreY + 266);
     };
 
-    drawCardFront();
-    // Direct LinearFilter with NO mipmapping avoids the blur/haze of downscaled mipmap levels
+    const renderFrontCard = () => {
+      drawCardFront(creatureImg, frameImg);
+      frontTexture.needsUpdate = true;
+    };
+
+    drawCardFront(null, null);
+
+    // Direct LinearFilter with NO mipmapping avoids blurriness
     const frontTexture = new THREE.CanvasTexture(frontCanvas);
     frontTexture.colorSpace = THREE.SRGBColorSpace;
     frontTexture.minFilter = THREE.LinearFilter;
@@ -673,70 +648,85 @@ export function CreatureHologramStage({
     frontTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     frontTexture.needsUpdate = true;
 
+    // Load Creature Artwork
     if (imageUrl) {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
-        drawCardFront(img);
-        frontTexture.needsUpdate = true;
+        creatureImg = img;
+        renderFrontCard();
       };
       img.src = imageUrl;
     }
 
-    // Canvas 2: Back of Card (Guild Crest - 1024 x 1432)
+    // Load Rarity-themed Card Base Template (/creatures/common.png, rare.png, legend.png, etc.)
+    const frameImage = new Image();
+    frameImage.onload = () => {
+      frameImg = frameImage;
+      renderFrontCard();
+    };
+    frameImage.onerror = () => {
+      // Fallback to common.png if specific rarity template is missing
+      if (!frameImage.src.endsWith("/creatures/common.png")) {
+        frameImage.src = "/creatures/common.png";
+      }
+    };
+    const getRarityTemplateSrc = (r: string) => {
+      const lower = (r || "common").toLowerCase();
+      if (lower === "legendary" || lower === "legend") {
+        return "/creatures/legend.png";
+      }
+      return `/creatures/${lower}.png`;
+    };
+    frameImage.src = getRarityTemplateSrc(rarity);
+
+    // Canvas 2: Back of Card (Universal WILDCARD Back - 1024 x 1536)
     const backCanvas = document.createElement("canvas");
     backCanvas.width = 1024;
-    backCanvas.height = 1432;
+    backCanvas.height = 1536;
     const backCtx = backCanvas.getContext("2d");
-    if (backCtx) {
-      // Obsidian gradient background
-      const bGrad = backCtx.createLinearGradient(0, 0, 1024, 1432);
-      bGrad.addColorStop(0, "#16120c");
-      bGrad.addColorStop(0.5, "#0d0a07");
-      bGrad.addColorStop(1, "#16120c");
-      backCtx.fillStyle = bGrad;
-      backCtx.fillRect(0, 0, 1024, 1432);
 
-      // Double gold borders
-      backCtx.strokeStyle = "#c8a96e";
-      backCtx.lineWidth = 26;
-      backCtx.strokeRect(20, 20, 984, 1392);
+    const renderCardBack = (backImg?: HTMLImageElement | null) => {
+      if (!backCtx) return;
+      if (backImg) {
+        backCtx.drawImage(backImg, 0, 0, 1024, 1536);
+      } else {
+        // Obsidian gradient fallback
+        const bGrad = backCtx.createLinearGradient(0, 0, 1024, 1536);
+        bGrad.addColorStop(0, "#16120c");
+        bGrad.addColorStop(0.5, "#0d0a07");
+        bGrad.addColorStop(1, "#16120c");
+        backCtx.fillStyle = bGrad;
+        backCtx.fillRect(0, 0, 1024, 1536);
 
-      backCtx.strokeStyle = "#a07d48";
-      backCtx.lineWidth = 5;
-      backCtx.strokeRect(44, 44, 936, 1344);
+        // Double gold borders
+        backCtx.strokeStyle = "#c8a96e";
+        backCtx.lineWidth = 26;
+        backCtx.strokeRect(20, 20, 984, 1496);
 
-      // Central Mystical Circles
-      backCtx.strokeStyle = "rgba(200, 169, 110, 0.4)";
-      backCtx.lineWidth = 4;
-      backCtx.beginPath();
-      backCtx.arc(512, 716, 320, 0, Math.PI * 2);
-      backCtx.stroke();
+        backCtx.strokeStyle = "#a07d48";
+        backCtx.lineWidth = 5;
+        backCtx.strokeRect(44, 44, 936, 1448);
 
-      backCtx.beginPath();
-      backCtx.arc(512, 716, 240, 0, Math.PI * 2);
-      backCtx.stroke();
+        // Central Mystical Circles
+        backCtx.strokeStyle = "rgba(200, 169, 110, 0.4)";
+        backCtx.lineWidth = 4;
+        backCtx.beginPath();
+        backCtx.arc(512, 768, 320, 0, Math.PI * 2);
+        backCtx.stroke();
 
-      // WildQuest Guild Crest Emblem (Huge, Regal)
-      backCtx.fillStyle = "#c8a96e";
-      backCtx.font = "900 110px serif";
-      backCtx.textAlign = "center";
-      backCtx.fillText("WQ", 512, 690);
+        // WildQuest Guild Crest Emblem
+        backCtx.fillStyle = "#c8a96e";
+        backCtx.font = "900 110px serif";
+        backCtx.textAlign = "center";
+        backCtx.fillText("WQ", 512, 740);
 
-      backCtx.font = "900 46px sans-serif";
-      backCtx.fillText("WILDQUEST", 512, 770);
+        backCtx.font = "900 46px sans-serif";
+        backCtx.fillText("WILDCARD", 512, 820);
+      }
+    };
 
-      backCtx.font = "bold 24px monospace";
-      backCtx.fillStyle = "#a07d48";
-      backCtx.fillText("CHRONICLES OF SOLANA", 512, 820);
-
-      // Runes at corners
-      backCtx.font = "bold 36px monospace";
-      backCtx.fillText("✦", 80, 120);
-      backCtx.fillText("✦", 944, 120);
-      backCtx.fillText("✦", 80, 1340);
-      backCtx.fillText("✦", 944, 1340);
-    }
+    renderCardBack(null);
 
     const backTexture = new THREE.CanvasTexture(backCanvas);
     backTexture.colorSpace = THREE.SRGBColorSpace;
@@ -746,16 +736,24 @@ export function CreatureHologramStage({
     backTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     backTexture.needsUpdate = true;
 
-    // Card geometry: Rounded slab with gold bevel sides
-    const cardWidth = 1.9;
-    const cardHeight = 2.65;
+    // Load custom card back image (/creatures/background_wildcard.png)
+    const cardBackImage = new Image();
+    cardBackImage.onload = () => {
+      renderCardBack(cardBackImage);
+      backTexture.needsUpdate = true;
+    };
+    cardBackImage.src = "/creatures/background_wildcard.png";
+
+    // Card geometry: Rounded slab with gold bevel sides (2:3 aspect ratio matching frame)
+    const cardWidth = 1.84;
+    const cardHeight = 2.76;
     const cardThickness = 0.05;
     const cardGeo = new THREE.BoxGeometry(cardWidth, cardHeight, cardThickness);
 
     const sideMat = new THREE.MeshStandardMaterial({
-      color: 0xc8a96e,
-      metalness: 0.9,
-      roughness: 0.2,
+      color: 0x5a4225, // Deep ancient wood bronze side
+      metalness: 0.7,
+      roughness: 0.35,
     });
     // Matte finish on card front eliminates specular glare from lights that washed out the text
     const frontMat = new THREE.MeshStandardMaterial({
@@ -779,7 +777,7 @@ export function CreatureHologramStage({
     ]);
     cardMesh.castShadow = true;
     cardMesh.receiveShadow = true;
-    cardMesh.position.set(0, 0.08, 0);
+    cardMesh.position.set(0, 0.06, 0);
     mainPivot.add(cardMesh);
 
     // Floating energy particles around the 3D card
@@ -793,7 +791,7 @@ export function CreatureHologramStage({
     for (let i = 0; i < particleCount * 3; i += 3) {
       positions[i] = (Math.random() - 0.5) * 2.2;
       positions[i + 1] = (Math.random() - 0.5) * 2.8;
-      positions[i + 2] = (Math.random() - 0.5) * 0.8;
+      positions[i + 2] = -0.08 - Math.random() * 0.35; // strictly behind the card
     }
     particleGeo.setAttribute(
       "position",
@@ -811,12 +809,14 @@ export function CreatureHologramStage({
     setIsLoadingModel(false);
 
     // --- 7. Realistic Burning Fire & SSJ2 Lightning System (Rarity Tinted) ---
+    // Positioned strictly behind the 3D card (z = -0.08) so front art and text remain crystal clear
     const saiyanAuraGroup = new THREE.Group();
+    saiyanAuraGroup.position.set(0, 0.06, -0.08);
     mainPivot.add(saiyanAuraGroup);
 
     // A. Dancing Flame Tongues with dynamic rarity colors
     const flameTongueTex = createFlameTongueTexture(auraPalette);
-    const flameTongueGeo = new THREE.PlaneGeometry(0.48, 0.95);
+    const flameTongueGeo = new THREE.PlaneGeometry(0.55, 1.1);
     const TONGUE_COUNT = 16;
     const flameTongueMeshes: Array<{
       mesh: THREE.Mesh;
@@ -836,16 +836,16 @@ export function CreatureHologramStage({
       const mat = new THREE.MeshBasicMaterial({
         map: flameTongueTex,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.82,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         depthWrite: false,
       });
       const tongueMesh = new THREE.Mesh(flameTongueGeo, mat);
       tongueMesh.position.set(
-        side * (0.96 + Math.random() * 0.05),
+        side * (1.02 + Math.random() * 0.06),
         baseY,
-        (Math.random() - 0.5) * 0.08,
+        -0.01 + (Math.random() - 0.5) * 0.02,
       );
       tongueMesh.rotation.z = baseRotZ;
       saiyanAuraGroup.add(tongueMesh);
@@ -861,7 +861,7 @@ export function CreatureHologramStage({
 
     // B. Base Fire Sheaths (Continuous heat wall)
     const flameWallTex = createFlameWallTexture(auraPalette);
-    const wallGeo = new THREE.PlaneGeometry(0.4, 2.75);
+    const wallGeo = new THREE.PlaneGeometry(0.52, 2.9);
 
     const leftWallMat = new THREE.MeshBasicMaterial({
       map: flameWallTex,
@@ -872,7 +872,7 @@ export function CreatureHologramStage({
       depthWrite: false,
     });
     const leftWall = new THREE.Mesh(wallGeo, leftWallMat);
-    leftWall.position.set(-1.01, 0.15, 0);
+    leftWall.position.set(-1.06, 0.06, -0.02);
     saiyanAuraGroup.add(leftWall);
 
     const rightWallMat = new THREE.MeshBasicMaterial({
@@ -884,7 +884,7 @@ export function CreatureHologramStage({
       depthWrite: false,
     });
     const rightWall = new THREE.Mesh(wallGeo, rightWallMat);
-    rightWall.position.set(1.01, 0.15, 0);
+    rightWall.position.set(1.06, 0.06, -0.02);
     rightWall.rotation.y = Math.PI;
     saiyanAuraGroup.add(rightWall);
 
@@ -904,9 +904,9 @@ export function CreatureHologramStage({
       const side = isRight ? 1 : -1;
       emberSides[i] = side;
 
-      const x = side * (0.95 + Math.random() * 0.1);
-      const y = -1.15 + Math.random() * 2.6;
-      const z = (Math.random() - 0.5) * 0.12;
+      const x = side * (1.02 + Math.random() * 0.15);
+      const y = -1.25 + Math.random() * 2.8;
+      const z = -0.02 + (Math.random() - 0.5) * 0.04;
 
       emberPositions[i * 3] = x;
       emberPositions[i * 3 + 1] = y;
@@ -963,13 +963,13 @@ export function CreatureHologramStage({
 
     const boltLifetimes = new Float32Array(BOLT_COUNT);
 
-    // E. Point Lights matching rarity aura
+    // E. Point Lights matching rarity aura (Stationed behind the card sides)
     const leftFireLight = new THREE.PointLight(
       auraPalette.lightColor,
       2.5,
       3.8,
     );
-    leftFireLight.position.set(-1.18, 0.15, 0.18);
+    leftFireLight.position.set(-1.25, 0.15, -0.06);
     saiyanAuraGroup.add(leftFireLight);
 
     const rightFireLight = new THREE.PointLight(
@@ -977,7 +977,7 @@ export function CreatureHologramStage({
       2.5,
       3.8,
     );
-    rightFireLight.position.set(1.18, 0.15, 0.18);
+    rightFireLight.position.set(1.25, 0.15, -0.06);
     saiyanAuraGroup.add(rightFireLight);
 
     // --- 8. Touch & Mouse Pointer Controls ---
@@ -1080,7 +1080,7 @@ export function CreatureHologramStage({
       leftWallMat.opacity = 0.65 + Math.sin(elapsedTime * 18) * 0.18;
       rightWallMat.opacity = 0.65 + Math.sin(elapsedTime * 18 + 2.0) * 0.18;
 
-      // Animate Rising Embers
+      // Animate Rising Embers (Rising strictly behind the card plane)
       const ePos = emberGeo.attributes.position.array as Float32Array;
       for (let i = 0; i < EMBER_COUNT; i++) {
         const idx = i * 3;
@@ -1093,16 +1093,17 @@ export function CreatureHologramStage({
         const curY = ePos[idx + 1];
         const drift = Math.sin(curY * 6 + elapsedTime * 5 + phase) * 0.035;
         ePos[idx] =
-          side * (0.97 + Math.max(0, (curY - 0.15) * 0.07)) + side * drift;
+          side * (1.02 + Math.max(0, (curY - 0.15) * 0.08)) +
+          side * Math.abs(drift);
 
         if (curY > 1.65) {
-          ePos[idx + 1] = -1.2 + Math.random() * 0.35;
-          ePos[idx + 2] = (Math.random() - 0.5) * 0.12;
+          ePos[idx + 1] = -1.25 + Math.random() * 0.35;
+          ePos[idx + 2] = -0.02 + (Math.random() - 0.5) * 0.04;
         }
       }
       emberGeo.attributes.position.needsUpdate = true;
 
-      // Animate SSJ2 Lightning Arcs
+      // Animate SSJ2 Lightning Arcs (Discharging strictly behind the card perimeter)
       const lPos = lightningGeo.attributes.position.array as Float32Array;
       for (let b = 0; b < BOLT_COUNT; b++) {
         boltLifetimes[b] -= 0.14;
@@ -1112,9 +1113,9 @@ export function CreatureHologramStage({
           if (Math.random() < 0.14) {
             boltLifetimes[b] = 1.0;
             const side = b < BOLT_COUNT / 2 ? -1 : 1;
-            let curX = side * (0.95 + Math.random() * 0.05);
+            let curX = side * (1.02 + Math.random() * 0.06);
             let curY = -1.1 + Math.random() * 2.3;
-            let curZ = (Math.random() - 0.5) * 0.08;
+            let curZ = -0.02 + (Math.random() - 0.5) * 0.03;
 
             for (let s = 0; s < SEGMENTS_PER_BOLT; s++) {
               const vStart = baseIdx + s * 2 * 3;
@@ -1126,10 +1127,10 @@ export function CreatureHologramStage({
 
               curX +=
                 side *
-                (0.05 + Math.random() * 0.14) *
-                (Math.random() > 0.28 ? 1 : -0.4);
+                (0.05 + Math.random() * 0.12) *
+                (Math.random() > 0.15 ? 1 : -0.2);
               curY += Math.random() * 0.22 - 0.03;
-              curZ += (Math.random() - 0.5) * 0.12;
+              curZ += (Math.random() - 0.5) * 0.03;
 
               lPos[vEnd] = curX;
               lPos[vEnd + 1] = curY;
@@ -1149,9 +1150,6 @@ export function CreatureHologramStage({
         Math.sin(elapsedTime * 24) * 0.4 + (Math.random() - 0.5) * 0.3;
       leftFireLight.intensity = 2.4 + fireFlicker;
       rightFireLight.intensity = 2.4 + fireFlicker;
-
-      // Pedestal slow synchronized rotation
-      pedestalGroup.rotation.y += 0.001;
 
       renderer.render(scene, camera);
     };
@@ -1252,7 +1250,7 @@ export function CreatureHologramStage({
         </div>
       )}
 
-      {/* Main 3D WebGL Canvas Stage - Generous height so entire card and pedestal base are 100% visible */}
+      {/* Main 3D WebGL Canvas Stage - Generous height for floating 3D card and aura flames */}
       <div
         className={`relative w-full flex items-center justify-center ${
           compact ? "h-[490px] sm:h-[550px]" : "h-[540px] sm:h-[600px]"
