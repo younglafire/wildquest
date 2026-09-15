@@ -7,7 +7,7 @@ const validIdentification = {
   common_name: "Bee",
   model_class_id: 309,
   model_label: "bee",
-  balance_version: 1,
+  balance_version: 2,
   confidence: 0.85,
   explanation: 'ResNet-50 matched the ImageNet label "bee".',
   rarity: "Common",

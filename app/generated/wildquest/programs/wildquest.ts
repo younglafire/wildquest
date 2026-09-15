@@ -36,6 +36,7 @@ import {
   parseRefundStaleMatchInstruction,
   parseReleaseCreatureInstruction,
   parseResolveMatchInstruction,
+  parseUpgradeCreatureBalanceInstruction,
   type ParsedActivateTurnCombatInstruction,
   type ParsedAdminCloseCreatureInstruction,
   type ParsedAdminCloseMatchInstruction,
@@ -55,6 +56,7 @@ import {
   type ParsedRefundStaleMatchInstruction,
   type ParsedReleaseCreatureInstruction,
   type ParsedResolveMatchInstruction,
+  type ParsedUpgradeCreatureBalanceInstruction,
 } from "../instructions";
 
 export const WILDQUEST_PROGRAM_ADDRESS =
@@ -200,6 +202,7 @@ export enum WildquestInstruction {
   RefundStaleMatch,
   ReleaseCreature,
   ResolveMatch,
+  UpgradeCreatureBalance,
 }
 
 export function identifyWildquestInstruction(
@@ -415,6 +418,17 @@ export function identifyWildquestInstruction(
   ) {
     return WildquestInstruction.ResolveMatch;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([129, 31, 34, 24, 135, 176, 125, 209]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.UpgradeCreatureBalance;
+  }
   throw new Error(
     "The provided instruction could not be identified as a wildquest instruction.",
   );
@@ -479,7 +493,10 @@ export type ParsedWildquestInstruction<
     } & ParsedReleaseCreatureInstruction<TProgram>)
   | ({
       instructionType: WildquestInstruction.ResolveMatch;
-    } & ParsedResolveMatchInstruction<TProgram>);
+    } & ParsedResolveMatchInstruction<TProgram>)
+  | ({
+      instructionType: WildquestInstruction.UpgradeCreatureBalance;
+    } & ParsedUpgradeCreatureBalanceInstruction<TProgram>);
 
 export function parseWildquestInstruction<TProgram extends string>(
   instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
@@ -617,6 +634,13 @@ export function parseWildquestInstruction<TProgram extends string>(
       return {
         instructionType: WildquestInstruction.ResolveMatch,
         ...parseResolveMatchInstruction(instruction),
+      };
+    }
+    case WildquestInstruction.UpgradeCreatureBalance: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.UpgradeCreatureBalance,
+        ...parseUpgradeCreatureBalanceInstruction(instruction),
       };
     }
     default:

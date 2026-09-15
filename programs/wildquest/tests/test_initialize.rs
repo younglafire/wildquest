@@ -332,6 +332,15 @@ fn write_game_config(svm: &mut LiteSVM, game_config: Pubkey, state: &wildquest::
     svm.set_account(game_config, account).unwrap();
 }
 
+fn write_creature(svm: &mut LiteSVM, creature: Pubkey, state: &wildquest::state::Creature) {
+    let mut account = svm.get_account(&creature).unwrap();
+    let mut data = Vec::with_capacity(account.data.len());
+    state.try_serialize(&mut data).unwrap();
+    assert_eq!(data.len(), account.data.len());
+    account.data = data;
+    svm.set_account(creature, account).unwrap();
+}
+
 fn capture_creature(
     svm: &mut LiteSVM,
     owner: &Keypair,
@@ -1038,6 +1047,7 @@ fn test_activate_turn_combat_requires_admin_and_updates_existing_config() {
     let mut data: &[u8] = &account.data;
     let mut state = wildquest::state::GameConfig::try_deserialize(&mut data).unwrap();
     state.rules_version = 1;
+    state.balance_version = 1;
     write_game_config(&mut svm, game_config, &state);
 
     let instruction = |signer: Pubkey| {
@@ -1075,6 +1085,72 @@ fn test_activate_turn_combat_requires_admin_and_updates_existing_config() {
     let mut data: &[u8] = &account.data;
     let updated = wildquest::state::GameConfig::try_deserialize(&mut data).unwrap();
     assert_eq!(updated.rules_version, wildquest::constants::RULES_VERSION);
+    assert_eq!(
+        updated.balance_version,
+        wildquest::constants::BALANCE_VERSION
+    );
+}
+
+#[test]
+fn test_owner_can_upgrade_existing_creature_to_active_balance() {
+    let owner = Keypair::new();
+    let wrong_owner = Keypair::new();
+    let capture_authority = Keypair::new();
+    let mut svm = create_test_svm();
+    svm.airdrop(&owner.pubkey(), 2_000_000_000).unwrap();
+    svm.airdrop(&wrong_owner.pubkey(), 2_000_000_000).unwrap();
+    let game_config = initialize_game_config(&mut svm, &owner, capture_authority.pubkey());
+    let catalogue_id = wildquest::constants::BATTLE_CATALOGUE_IDS[0];
+    let species_config = initialize_species_config(&mut svm, &owner, game_config, catalogue_id);
+    let creature = capture_creature(
+        &mut svm,
+        &owner,
+        &capture_authority,
+        game_config,
+        species_config,
+        catalogue_id,
+        41,
+    );
+    let account = svm.get_account(&creature).unwrap();
+    let mut data: &[u8] = &account.data;
+    let mut state = wildquest::state::Creature::try_deserialize(&mut data).unwrap();
+    state.balance_version = 1;
+    write_creature(&mut svm, creature, &state);
+
+    let instruction = |signer: Pubkey| {
+        Instruction::new_with_bytes(
+            wildquest::id(),
+            &wildquest::instruction::UpgradeCreatureBalance {}.data(),
+            wildquest::accounts::UpgradeCreatureBalanceAccountConstraints {
+                owner: signer,
+                game_config,
+                species_config,
+                creature,
+            }
+            .to_account_metas(None),
+        )
+    };
+
+    assert!(!send_instruction(
+        &mut svm,
+        &wrong_owner,
+        instruction(wrong_owner.pubkey())
+    ));
+    assert!(send_instruction(
+        &mut svm,
+        &owner,
+        instruction(owner.pubkey())
+    ));
+
+    let account = svm.get_account(&creature).unwrap();
+    let mut data: &[u8] = &account.data;
+    let upgraded = wildquest::state::Creature::try_deserialize(&mut data).unwrap();
+    assert_eq!(upgraded.owner, owner.pubkey());
+    assert_eq!(upgraded.proof_hash, [41; 32]);
+    assert_eq!(
+        upgraded.balance_version,
+        wildquest::constants::BALANCE_VERSION
+    );
 }
 
 #[test]
@@ -1106,7 +1182,8 @@ fn test_initialize_battle_species_configs() {
         let account = svm.get_account(&species_config).unwrap();
         let mut data: &[u8] = &account.data;
         let config = wildquest::state::SpeciesConfig::try_deserialize(&mut data).unwrap();
-        let [hp, attack, defense, speed, shield] = wildquest::constants::BATTLE_STATS[index];
+        let [hp, attack, defense, max_mana, strike_cost, guard_cost, recharge_gain, ability_id, ability_cost] =
+            wildquest::constants::BATTLE_STATS[index];
         assert_eq!(config.catalogue_id, *catalogue_id);
         assert_eq!(
             config.model_class_id,
@@ -1117,10 +1194,24 @@ fn test_initialize_battle_species_configs() {
                 config.hp,
                 config.attack,
                 config.defense,
-                config.speed,
-                config.shield,
+                config.max_mana,
+                config.strike_cost,
+                config.guard_cost,
+                config.recharge_gain,
+                config.ability_id,
+                config.ability_cost,
             ],
-            [hp, attack, defense, speed, shield]
+            [
+                hp,
+                attack,
+                defense,
+                max_mana,
+                strike_cost,
+                guard_cost,
+                recharge_gain,
+                ability_id,
+                ability_cost
+            ]
         );
         assert!(config.active);
         assert_eq!(

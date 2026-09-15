@@ -1,16 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  BattleRoom,
-  WAITING_FOR_OPPONENT_TIMEOUT_MS,
-} from "./battle-room";
+import { BattleRoom, WAITING_FOR_OPPONENT_TIMEOUT_MS } from "./battle-room";
 import type { BattleStats } from "./battle-engine";
 
 const stats: BattleStats = {
   hp: 100,
   attack: 60,
   defense: 50,
-  speed: 50,
-  shield: 25,
+  maxMana: 5,
+  strikeCost: 2,
+  guardCost: 1,
+  rechargeGain: 3,
+  abilityId: 1,
+  abilityCost: 3,
 };
 const team = [stats, stats, stats];
 

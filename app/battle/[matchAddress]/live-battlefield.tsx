@@ -6,6 +6,7 @@ import type { BattleRoomSnapshot } from "../../lib/battle-room";
 import type { BattleCreature } from "../../lib/battle-creatures";
 import { useBattleRoom } from "../../lib/hooks/use-battle-room";
 import { canUseAction } from "../../lib/simultaneous-battle";
+import { creatureAbility } from "../../lib/creature-abilities";
 import type { WalletSession } from "../../lib/wallet/types";
 import { SpeciesArt } from "../../components/species-art";
 
@@ -127,28 +128,32 @@ export function LiveBattlefield({
       </div>
 
       {playerSide && (
-        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-card/95 p-2 backdrop-blur md:static md:p-0">
-          {(["strike", "guard", "recharge"] as const).map((action) => (
-            <button
-              key={action}
-              type="button"
-              disabled={
-                status !== "authenticated" ||
-                snapshot.phase !== "choosing" ||
-                ownLocked ||
-                !ownFighter ||
-                !canUseAction(ownFighter, action)
-              }
-              onClick={() => choose(action)}
-              className="min-h-14 rounded-xl border border-border bg-cream px-2 text-xs font-black transition active:scale-95 disabled:opacity-40 motion-reduce:transition-none sm:text-sm"
-            >
-              {action === "strike"
-                ? "⚔ Strike · 2"
-                : action === "guard"
-                  ? "◆ Guard · 1"
-                  : "✦ Recharge · +3"}
-            </button>
-          ))}
+        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-card/95 p-2 backdrop-blur md:static md:grid-cols-4 md:p-0">
+          {(["strike", "guard", "ability", "recharge"] as const).map(
+            (action) => (
+              <button
+                key={action}
+                type="button"
+                disabled={
+                  status !== "authenticated" ||
+                  snapshot.phase !== "choosing" ||
+                  ownLocked ||
+                  !ownFighter ||
+                  !canUseAction(ownFighter, action)
+                }
+                onClick={() => choose(action)}
+                className="min-h-14 rounded-xl border border-border bg-cream px-2 text-xs font-black transition active:scale-95 disabled:opacity-40 motion-reduce:transition-none sm:text-sm"
+              >
+                {action === "strike"
+                  ? `⚔ Strike · ${ownFighter?.stats.strikeCost ?? 0}`
+                  : action === "guard"
+                    ? `◆ Guard · ${ownFighter?.stats.guardCost ?? 0}`
+                    : action === "ability"
+                      ? `${creatureAbility(ownFighter?.stats.abilityId ?? 1).name} · ${ownFighter?.stats.abilityCost ?? 0}`
+                      : `✦ Recharge · +${ownFighter?.stats.rechargeGain ?? 0}`}
+              </button>
+            ),
+          )}
         </div>
       )}
       <div
@@ -199,9 +204,14 @@ function TeamPanel({
   team: BattleCreature[];
   activeSlot: number;
   fighter:
-    { currentHp: number; mana: number; stats: { hp: number } } | undefined;
+    | {
+        currentHp: number;
+        mana: number;
+        stats: { hp: number; maxMana: number };
+      }
+    | undefined;
   side: string;
-  action: "strike" | "guard" | "recharge" | undefined;
+  action: "strike" | "guard" | "ability" | "recharge" | undefined;
 }) {
   return (
     <div>
@@ -276,16 +286,21 @@ function CombatCard({
 }: {
   creature: BattleCreature | undefined;
   fighter:
-    { currentHp: number; mana: number; stats: { hp: number } } | undefined;
+    | {
+        currentHp: number;
+        mana: number;
+        stats: { hp: number; maxMana: number };
+      }
+    | undefined;
   side: string;
-  action: "strike" | "guard" | "recharge" | undefined;
+  action: "strike" | "guard" | "ability" | "recharge" | undefined;
 }) {
   const hp = fighter
     ? Math.round((fighter.currentHp / fighter.stats.hp) * 100)
     : 0;
   return (
     <article
-      className={`rounded-2xl border border-border bg-cream p-4 transition-all duration-300 motion-reduce:transform-none motion-reduce:transition-none ${hp === 0 ? "grayscale opacity-50" : ""} ${action === "strike" ? "scale-[1.03] border-red-500" : ""} ${action === "guard" ? "ring-2 ring-sky-400" : ""} ${action === "recharge" ? "ring-2 ring-amber-300" : ""}`}
+      className={`rounded-2xl border border-border bg-cream p-4 transition-all duration-300 motion-reduce:transform-none motion-reduce:transition-none ${hp === 0 ? "grayscale opacity-50" : ""} ${action === "strike" ? "scale-[1.03] border-red-500" : ""} ${action === "guard" ? "ring-2 ring-sky-400" : ""} ${action === "ability" ? "ring-2 ring-violet-400" : ""} ${action === "recharge" ? "ring-2 ring-amber-300" : ""}`}
     >
       <p className="text-xs font-bold uppercase tracking-widest text-muted">
         {side}
@@ -310,7 +325,9 @@ function CombatCard({
         <span>
           HP {fighter?.currentHp ?? 0}/{fighter?.stats.hp ?? 0}
         </span>
-        <span>Mana {fighter?.mana ?? 0}/5</span>
+        <span>
+          Mana {fighter?.mana ?? 0}/{fighter?.stats.maxMana ?? 0}
+        </span>
       </div>
     </article>
   );

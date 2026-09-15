@@ -18,7 +18,7 @@ export interface CreatureHologramStageProps {
     hp?: number;
     attack?: number;
     defense?: number;
-    speed?: number;
+    maxMana?: number;
   } | null;
   summary?: string | null;
   habitat?: string | null;
@@ -135,7 +135,7 @@ function deriveDisplayStats(
     hp?: number;
     attack?: number;
     defense?: number;
-    speed?: number;
+    maxMana?: number;
   } | null,
 ) {
   if (stats && (stats.hp || stats.attack)) {
@@ -143,22 +143,22 @@ function deriveDisplayStats(
       hp: stats.hp ?? 85,
       attack: stats.attack ?? 80,
       defense: stats.defense ?? 65,
-      speed: stats.speed ?? 75,
+      maxMana: stats.maxMana ?? 5,
     };
   }
 
   const r = (role ?? "striker").toLowerCase();
   if (r.includes("guardian")) {
-    return { hp: 120, attack: 68, defense: 98, speed: 52 };
+    return { hp: 120, attack: 68, defense: 98, maxMana: 5 };
   }
   if (r.includes("skirmisher")) {
-    return { hp: 85, attack: 92, defense: 62, speed: 96 };
+    return { hp: 85, attack: 92, defense: 62, maxMana: 7 };
   }
   if (r.includes("scout")) {
-    return { hp: 78, attack: 75, defense: 65, speed: 108 };
+    return { hp: 78, attack: 75, defense: 65, maxMana: 8 };
   }
   // Default: Striker
-  return { hp: 88, attack: 96, defense: 64, speed: 82 };
+  return { hp: 88, attack: 96, defense: 64, maxMana: 6 };
 }
 
 function wrapCanvasText(
@@ -195,7 +195,6 @@ function wrapCanvasText(
     ctx.fillText(line.trim(), x, y);
   }
 }
-
 
 export function CreatureHologramStage({
   speciesId,
@@ -435,8 +434,8 @@ export function CreatureHologramStage({
           bg: "rgba(59, 130, 246, 0.16)",
         },
         {
-          label: "SPD",
-          value: displayStats.speed,
+          label: "MANA",
+          value: displayStats.maxMana,
           color: "#facc15",
           border: "#eab308",
           bg: "rgba(234, 179, 8, 0.16)",

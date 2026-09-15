@@ -12,6 +12,7 @@ import {
 } from "../lib/battle-creatures";
 import {
   buildReleaseCreatureInstruction,
+  buildUpgradeCreatureBalanceInstruction,
   type OwnedCreature,
 } from "../lib/creatures";
 import { useGameData } from "../lib/hooks/use-game-data";
@@ -126,6 +127,33 @@ export function CollectionContent() {
         thrownObject instanceof Error
           ? thrownObject.message
           : "The Creature could not be released.",
+      );
+    }
+  };
+
+  const upgradeCreature = async (
+    creature: OwnedCreature,
+    config: BattleCreature["config"],
+  ) => {
+    if (!signer || !game.address) return;
+    setError(null);
+    try {
+      await send({
+        instructions: [
+          buildUpgradeCreatureBalanceInstruction(
+            signer,
+            game.address,
+            config,
+            creature,
+          ),
+        ],
+      });
+      await game.refresh();
+    } catch (thrownObject) {
+      setError(
+        thrownObject instanceof Error
+          ? thrownObject.message
+          : "The Creature could not be upgraded.",
       );
     }
   };
@@ -366,6 +394,9 @@ export function CollectionContent() {
             const locked = owned
               ? lockedCreatureAddresses.has(owned.address)
               : false;
+            const needsUpgrade = owned
+              ? owned.data.balanceVersion !== config.data.balanceVersion
+              : false;
             return (
               <div key={String(species.id)} className="flex flex-col">
                 <Link
@@ -388,7 +419,22 @@ export function CollectionContent() {
                     />
                   )}
                 </Link>
-                {owned ? (
+                {owned && needsUpgrade ? (
+                  <button
+                    type="button"
+                    disabled={isSending}
+                    onClick={() => void upgradeCreature(owned, config)}
+                    className="mt-2 min-h-10 w-full rounded-lg px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px]"
+                    style={{
+                      border: "1px solid rgba(200,169,110,0.55)",
+                      color: "#100e09",
+                      background: "linear-gradient(135deg, #d8bd82, #a9834d)",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
+                    {isSending ? "Waiting for wallet…" : "Upgrade for battle"}
+                  </button>
+                ) : owned ? (
                   <button
                     type="button"
                     disabled={isSending || locked}

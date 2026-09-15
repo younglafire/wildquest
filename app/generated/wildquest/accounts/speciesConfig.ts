@@ -58,8 +58,12 @@ export type SpeciesConfig = {
   hp: number;
   attack: number;
   defense: number;
-  speed: number;
-  shield: number;
+  maxMana: number;
+  strikeCost: number;
+  guardCost: number;
+  rechargeGain: number;
+  abilityId: number;
+  abilityCost: number;
   balanceVersion: number;
   active: boolean;
   bump: number;
@@ -71,8 +75,12 @@ export type SpeciesConfigArgs = {
   hp: number;
   attack: number;
   defense: number;
-  speed: number;
-  shield: number;
+  maxMana: number;
+  strikeCost: number;
+  guardCost: number;
+  rechargeGain: number;
+  abilityId: number;
+  abilityCost: number;
   balanceVersion: number;
   active: boolean;
   bump: number;
@@ -88,8 +96,12 @@ export function getSpeciesConfigEncoder(): FixedSizeEncoder<SpeciesConfigArgs> {
       ["hp", getU16Encoder()],
       ["attack", getU16Encoder()],
       ["defense", getU16Encoder()],
-      ["speed", getU16Encoder()],
-      ["shield", getU16Encoder()],
+      ["maxMana", getU16Encoder()],
+      ["strikeCost", getU16Encoder()],
+      ["guardCost", getU16Encoder()],
+      ["rechargeGain", getU16Encoder()],
+      ["abilityId", getU16Encoder()],
+      ["abilityCost", getU16Encoder()],
       ["balanceVersion", getU16Encoder()],
       ["active", getBooleanEncoder()],
       ["bump", getU8Encoder()],
@@ -107,8 +119,12 @@ export function getSpeciesConfigDecoder(): FixedSizeDecoder<SpeciesConfig> {
     ["hp", getU16Decoder()],
     ["attack", getU16Decoder()],
     ["defense", getU16Decoder()],
-    ["speed", getU16Decoder()],
-    ["shield", getU16Decoder()],
+    ["maxMana", getU16Decoder()],
+    ["strikeCost", getU16Decoder()],
+    ["guardCost", getU16Decoder()],
+    ["rechargeGain", getU16Decoder()],
+    ["abilityId", getU16Decoder()],
+    ["abilityCost", getU16Decoder()],
     ["balanceVersion", getU16Decoder()],
     ["active", getBooleanDecoder()],
     ["bump", getU8Decoder()],
@@ -181,5 +197,5 @@ export async function fetchAllMaybeSpeciesConfig(
 }
 
 export function getSpeciesConfigSize(): number {
-  return 32;
+  return 40;
 }

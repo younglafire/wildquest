@@ -32,6 +32,9 @@ function chooseAction(
   const team = state[side];
   const fighter = team.fighters[team.activeSlot]!;
   if (!canUseAction(fighter, "strike")) return "recharge";
+  if ((state.turn + style) % 11 === 0 && canUseAction(fighter, "ability")) {
+    return "ability";
+  }
   const decision = (state.turn + style) % 7;
   const tacticalGuard = (state.turn * 3 + style) % 9 === 0;
   if (
@@ -54,6 +57,7 @@ export function simulateBalanceMatch(input: {
   const actions: Record<BattleAction, number> = {
     strike: 0,
     guard: 0,
+    ability: 0,
     recharge: 0,
   };
   while (state.status === "active") {
@@ -82,7 +86,7 @@ export function summarizeBalance(
     turns.length % 2 === 0
       ? (turns[middle - 1]! + turns[middle]!) / 2
       : turns[middle]!;
-  const actions = { strike: 0, guard: 0, recharge: 0 };
+  const actions = { strike: 0, guard: 0, ability: 0, recharge: 0 };
   const appearances = new Map<number, number>();
   const wins = new Map<number, number>();
   for (const match of matches) {
@@ -121,6 +125,7 @@ export function summarizeBalance(
     actionRates: {
       strike: actions.strike / totalActions,
       guard: actions.guard / totalActions,
+      ability: actions.ability / totalActions,
       recharge: actions.recharge / totalActions,
     },
     creatureWinRates,

@@ -44,7 +44,7 @@ describe.runIf(process.env.RUN_RESNET_INTEGRATION === "1")(
             common_name: fixture.speciesId,
             model_class_id: result.classId,
             model_label: result.label,
-            balance_version: 1,
+            balance_version: 2,
             confidence: result.confidence,
             explanation: `ResNet-50 matched the ImageNet label "${result.label}".`,
             rarity: "Common",

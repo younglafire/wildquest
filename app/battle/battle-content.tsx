@@ -292,7 +292,11 @@ export function BattleContent() {
     <main className="mx-auto max-w-6xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
       <section
         className="rounded-xl p-4 sm:p-8"
-        style={{ background: "#1c1810", border: "1px solid #3a2e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
+        style={{
+          background: "#1c1810",
+          border: "1px solid #3a2e1e",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        }}
       >
         <p
           className="text-[10px] font-bold uppercase tracking-[0.24em]"
@@ -306,7 +310,10 @@ export function BattleContent() {
         >
           Build your team
         </h1>
-        <p className="mt-2 max-w-2xl text-xs leading-relaxed sm:mt-3 sm:text-sm" style={{ color: "#8a7a62" }}>
+        <p
+          className="mt-2 max-w-2xl text-xs leading-relaxed sm:mt-3 sm:text-sm"
+          style={{ color: "#8a7a62" }}
+        >
           Choose three different Creatures in order. Tap a card then a slot.
           Every match stakes 0.01 SOL.
         </p>
@@ -316,8 +323,16 @@ export function BattleContent() {
             className="mt-5 rounded-xl p-4 sm:mt-7 sm:p-5"
             style={{ background: "#221d14", border: "1px solid #3a2e1e" }}
           >
-            <h2 className="font-black text-sm sm:text-base" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>You need three Creatures</h2>
-            <p className="mt-1.5 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
+            <h2
+              className="font-black text-sm sm:text-base"
+              style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+            >
+              You need three Creatures
+            </h2>
+            <p
+              className="mt-1.5 text-xs sm:text-sm"
+              style={{ color: "#8a7a62" }}
+            >
               You currently own {creatures.length}. Capture more exact supported
               species first.
             </p>
@@ -333,7 +348,11 @@ export function BattleContent() {
             Loading verified onchain stats…
           </p>
         ) : battleCreatures.error ? (
-          <p role="alert" className="mt-5 text-sm sm:mt-7" style={{ color: "#f8c8c4" }}>
+          <p
+            role="alert"
+            className="mt-5 text-sm sm:mt-7"
+            style={{ color: "#f8c8c4" }}
+          >
             Creature stats could not be loaded.
           </p>
         ) : (
@@ -358,12 +377,18 @@ export function BattleContent() {
                     onDrop={(event) => handleDrop(event, index)}
                     className="min-h-32 rounded-xl text-left transition-all sm:min-h-44 active:scale-95"
                     style={{
-                      border: card ? "none" : "2px dashed rgba(200,169,110,0.25)",
+                      border: card
+                        ? "none"
+                        : "2px dashed rgba(200,169,110,0.25)",
                       background: card ? "transparent" : "#221d14",
                     }}
                   >
                     {card ? (
-                      <CreatureModelCard creature={card} compact slotIndex={index + 1} />
+                      <CreatureModelCard
+                        creature={card}
+                        compact
+                        slotIndex={index + 1}
+                      />
                     ) : (
                       <div className="flex min-h-28 flex-col items-center justify-center p-1 sm:min-h-40">
                         <span
@@ -374,7 +399,10 @@ export function BattleContent() {
                         </span>
                         <span
                           className="mt-1 text-[8px] font-bold uppercase tracking-wider sm:text-[10px]"
-                          style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                          style={{
+                            color: "#8a7a62",
+                            fontFamily: "var(--font-display)",
+                          }}
                         >
                           Slot {index + 1}
                         </span>
@@ -388,7 +416,8 @@ export function BattleContent() {
               className="mt-5 text-[10px] font-bold uppercase tracking-wider sm:mt-6"
               style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
             >
-              Your Creature Cards {armed ? "(Tap a slot above to place)" : "(Tap to select)"}
+              Your Creature Cards{" "}
+              {armed ? "(Tap a slot above to place)" : "(Tap to select)"}
             </p>
             <div className="mt-2.5 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {(battleCreatures.data ?? []).map((card) => {
@@ -428,7 +457,11 @@ export function BattleContent() {
           <p
             role="alert"
             className="mt-4 rounded-lg p-3 text-xs sm:mt-5 sm:p-4 sm:text-sm"
-            style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
+            style={{
+              background: "rgba(192,57,43,0.12)",
+              color: "#f8c8c4",
+              border: "1px solid rgba(192,57,43,0.3)",
+            }}
           >
             {error}
           </p>
@@ -498,19 +531,29 @@ export function BattleContent() {
             type="button"
             onClick={() => void matches.mutate()}
             className="min-h-10 rounded-lg px-4 text-[11px] font-bold uppercase tracking-wide"
-            style={{ border: "1px solid #3a2e1e", color: "#c8a96e", fontFamily: "var(--font-display)", background: "rgba(200,169,110,0.06)" }}
+            style={{
+              border: "1px solid #3a2e1e",
+              color: "#c8a96e",
+              fontFamily: "var(--font-display)",
+              background: "rgba(200,169,110,0.06)",
+            }}
           >
             Refresh
           </button>
         </div>
         {matches.isLoading ? (
-          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>Loading matches…</p>
+          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>
+            Loading matches…
+          </p>
         ) : matches.error ? (
           <p className="mt-6 text-sm" style={{ color: "#f8c8c4" }}>
             The Devnet match lobby is unavailable.
           </p>
         ) : relevantMatches.length === 0 ? (
-          <p className="mt-6 rounded-xl p-5 text-sm" style={{ background: "#221d14", color: "#8a7a62" }}>
+          <p
+            className="mt-6 rounded-xl p-5 text-sm"
+            style={{ background: "#221d14", color: "#8a7a62" }}
+          >
             No open challenge or unclaimed win yet.
           </p>
         ) : (
@@ -522,7 +565,15 @@ export function BattleContent() {
                 <article
                   key={match.address}
                   className="flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
-                  style={{ background: "#221d14", border: mine ? "1px solid rgba(200,169,110,0.3)" : "1px solid #3a2e1e", borderLeft: mine ? "3px solid #c8a96e" : "3px solid #3a2e1e" }}
+                  style={{
+                    background: "#221d14",
+                    border: mine
+                      ? "1px solid rgba(200,169,110,0.3)"
+                      : "1px solid #3a2e1e",
+                    borderLeft: mine
+                      ? "3px solid #c8a96e"
+                      : "3px solid #3a2e1e",
+                  }}
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -532,20 +583,29 @@ export function BattleContent() {
                       {mine && (
                         <span
                           className="text-[10px] font-bold uppercase tracking-wide"
-                          style={{ color: "#c8a96e", fontFamily: "var(--font-display)" }}
+                          style={{
+                            color: "#c8a96e",
+                            fontFamily: "var(--font-display)",
+                          }}
                         >
                           Your match
                         </span>
                       )}
                     </div>
-                    <p className="mt-3 text-sm font-bold" style={{ color: "#f0e8d4" }}>
+                    <p
+                      className="mt-3 text-sm font-bold"
+                      style={{ color: "#f0e8d4" }}
+                    >
                       3 Creatures ·{" "}
                       {Number(match.data.stakeLamports) / 1_000_000_000} SOL
                       stake
                     </p>
                     <p
                       className="mt-1 max-w-sm truncate text-[10px]"
-                      style={{ fontFamily: "var(--font-mono)", color: "#8a7a62" }}
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        color: "#8a7a62",
+                      }}
                     >
                       {match.data.creator}
                     </p>
@@ -570,7 +630,11 @@ export function BattleContent() {
                         onClick={() => void cancelMatch(match)}
                         disabled={isSending}
                         className="min-h-12 rounded-lg px-5 text-sm font-bold disabled:opacity-50"
-                        style={{ border: "1px solid #3a2e1e", color: "#8a7a62", background: "transparent" }}
+                        style={{
+                          border: "1px solid #3a2e1e",
+                          color: "#8a7a62",
+                          background: "transparent",
+                        }}
                       >
                         Cancel and refund
                       </button>
@@ -614,9 +678,14 @@ export function BattleContent() {
           signed transaction receipts.
         </p>
         {matches.isLoading ? (
-          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>Loading history…</p>
+          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>
+            Loading history…
+          </p>
         ) : playerHistory.length === 0 ? (
-          <p className="mt-6 rounded-xl p-5 text-sm" style={{ background: "#221d14", color: "#8a7a62" }}>
+          <p
+            className="mt-6 rounded-xl p-5 text-sm"
+            style={{ background: "#221d14", color: "#8a7a62" }}
+          >
             Your wallet has not opened or joined a match yet.
           </p>
         ) : (
@@ -640,31 +709,50 @@ export function BattleContent() {
                   style={{
                     background: "#221d14",
                     border: "1px solid #3a2e1e",
-                    borderLeft: isWin ? "3px solid #c8a96e" : "3px solid #3a2e1e",
+                    borderLeft: isWin
+                      ? "3px solid #c8a96e"
+                      : "3px solid #3a2e1e",
                   }}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span
                       className="font-black"
-                      style={{ fontFamily: "var(--font-display)", color: isWin ? "#c8a96e" : "#f0e8d4" }}
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        color: isWin ? "#c8a96e" : "#f0e8d4",
+                      }}
                     >
                       {result}
                     </span>
                     <span
                       className="rounded-full px-3 py-1 text-[10px] font-bold"
-                      style={{ background: "#100e09", color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                      style={{
+                        background: "#100e09",
+                        color: "#8a7a62",
+                        fontFamily: "var(--font-display)",
+                      }}
                     >
                       {STATUS_LABEL[match.data.status]}
                     </span>
                   </div>
-                  <p className="mt-3 text-sm" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)", fontSize: "0.72rem" }}>
+                  <p
+                    className="mt-3 text-sm"
+                    style={{
+                      color: "#8a7a62",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.72rem",
+                    }}
+                  >
                     {new Date(
                       Number(match.data.createdAt) * 1_000,
                     ).toLocaleString()}
                   </p>
                   <p
                     className="mt-2 truncate text-[10px]"
-                    style={{ fontFamily: "var(--font-mono)", color: "rgba(138,122,98,0.6)" }}
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      color: "rgba(138,122,98,0.6)",
+                    }}
                   >
                     {match.address}
                   </p>
@@ -712,7 +800,7 @@ export function MatchResult({
       ]);
       const cards = [...creator, ...opponentCards];
       if (
-        match.data.rulesVersion !== 1 ||
+        match.data.rulesVersion !== 2 ||
         cards.some(
           (card) =>
             card.config.data.balanceVersion !== match.data.balanceVersion,

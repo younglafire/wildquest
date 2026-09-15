@@ -5,8 +5,12 @@ export type BattleStats = {
   hp: number;
   attack: number;
   defense: number;
-  speed: number;
-  shield: number;
+  maxMana: number;
+  strikeCost: number;
+  guardCost: number;
+  rechargeGain: number;
+  abilityId: number;
+  abilityCost: number;
 };
 
 export type BattleSide = "creator" | "opponent";
@@ -18,8 +22,6 @@ export type BattleEvent = {
   attackerSlot: number;
   defenderSlot: number;
   damage: number;
-  shieldBefore: number;
-  shieldAfter: number;
   hpBefore: number;
   hpAfter: number;
 };
@@ -29,7 +31,7 @@ export type BattleReport = {
   events: BattleEvent[];
 };
 
-type Fighter = BattleStats & { currentHp: number; currentShield: number };
+type Fighter = BattleStats & { currentHp: number };
 
 function validateTeam(
   team: readonly BattleStats[],
@@ -43,7 +45,7 @@ function validateTeam(
       }
     }
   }
-  if (team.every((stats) => stats.hp + stats.shield === 0)) {
+  if (team.every((stats) => stats.hp === 0)) {
     throw new Error("A battle team must have starting power.");
   }
 }
@@ -60,22 +62,14 @@ function hit(
   defenderSlot: number,
   amount: number,
 ): BattleEvent {
-  const shieldBefore = defender.currentShield;
   const hpBefore = defender.currentHp;
-  const shieldDamage = Math.min(defender.currentShield, amount);
-  defender.currentShield -= shieldDamage;
-  defender.currentHp = Math.max(
-    0,
-    defender.currentHp - (amount - shieldDamage),
-  );
+  defender.currentHp = Math.max(0, defender.currentHp - amount);
   return {
     round,
     attackerSide,
     attackerSlot,
     defenderSlot,
     damage: amount,
-    shieldBefore,
-    shieldAfter: defender.currentShield,
     hpBefore,
     hpAfter: defender.currentHp,
   };
@@ -96,21 +90,13 @@ export function simulateBattle(
   const creator = creatorStats.map((stats) => ({
     ...stats,
     currentHp: stats.hp,
-    currentShield: stats.shield,
   }));
   const opponent = opponentStats.map((stats) => ({
     ...stats,
     currentHp: stats.hp,
-    currentShield: stats.shield,
   }));
-  const creatorStart = creator.reduce(
-    (sum, item) => sum + item.hp + item.shield,
-    0,
-  );
-  const opponentStart = opponent.reduce(
-    (sum, item) => sum + item.hp + item.shield,
-    0,
-  );
+  const creatorStart = creator.reduce((sum, item) => sum + item.hp, 0);
+  const opponentStart = opponent.reduce((sum, item) => sum + item.hp, 0);
   const events: BattleEvent[] = [];
   let creatorSlot = 0;
   let opponentSlot = 0;
@@ -163,24 +149,16 @@ export function simulateBattle(
         ),
       );
 
-    if (creatorFighter.speed > opponentFighter.speed) {
-      creatorHit();
-      if (opponentFighter.currentHp > 0) opponentHit();
-    } else if (opponentFighter.speed > creatorFighter.speed) {
-      opponentHit();
-      if (creatorFighter.currentHp > 0) creatorHit();
-    } else {
-      creatorHit();
-      opponentHit();
-    }
+    creatorHit();
+    opponentHit();
   }
 
   const creatorRemaining = creator.reduce(
-    (sum, item) => sum + item.currentHp + item.currentShield,
+    (sum, item) => sum + item.currentHp,
     0,
   );
   const opponentRemaining = opponent.reduce(
-    (sum, item) => sum + item.currentHp + item.currentShield,
+    (sum, item) => sum + item.currentHp,
     0,
   );
   const creatorRatio = creatorRemaining * opponentStart;

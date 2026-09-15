@@ -88,7 +88,10 @@ async function ensureGameConfig(
       );
     }
     console.info(`GameConfig already exists: ${address}`);
-    if (existing.data.rulesVersion !== 2) {
+    if (
+      existing.data.rulesVersion !== 2 ||
+      existing.data.balanceVersion !== 2
+    ) {
       const instruction = getActivateTurnCombatInstruction({
         admin,
         gameConfig: address,

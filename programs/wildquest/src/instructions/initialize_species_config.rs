@@ -46,7 +46,8 @@ pub fn handle_initialize_species_config(
         .iter()
         .position(|candidate| *candidate == catalogue_id)
         .ok_or_else(|| error!(ErrorCode::UnsupportedBattleSpecies))?;
-    let [hp, attack, defense, speed, shield] = BATTLE_STATS[index];
+    let [hp, attack, defense, max_mana, strike_cost, guard_cost, recharge_gain, ability_id, ability_cost] =
+        BATTLE_STATS[index];
 
     let species_config = &mut context.accounts.species_config;
     species_config.catalogue_id = catalogue_id;
@@ -54,8 +55,12 @@ pub fn handle_initialize_species_config(
     species_config.hp = hp;
     species_config.attack = attack;
     species_config.defense = defense;
-    species_config.speed = speed;
-    species_config.shield = shield;
+    species_config.max_mana = max_mana;
+    species_config.strike_cost = strike_cost;
+    species_config.guard_cost = guard_cost;
+    species_config.recharge_gain = recharge_gain;
+    species_config.ability_id = ability_id;
+    species_config.ability_cost = ability_cost;
     species_config.balance_version = BALANCE_VERSION;
     species_config.active = true;
     species_config.bump = context.bumps.species_config;

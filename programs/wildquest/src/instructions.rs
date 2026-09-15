@@ -16,6 +16,7 @@ pub mod open_match;
 pub mod refund_stale_match;
 pub mod release_creature;
 pub mod resolve_match;
+pub mod upgrade_creature_balance;
 
 pub use activate_turn_combat::*;
 pub use admin::*;
@@ -35,3 +36,4 @@ pub use open_match::*;
 pub use refund_stale_match::*;
 pub use release_creature::*;
 pub use resolve_match::*;
+pub use upgrade_creature_balance::*;

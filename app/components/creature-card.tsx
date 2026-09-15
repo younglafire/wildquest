@@ -2,6 +2,7 @@ import type { SpeciesConfig } from "../generated/wildquest";
 import type { BattleCreature } from "../lib/battle-creatures";
 import type { CatalogueSpecies } from "../lib/catalogue-client";
 import { SpeciesArt } from "./species-art";
+import { creatureAbility } from "../lib/creature-abilities";
 
 type Props = {
   creature: BattleCreature;
@@ -16,7 +17,16 @@ type PreviewProps = Omit<Props, "creature"> & {
   species: CatalogueSpecies;
   stats: Pick<
     SpeciesConfig,
-    "catalogueId" | "hp" | "attack" | "defense" | "speed" | "shield"
+    | "catalogueId"
+    | "hp"
+    | "attack"
+    | "defense"
+    | "maxMana"
+    | "strikeCost"
+    | "guardCost"
+    | "rechargeGain"
+    | "abilityId"
+    | "abilityCost"
   >;
 };
 
@@ -37,11 +47,11 @@ export function CreatureCard(props: Props | PreviewProps) {
     typeof imageSrc === "string" && imageSrc.endsWith(".svg");
   const stats = [
     ["HP", config.hp],
-    ["Damage", config.attack],
-    ["Defense", config.defense],
-    ["Speed", config.speed],
-    ["Shield", config.shield],
+    ["ATK", config.attack],
+    ["DEF", config.defense],
+    ["Mana", config.maxMana],
   ] as const;
+  const ability = creatureAbility(config.abilityId);
 
   return (
     <article
@@ -97,18 +107,8 @@ export function CreatureCard(props: Props | PreviewProps) {
         >
           {name}
         </h3>
-        {!compact && (
-          <p
-            className="mt-1 line-clamp-2 min-h-10 text-xs leading-relaxed"
-            style={{ color: "#8a7a62" }}
-          >
-            {species?.cardSummary ??
-              "A field-discovered creature ready for deterministic battle."}
-          </p>
-        )}
-
         {/* Stats grid — JetBrains Mono */}
-        <dl className="mt-3 grid grid-cols-5 gap-1">
+        <dl className="mt-3 grid grid-cols-4 gap-1">
           {stats.map(([label, value]) => (
             <div
               key={label}
@@ -131,13 +131,20 @@ export function CreatureCard(props: Props | PreviewProps) {
           ))}
         </dl>
 
-        {!compact && species?.originRegion && (
-          <p
-            className="mt-3 text-[9px] font-semibold uppercase tracking-wider"
-            style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
-          >
-            Origin · {species.originRegion}
-          </p>
+        {!compact && (
+          <div className="mt-2 rounded-lg bg-[#100e09] p-2 text-[10px] text-[#c8a96e]">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 font-bold">
+              <span>Strike {config.strikeCost}</span>
+              <span>Guard {config.guardCost}</span>
+              <span>Recharge +{config.rechargeGain}</span>
+            </div>
+            <p className="mt-1 text-[#f0e8d4]">
+              <strong>
+                {ability.name} · {config.abilityCost}
+              </strong>{" "}
+              — {ability.summary}
+            </p>
+          </div>
         )}
       </div>
     </article>

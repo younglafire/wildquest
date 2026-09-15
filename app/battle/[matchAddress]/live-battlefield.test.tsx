@@ -22,7 +22,17 @@ vi.mock("../../lib/hooks/use-battle-room", () => ({
   }),
 }));
 
-const stats = { hp: 100, attack: 60, defense: 50, speed: 50, shield: 25 };
+const stats = {
+  hp: 100,
+  attack: 60,
+  defense: 50,
+  maxMana: 5,
+  strikeCost: 2,
+  guardCost: 1,
+  rechargeGain: 3,
+  abilityId: 1,
+  abilityCost: 3,
+};
 const creatures = [0, 1, 2].map(
   (index) =>
     ({

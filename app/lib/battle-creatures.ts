@@ -147,8 +147,28 @@ export async function fetchBattleCreatures(
 }
 
 export function battleStats(creature: BattleCreature) {
-  const { hp, attack, defense, speed, shield } = creature.config.data;
-  return { hp, attack, defense, speed, shield };
+  const {
+    hp,
+    attack,
+    defense,
+    maxMana,
+    strikeCost,
+    guardCost,
+    rechargeGain,
+    abilityId,
+    abilityCost,
+  } = creature.config.data;
+  return {
+    hp,
+    attack,
+    defense,
+    maxMana,
+    strikeCost,
+    guardCost,
+    rechargeGain,
+    abilityId,
+    abilityCost,
+  };
 }
 
 export function battleCreatureByAddress(

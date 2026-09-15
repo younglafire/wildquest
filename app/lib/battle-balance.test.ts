@@ -6,8 +6,12 @@ const balanced: BattleStats = {
   hp: 100,
   attack: 60,
   defense: 50,
-  speed: 50,
-  shield: 25,
+  maxMana: 5,
+  strikeCost: 2,
+  guardCost: 1,
+  rechargeGain: 3,
+  abilityId: 1,
+  abilityCost: 3,
 };
 
 describe("battle balance analysis", () => {

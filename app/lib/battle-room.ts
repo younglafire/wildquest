@@ -308,6 +308,15 @@ export function serializeBattleResult(
   outcome: BattleOutcome,
   turnCount: number,
   events: ReadonlyArray<TurnEvent>,
+  rulesVersion?: number,
+  balanceVersion?: number,
 ) {
-  return JSON.stringify({ matchAddress, outcome, turnCount, events });
+  return JSON.stringify({
+    matchAddress,
+    outcome,
+    turnCount,
+    rulesVersion,
+    balanceVersion,
+    events,
+  });
 }

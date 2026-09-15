@@ -18,10 +18,13 @@ export type SpeciesQuiz = {
 
 export const BATTLE_ROLES = [
   "Balanced",
+  "Brawler",
+  "Controller",
+  "Energizer",
   "Guardian",
-  "Scout",
   "Skirmisher",
   "Striker",
+  "Support",
 ] as const;
 
 export type BattleRole = (typeof BATTLE_ROLES)[number];

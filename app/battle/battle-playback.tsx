@@ -53,20 +53,11 @@ export function BattlePlayback({
   }, [finished]);
 
   const health = useMemo(() => {
-    const creator = creatorTeam.map((item) => ({
-      hp: item.config.data.hp,
-      shield: item.config.data.shield,
-    }));
-    const opponent = opponentTeam.map((item) => ({
-      hp: item.config.data.hp,
-      shield: item.config.data.shield,
-    }));
+    const creator = creatorTeam.map((item) => ({ hp: item.config.data.hp }));
+    const opponent = opponentTeam.map((item) => ({ hp: item.config.data.hp }));
     for (const event of report.events.slice(0, eventCount)) {
       const target = event.attackerSide === "creator" ? opponent : creator;
-      target[event.defenderSlot] = {
-        hp: event.hpAfter,
-        shield: event.shieldAfter,
-      };
+      target[event.defenderSlot] = { hp: event.hpAfter };
     }
     return { creator, opponent };
   }, [creatorTeam, eventCount, opponentTeam, report.events]);
@@ -112,9 +103,7 @@ export function BattlePlayback({
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="wax-badge wax-badge-forest">
-            Battle replay
-          </p>
+          <p className="wax-badge wax-badge-forest">Battle replay</p>
           <h2
             className="mt-2 text-2xl font-black sm:text-3xl"
             style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
@@ -126,7 +115,10 @@ export function BattlePlayback({
                 : `Round ${current?.round ?? 1}`}
           </h2>
         </div>
-        <p className="max-w-xs text-xs leading-relaxed" style={{ color: "#8a7a62" }}>
+        <p
+          className="max-w-xs text-xs leading-relaxed"
+          style={{ color: "#8a7a62" }}
+        >
           Live deterministic timeline from Solana Devnet
         </p>
       </div>
@@ -152,7 +144,10 @@ export function BattlePlayback({
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 text-center text-[10px] font-bold uppercase tracking-wider sm:text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}>
+      <div
+        className="mt-4 grid grid-cols-2 gap-2 text-center text-[10px] font-bold uppercase tracking-wider sm:text-xs"
+        style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+      >
         <p>Creator · slot {creatorSlot + 1}</p>
         <p>Opponent · slot {opponentSlot + 1}</p>
       </div>
@@ -171,7 +166,11 @@ export function BattlePlayback({
         <p
           role="alert"
           className="mt-4 rounded-xl p-3 text-xs font-semibold sm:text-sm"
-          style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
+          style={{
+            background: "rgba(192,57,43,0.12)",
+            color: "#f8c8c4",
+            border: "1px solid rgba(192,57,43,0.3)",
+          }}
         >
           Replay rules do not match the recorded onchain winner. Claim is
           disabled; refresh the app before continuing.
@@ -220,16 +219,12 @@ function Combatant({
   side,
 }: {
   creature: BattleCreature;
-  state: { hp: number; shield: number };
+  state: { hp: number };
   attacking: boolean;
   side: "creator" | "opponent";
 }) {
   const defeated = state.hp === 0;
   const hpPercent = Math.round((state.hp / creature.config.data.hp) * 100);
-  const shieldPercent =
-    creature.config.data.shield === 0
-      ? 0
-      : Math.round((state.shield / creature.config.data.shield) * 100);
   return (
     <div
       className={`${attacking ? (side === "creator" ? "battle-hit-right" : "battle-hit-left") : ""} ${defeated ? "grayscale opacity-45" : ""} min-w-0 transition duration-300`}
@@ -240,12 +235,6 @@ function Combatant({
         value={hpPercent}
         text={`${state.hp}/${creature.config.data.hp}`}
         color="bg-rose-500"
-      />
-      <Meter
-        label="Shield"
-        value={shieldPercent}
-        text={`${state.shield}/${creature.config.data.shield}`}
-        color="bg-sky-500"
       />
     </div>
   );

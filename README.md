@@ -179,7 +179,8 @@ The mobile battle-slice capture flow opens a full-screen rear-camera scanner.
 Light and movement guidance helps the player frame one animal, and the shutter
 sends the in-memory frame with the connected wallet address to `/api/identify`.
 The result spotlights a rotating battle card with the catalogue identity,
-onchain HP, Damage, Defense, Speed, Shield, confidence, and balance version.
+onchain HP, Attack, Defense, Max Mana, action costs, Recharge gain, ability,
+confidence, and balance version.
 The capture route does not accept desktop or gallery uploads.
 
 Pending identification metadata lives in session storage. Photo bytes never
@@ -235,7 +236,8 @@ The earlier Counter instructions remain as scaffold functionality.
   balance version, rules version, and fixed stake.
 - **SpeciesConfig PDA** uses
   `["species_config", catalogue_id_le, balance_version_le]` and stores the
-  static battle stats.
+  static HP, Attack, Defense, Max Mana, action costs, Recharge gain, and
+  ability ID.
 - **Creature PDA** uses `["creature", wallet, catalogue_id_le]`, enforcing one
   owned Creature for each exact catalogue ID.
 - **Match PDA** uses `["match", creator, match_id_le]` and stores both ordered
@@ -250,7 +252,9 @@ and either participant can refund an Active Match after its server timeout.
 
 Opening or joining a Match routes both wallets to the same battlefield address.
 Each browser connects to the same battle room. Participants authenticate with a
-wallet-signed message, while spectators have read-only access. The server owns
+wallet-signed message, while spectators have read-only access. Players choose
+Strike, Guard, Ability, or Recharge. Each creature has its own mana cap and
+costs. Guard provides temporary mitigation derived from Defense. The server owns
 the deadline and broadcasts snapshots, so the live view has no pause or skip
 control and one player's choice remains hidden until both choices resolve.
 
@@ -273,9 +277,9 @@ Check the rules-version 2 roster before a demo or deployment:
 npm run battle:balance
 ```
 
-The deterministic matrix fails the command unless median length is 12 to 24
-turns, draws remain below 10%, no action exceeds 65% usage, and no creature
-exceeds a 65% sample win rate. Supabase stores creature presentation metadata;
+The deterministic simulation fails unless median length is 12 to 24 turns,
+draws remain below 10%, no action exceeds 65% usage, and no creature exceeds a
+65% sample win rate. Supabase stores creature presentation metadata;
 the program's `SpeciesConfig` accounts remain authoritative for battle stats.
 After deploying a program build with new stats, rerun `npm run setup:pk-config`
 with the configured admin so Devnet has every supported SpeciesConfig.

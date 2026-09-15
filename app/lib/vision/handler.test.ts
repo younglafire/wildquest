@@ -60,7 +60,7 @@ const expectedIdentification = {
   model_class_id: 323,
   model_label:
     "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus",
-  balance_version: 1,
+  balance_version: 2,
   confidence: 0.91,
   explanation:
     'ResNet-50 matched the ImageNet label "monarch, monarch butterfly, milkweed butterfly, Danaus plexippus".',
@@ -197,7 +197,7 @@ describe("POST /api/identify", () => {
           species_id: speciesId,
           model_class_id: classId,
           model_label: label,
-          balance_version: 1,
+          balance_version: 2,
         },
       });
     },

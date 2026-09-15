@@ -103,7 +103,7 @@ describe("collection aggregation", () => {
         common_name: "Bee",
         model_class_id: 309,
         model_label: "bee",
-        balance_version: 1,
+        balance_version: 2,
         confidence: 0.95,
         explanation: "Matched bee.",
         rarity: "Common",

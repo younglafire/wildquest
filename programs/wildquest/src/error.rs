@@ -32,7 +32,7 @@ pub enum ErrorCode {
     GameAdminMismatch,
     #[msg("The capture authority does not match the configured authority")]
     CaptureAuthorityMismatch,
-    #[msg("The catalogue ID is not part of balance version one")]
+    #[msg("The catalogue ID is not part of the active balance version")]
     UnsupportedBattleSpecies,
     #[msg("The SpeciesConfig account does not match the requested creature")]
     SpeciesConfigMismatch,
@@ -46,8 +46,10 @@ pub enum ErrorCode {
     CreatureOwnerMismatch,
     #[msg("A Creature account uses the wrong balance version")]
     CreatureBalanceVersionMismatch,
-    #[msg("Battle stats must contain positive total HP or Shield")]
+    #[msg("Battle stats must contain positive HP")]
     InvalidBattleStats,
+    #[msg("The GameConfig account does not use the active balance version")]
+    GameBalanceVersionMismatch,
     #[msg("Battle arithmetic overflowed")]
     BattleArithmeticOverflow,
     #[msg("The Match account is not open")]

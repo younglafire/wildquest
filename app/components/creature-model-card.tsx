@@ -4,13 +4,23 @@ import { useId } from "react";
 import type { SpeciesConfig } from "../generated/wildquest";
 import type { BattleCreature } from "../lib/battle-creatures";
 import type { CatalogueSpecies } from "../lib/catalogue-client";
+import { creatureAbility } from "../lib/creature-abilities";
 
 export type CreatureModelCardProps = {
   creature?: BattleCreature | null;
   species?: CatalogueSpecies | null;
   stats?: Pick<
     SpeciesConfig,
-    "catalogueId" | "hp" | "attack" | "defense" | "speed" | "shield"
+    | "catalogueId"
+    | "hp"
+    | "attack"
+    | "defense"
+    | "maxMana"
+    | "strikeCost"
+    | "guardCost"
+    | "rechargeGain"
+    | "abilityId"
+    | "abilityCost"
   > | null;
   compact?: boolean;
   selected?: boolean;
@@ -27,19 +37,6 @@ function getRarityTemplate(rarity?: string): string {
   if (r.includes("rare")) return "/creatures/rare.png";
   if (r.includes("uncommon")) return "/creatures/uncommon.png";
   return "/creatures/common.png";
-}
-
-function splitSummary(text?: string | null): [string, string] {
-  if (!text) {
-    return [
-      "An authentic specimen from the WildQuest wilderness.",
-      "Possesses sharp instincts and natural balance in the arena.",
-    ];
-  }
-  const words = text.trim().split(/\s+/);
-  if (words.length <= 6) return [text, ""];
-  const mid = Math.ceil(words.length / 2);
-  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
 /**
@@ -75,18 +72,26 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
   const gradId = `card_grad_${rawId}`;
   const clipId = `art_clip_${rawId}`;
 
-  const name = species?.name ?? (config?.catalogueId != null ? `Creature #${config.catalogueId}` : "Creature");
+  const name =
+    species?.name ??
+    (config?.catalogueId != null
+      ? `Creature #${config.catalogueId}`
+      : "Creature");
   const rarity = species?.rarity ?? "Common";
   const role = species?.battleRole ?? "Creature";
   const imageSrc = species?.imageUrl ?? species?.iconUrl ?? null;
-  const habitat = species?.habitat ?? "Wild Sanctuary";
-  const [summaryLine1, summaryLine2] = splitSummary(species?.cardSummary);
-  const catalogueId = config?.catalogueId != null ? String(config.catalogueId) : species?.id != null ? String(species.id) : null;
+  const catalogueId =
+    config?.catalogueId != null
+      ? String(config.catalogueId)
+      : species?.id != null
+        ? String(species.id)
+        : null;
 
   const hp = config?.hp ?? 100;
   const attack = config?.attack ?? 80;
   const defense = config?.defense ?? 65;
-  const speed = config?.speed ?? 75;
+  const mana = config?.maxMana ?? 5;
+  const ability = creatureAbility(config?.abilityId ?? 1);
 
   const frameSrc = getRarityTemplate(rarity);
 
@@ -198,30 +203,174 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           {name.toUpperCase()}
         </text>
 
-        {/* 5. Four Battle Stats Badges (HP, ATK, DEF, SPD) */}
+        {/* 5. Four Battle Stats Badges */}
         {/* HP */}
-        <rect x="82" y="880" width="204" height="126" rx="14" fill="#0c0f0d" stroke="#22c55e" strokeWidth="2.5" />
-        <rect x="82" y="880" width="204" height="126" rx="14" fill="rgba(34, 197, 94, 0.16)" />
-        <text x="184" y="916" fontFamily="ui-monospace, monospace" fontSize="24" fontWeight="900" fill="#4ade80" textAnchor="middle">HP</text>
-        <text x="184" y="984" fontFamily="system-ui, -apple-system, sans-serif" fontSize="62" fontWeight="900" fill="#ffffff" textAnchor="middle">{hp}</text>
+        <rect
+          x="82"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="#0c0f0d"
+          stroke="#22c55e"
+          strokeWidth="2.5"
+        />
+        <rect
+          x="82"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="rgba(34, 197, 94, 0.16)"
+        />
+        <text
+          x="184"
+          y="916"
+          fontFamily="ui-monospace, monospace"
+          fontSize="24"
+          fontWeight="900"
+          fill="#4ade80"
+          textAnchor="middle"
+        >
+          HP
+        </text>
+        <text
+          x="184"
+          y="984"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          fontSize="62"
+          fontWeight="900"
+          fill="#ffffff"
+          textAnchor="middle"
+        >
+          {hp}
+        </text>
 
         {/* ATK */}
-        <rect x="300" y="880" width="204" height="126" rx="14" fill="#120c0b" stroke="#ef4444" strokeWidth="2.5" />
-        <rect x="300" y="880" width="204" height="126" rx="14" fill="rgba(239, 68, 68, 0.16)" />
-        <text x="402" y="916" fontFamily="ui-monospace, monospace" fontSize="24" fontWeight="900" fill="#f87171" textAnchor="middle">ATK</text>
-        <text x="402" y="984" fontFamily="system-ui, -apple-system, sans-serif" fontSize="62" fontWeight="900" fill="#ffffff" textAnchor="middle">{attack}</text>
+        <rect
+          x="300"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="#120c0b"
+          stroke="#ef4444"
+          strokeWidth="2.5"
+        />
+        <rect
+          x="300"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="rgba(239, 68, 68, 0.16)"
+        />
+        <text
+          x="402"
+          y="916"
+          fontFamily="ui-monospace, monospace"
+          fontSize="24"
+          fontWeight="900"
+          fill="#f87171"
+          textAnchor="middle"
+        >
+          ATK
+        </text>
+        <text
+          x="402"
+          y="984"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          fontSize="62"
+          fontWeight="900"
+          fill="#ffffff"
+          textAnchor="middle"
+        >
+          {attack}
+        </text>
 
         {/* DEF */}
-        <rect x="518" y="880" width="204" height="126" rx="14" fill="#0b0f14" stroke="#3b82f6" strokeWidth="2.5" />
-        <rect x="518" y="880" width="204" height="126" rx="14" fill="rgba(59, 130, 246, 0.16)" />
-        <text x="620" y="916" fontFamily="ui-monospace, monospace" fontSize="24" fontWeight="900" fill="#60a5fa" textAnchor="middle">DEF</text>
-        <text x="620" y="984" fontFamily="system-ui, -apple-system, sans-serif" fontSize="62" fontWeight="900" fill="#ffffff" textAnchor="middle">{defense}</text>
+        <rect
+          x="518"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="#0b0f14"
+          stroke="#3b82f6"
+          strokeWidth="2.5"
+        />
+        <rect
+          x="518"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="rgba(59, 130, 246, 0.16)"
+        />
+        <text
+          x="620"
+          y="916"
+          fontFamily="ui-monospace, monospace"
+          fontSize="24"
+          fontWeight="900"
+          fill="#60a5fa"
+          textAnchor="middle"
+        >
+          DEF
+        </text>
+        <text
+          x="620"
+          y="984"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          fontSize="62"
+          fontWeight="900"
+          fill="#ffffff"
+          textAnchor="middle"
+        >
+          {defense}
+        </text>
 
-        {/* SPD */}
-        <rect x="736" y="880" width="204" height="126" rx="14" fill="#12100a" stroke="#eab308" strokeWidth="2.5" />
-        <rect x="736" y="880" width="204" height="126" rx="14" fill="rgba(234, 179, 8, 0.16)" />
-        <text x="838" y="916" fontFamily="ui-monospace, monospace" fontSize="24" fontWeight="900" fill="#facc15" textAnchor="middle">SPD</text>
-        <text x="838" y="984" fontFamily="system-ui, -apple-system, sans-serif" fontSize="62" fontWeight="900" fill="#ffffff" textAnchor="middle">{speed}</text>
+        {/* Mana */}
+        <rect
+          x="736"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="#12100a"
+          stroke="#eab308"
+          strokeWidth="2.5"
+        />
+        <rect
+          x="736"
+          y="880"
+          width="204"
+          height="126"
+          rx="14"
+          fill="rgba(234, 179, 8, 0.16)"
+        />
+        <text
+          x="838"
+          y="916"
+          fontFamily="ui-monospace, monospace"
+          fontSize="24"
+          fontWeight="900"
+          fill="#facc15"
+          textAnchor="middle"
+        >
+          MANA
+        </text>
+        <text
+          x="838"
+          y="984"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          fontSize="62"
+          fontWeight="900"
+          fill="#ffffff"
+          textAnchor="middle"
+        >
+          {mana}
+        </text>
 
         {/* 6. Lower Lore Panel: Habitat, Trait, Lore & Watermark */}
         <rect
@@ -243,7 +392,7 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           fill="#fef08a"
           letterSpacing="1"
         >
-          {`🌍 HABITAT: ${habitat.toUpperCase()}`}
+          {`STRIKE ${config?.strikeCost ?? 2} · GUARD ${config?.guardCost ?? 1} · RECHARGE +${config?.rechargeGain ?? 3}`}
         </text>
         <text
           x="110"
@@ -254,7 +403,7 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           fill="#4ade80"
           letterSpacing="1"
         >
-          {`⚡ TRAIT: ${role.toUpperCase()} · ${rarity.toUpperCase()}`}
+          {`${ability.name.toUpperCase()} · ${config?.abilityCost ?? 3} MANA`}
         </text>
         <text
           x="110"
@@ -264,20 +413,8 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           fontWeight="700"
           fill="#ffffff"
         >
-          {summaryLine1}
+          {ability.summary}
         </text>
-        {summaryLine2 ? (
-          <text
-            x="110"
-            y="1192"
-            fontFamily="system-ui, -apple-system, sans-serif"
-            fontSize="26"
-            fontWeight="700"
-            fill="#ffffff"
-          >
-            {summaryLine2}
-          </text>
-        ) : null}
         <text
           x="512"
           y="1288"

@@ -34,7 +34,7 @@ export async function findSpeciesConfigPda(
         ]),
       ),
       getU64Encoder().encode(seeds.catalogueId),
-      getBytesEncoder().encode(new Uint8Array([1, 0])),
+      getBytesEncoder().encode(new Uint8Array([2, 0])),
     ],
   });
 }

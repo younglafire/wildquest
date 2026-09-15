@@ -31,7 +31,7 @@ export const identificationSchema = z
     common_name: z.string().trim().min(1).max(100),
     model_class_id: z.number().int().min(0).max(999),
     model_label: z.string().trim().min(1).max(200),
-    balance_version: z.literal(1),
+    balance_version: z.literal(2),
     confidence: z.number().finite().min(0).max(1),
     explanation: z.string().trim().min(1).max(300),
     rarity: z.enum(RARITIES),
