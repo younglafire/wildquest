@@ -28,25 +28,24 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
       className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-4"
       style={{ paddingTop: "max(0.625rem, env(safe-area-inset-top, 0px))" }}
     >
-      {/* Brand */}
+      {/* Brand Logo - Fully responsive across mobile, tablet, laptop, and desktop */}
       <Link
         href={landing ? "/" : "/home"}
-        className="shrink-0 text-sm font-black tracking-widest transition-opacity hover:opacity-80"
-        style={{
-          fontFamily: "var(--font-display)",
-          background: "linear-gradient(135deg, #e0c58a, #c8a96e, #a07d48)",
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}
+        className="flex shrink-0 items-center transition-transform hover:scale-105 active:scale-95"
+        aria-label="WildQuest"
       >
-        ✦ WILDQUEST
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/creatures/logo.png"
+          alt="WildQuest"
+          className="h-11 sm:h-14 md:h-16 lg:h-20 w-auto max-w-[155px] sm:max-w-[210px] md:max-w-[270px] lg:max-w-[340px] object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]"
+        />
       </Link>
 
       <nav className="flex items-center gap-1.5 sm:gap-2" aria-label="Primary">
         {/* Desktop nav links — hidden on mobile (bottom tab bar handles it) */}
         {!landing && (
-          <div className="hidden items-center gap-0.5 md:flex">
+          <div className="hidden items-center gap-1 md:flex lg:gap-1.5">
             {NAVIGATION.map(([href, label]) => {
               const active =
                 pathname === href ||
@@ -57,37 +56,57 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative rounded px-3 py-2 text-[11px] font-semibold tracking-wide transition-colors ${
-                    active
-                      ? "text-[#c8a96e]"
-                      : "text-[#8a7a62] hover:text-[#f0e8d4]"
+                  className={`group relative flex h-7.5 w-20 items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95 md:w-22 lg:w-26 ${
+                    active ? "scale-105" : "opacity-85 hover:opacity-100"
                   }`}
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {label}
-                  {active && (
-                    <span
-                      className="absolute inset-x-3 bottom-0 h-[2px] rounded-full"
-                      style={{
-                        background:
-                          "linear-gradient(90deg, transparent, #c8a96e, transparent)",
-                      }}
-                    />
-                  )}
+                  {/* Ornate Plaque Background Image */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/creatures/button_tab.png"
+                    alt=""
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute inset-0 h-full w-full object-fill transition-all ${
+                      active
+                        ? "drop-shadow-[0_0_10px_rgba(251,191,36,0.7)] brightness-115"
+                        : "drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] brightness-90 group-hover:brightness-105"
+                    }`}
+                  />
+
+                  {/* Text Label */}
+                  <span
+                    className={`relative z-10 text-[9px] font-black uppercase tracking-wider md:text-[10px] lg:text-[10.5px] transition-colors ${
+                      active
+                        ? "text-[#fbbf24] drop-shadow-[0_0_6px_rgba(251,191,36,0.8)]"
+                        : "text-[#d4c5a9] group-hover:text-white"
+                    }`}
+                  >
+                    {label}
+                  </span>
                 </Link>
               );
             })}
             <Link
               href="/capture"
               aria-current={pathname === "/capture" ? "page" : undefined}
-              className="ml-2 rounded px-4 py-2 text-[11px] font-black tracking-widest transition-all hover:-translate-y-0.5 hover:shadow-lg"
-              style={{
-                fontFamily: "var(--font-display)",
-                background: "linear-gradient(135deg, #c8a96e, #a07d48)",
-                color: "#100e09",
-                boxShadow: "0 2px 10px rgba(200,169,110,0.2)",
-              }}
+              className={`group relative ml-1 flex h-7.5 w-24 items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95 md:w-26 lg:w-28 ${
+                pathname === "/capture"
+                  ? "scale-105"
+                  : "opacity-95 hover:opacity-100"
+              }`}
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              CAPTURE
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/creatures/button_tab.png"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_0_12px_rgba(74,222,128,0.75)] brightness-125 saturate-125"
+              />
+              <span className="relative z-10 text-[9.5px] font-black uppercase tracking-widest text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.9)] md:text-[10.5px]">
+                CAPTURE
+              </span>
             </Link>
           </div>
         )}

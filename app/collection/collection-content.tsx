@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { MatchStatus } from "../generated/wildquest";
 import useSWR from "swr";
 import { address, lamports, type Address } from "@solana/kit";
-import { CreatureCard } from "../components/creature-card";
+import { CreatureModelCard } from "../components/creature-model-card";
 import { useCluster } from "../components/cluster-context";
 import {
   fetchBattleCatalogue,
@@ -407,7 +407,7 @@ export function CollectionContent() {
       ) : (
         <section
           aria-label="Creature collection"
-          className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
         >
           {cards.map(({ species, config }) => {
             const owned = ownedByCatalogueId.get(String(species.id));
@@ -418,19 +418,24 @@ export function CollectionContent() {
               ? lockedCreatureAddresses.has(owned.address)
               : false;
             return (
-              <div key={String(species.id)}>
+              <div key={String(species.id)} className="flex flex-col">
                 <Link
                   href={`/collection/${species.speciesId}`}
-                  className="block rounded-xl"
+                  className="group block flex-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a96e]"
                   style={{ outline: "none" }}
+                  aria-label={`View ${species.name} details`}
                 >
                   {battleCreature ? (
-                    <CreatureCard creature={battleCreature} />
+                    <CreatureModelCard
+                      creature={battleCreature}
+                      disabledBadge={locked ? "IN MATCH" : null}
+                    />
                   ) : (
-                    <CreatureCard
+                    <CreatureModelCard
                       species={species}
                       stats={config.data}
                       disabled
+                      disabledBadge="UNDISCOVERED"
                     />
                   )}
                 </Link>
@@ -452,7 +457,7 @@ export function CollectionContent() {
                       }
                       setReleaseCandidate(owned);
                     }}
-                    className="mt-2 min-h-10 w-full rounded-lg px-4 text-[11px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45"
+                    className="mt-2 min-h-10 w-full rounded-lg px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px]"
                     style={{
                       border: "1px solid rgba(192,57,43,0.4)",
                       color: "#f8c8c4",
@@ -460,13 +465,13 @@ export function CollectionContent() {
                       fontFamily: "var(--font-display)",
                     }}
                   >
-                    {locked ? "Card locked in active Match" : "Release card"}
+                    {locked ? "Locked in Match" : "Release card"}
                   </button>
                 ) : (
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-2 grid grid-cols-2 gap-1.5">
                     <Link
                       href="/capture"
-                      className="flex min-h-10 items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors"
+                      className="flex min-h-10 items-center justify-center rounded-lg px-1 text-[10px] font-bold uppercase tracking-wide transition-colors sm:text-[11px]"
                       style={{
                         border: "1px solid #3a2e1e",
                         color: "#c8a96e",
@@ -480,7 +485,7 @@ export function CollectionContent() {
                       type="button"
                       disabled={isGenerating || generatingId !== null}
                       onClick={() => void generateAnimal(String(species.id))}
-                      className="min-h-10 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wide disabled:opacity-50"
+                      className="min-h-10 rounded-lg px-1 text-[10px] font-bold uppercase tracking-wide disabled:opacity-50 sm:text-[11px]"
                       style={{
                         border: "1px solid rgba(200,169,110,0.3)",
                         color: "#c8a96e",
@@ -490,7 +495,7 @@ export function CollectionContent() {
                     >
                       {generatingId === String(species.id)
                         ? "Generating…"
-                        : "Generate"}
+                        : "Devnet"}
                     </button>
                   </div>
                 )}

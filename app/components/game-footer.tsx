@@ -10,13 +10,13 @@ export function GameFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Studio Brand & Mission */}
           <div className="space-y-4 lg:col-span-2">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl" aria-hidden="true">
-                🧭
-              </span>
-              <span className="text-lg font-black tracking-tight text-foreground">
-                WILDQUEST
-              </span>
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/creatures/logo.png"
+                alt="WildQuest"
+                className="h-9 sm:h-11 w-auto object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]"
+              />
               <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400">
                 DEVNET V1
               </span>

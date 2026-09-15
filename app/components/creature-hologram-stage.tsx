@@ -196,101 +196,6 @@ function wrapCanvasText(
   }
 }
 
-function createFlameTongueTexture(palette: AuraPalette): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 128;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    // Outer fiery tongue with rarity aura gradient
-    const outerGrad = ctx.createLinearGradient(64, 256, 64, 10);
-    outerGrad.addColorStop(0, palette.rootColor);
-    outerGrad.addColorStop(0.25, palette.flameMid);
-    outerGrad.addColorStop(0.68, palette.flameHighlight);
-    outerGrad.addColorStop(1, "rgba(255, 255, 255, 0)"); // tip fade
-
-    ctx.fillStyle = outerGrad;
-    ctx.beginPath();
-    ctx.moveTo(64, 8); // sharp licking tip
-    ctx.bezierCurveTo(86, 45, 112, 105, 100, 185);
-    ctx.bezierCurveTo(94, 230, 80, 256, 64, 256);
-    ctx.bezierCurveTo(48, 256, 34, 230, 28, 185);
-    ctx.bezierCurveTo(16, 105, 42, 45, 64, 8);
-    ctx.closePath();
-    ctx.fill();
-
-    // Inner bright flame core
-    const innerGrad = ctx.createLinearGradient(64, 256, 64, 45);
-    innerGrad.addColorStop(0, palette.flameCore);
-    innerGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.95)");
-    innerGrad.addColorStop(0.75, palette.flameHighlight);
-    innerGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-
-    ctx.fillStyle = innerGrad;
-    ctx.beginPath();
-    ctx.moveTo(64, 40);
-    ctx.bezierCurveTo(76, 75, 88, 130, 82, 190);
-    ctx.bezierCurveTo(78, 225, 70, 250, 64, 250);
-    ctx.bezierCurveTo(58, 250, 50, 225, 46, 190);
-    ctx.bezierCurveTo(40, 130, 52, 75, 64, 40);
-    ctx.closePath();
-    ctx.fill();
-
-    // White-hot center spark
-    const sparkGrad = ctx.createRadialGradient(64, 185, 0, 64, 185, 22);
-    sparkGrad.addColorStop(0, "rgba(255, 255, 255, 1)");
-    sparkGrad.addColorStop(0.5, palette.flameHighlight);
-    sparkGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-    ctx.fillStyle = sparkGrad;
-    ctx.beginPath();
-    ctx.arc(64, 185, 22, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  return new THREE.CanvasTexture(canvas);
-}
-
-function createEmberTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 32;
-  canvas.height = 32;
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    grad.addColorStop(0, "rgba(255, 255, 255, 1)");
-    grad.addColorStop(0.35, "rgba(255, 255, 255, 0.9)");
-    grad.addColorStop(0.75, "rgba(255, 255, 255, 0.4)");
-    grad.addColorStop(1, "rgba(255, 255, 255, 0)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 32, 32);
-  }
-  return new THREE.CanvasTexture(canvas);
-}
-
-function createFlameWallTexture(palette: AuraPalette): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 128;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    const grad = ctx.createLinearGradient(0, 256, 0, 0);
-    grad.addColorStop(0, palette.rootColor);
-    grad.addColorStop(0.22, palette.flameMid);
-    grad.addColorStop(0.65, palette.flameHighlight);
-    grad.addColorStop(0.88, palette.flameCore);
-    grad.addColorStop(1, "rgba(255, 255, 255, 0)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 128, 256);
-
-    const hGrad = ctx.createLinearGradient(0, 0, 128, 0);
-    hGrad.addColorStop(0, "rgba(0,0,0,1)");
-    hGrad.addColorStop(0.48, "rgba(0,0,0,0.85)");
-    hGrad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.globalCompositeOperation = "destination-in";
-    ctx.fillStyle = hGrad;
-    ctx.fillRect(0, 0, 128, 256);
-  }
-  return new THREE.CanvasTexture(canvas);
-}
 
 export function CreatureHologramStage({
   speciesId,
@@ -311,7 +216,6 @@ export function CreatureHologramStage({
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cardGroupRef = useRef<THREE.Group | null>(null);
-  const creatureGroupRef = useRef<THREE.Group | null>(null);
   const isDraggingRef = useRef(false);
   const prevMouseRef = useRef({ x: 0, y: 0 });
   const rotationVelocityRef = useRef({ x: 0, y: 0 });
@@ -779,206 +683,7 @@ export function CreatureHologramStage({
     cardMesh.receiveShadow = true;
     cardMesh.position.set(0, 0.06, 0);
     mainPivot.add(cardMesh);
-
-    // Floating energy particles around the 3D card
-    const creatureGroup = new THREE.Group();
-    mainPivot.add(creatureGroup);
-    creatureGroupRef.current = creatureGroup;
-
-    const particleCount = 48;
-    const particleGeo = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 2.2;
-      positions[i + 1] = (Math.random() - 0.5) * 2.8;
-      positions[i + 2] = -0.08 - Math.random() * 0.35; // strictly behind the card
-    }
-    particleGeo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3),
-    );
-    const particleMat = new THREE.PointsMaterial({
-      color: auraPalette.lightColor,
-      size: 0.04,
-      transparent: true,
-      opacity: 0.75,
-    });
-    const particles = new THREE.Points(particleGeo, particleMat);
-    creatureGroup.add(particles);
-
     setIsLoadingModel(false);
-
-    // --- 7. Realistic Burning Fire & SSJ2 Lightning System (Rarity Tinted) ---
-    // Positioned strictly behind the 3D card (z = -0.08) so front art and text remain crystal clear
-    const saiyanAuraGroup = new THREE.Group();
-    saiyanAuraGroup.position.set(0, 0.06, -0.08);
-    mainPivot.add(saiyanAuraGroup);
-
-    // A. Dancing Flame Tongues with dynamic rarity colors
-    const flameTongueTex = createFlameTongueTexture(auraPalette);
-    const flameTongueGeo = new THREE.PlaneGeometry(0.55, 1.1);
-    const TONGUE_COUNT = 16;
-    const flameTongueMeshes: Array<{
-      mesh: THREE.Mesh;
-      material: THREE.MeshBasicMaterial;
-      baseY: number;
-      baseRotZ: number;
-      phase: number;
-    }> = [];
-
-    for (let i = 0; i < TONGUE_COUNT; i++) {
-      const isRight = i >= TONGUE_COUNT / 2;
-      const side = isRight ? 1 : -1;
-      const step = i % (TONGUE_COUNT / 2);
-      const baseY = -1.1 + step * 0.35 + (Math.random() - 0.5) * 0.08;
-      const baseRotZ = side * (0.14 + (Math.random() - 0.5) * 0.08);
-
-      const mat = new THREE.MeshBasicMaterial({
-        map: flameTongueTex,
-        transparent: true,
-        opacity: 0.82,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-      const tongueMesh = new THREE.Mesh(flameTongueGeo, mat);
-      tongueMesh.position.set(
-        side * (1.02 + Math.random() * 0.06),
-        baseY,
-        -0.01 + (Math.random() - 0.5) * 0.02,
-      );
-      tongueMesh.rotation.z = baseRotZ;
-      saiyanAuraGroup.add(tongueMesh);
-
-      flameTongueMeshes.push({
-        mesh: tongueMesh,
-        material: mat,
-        baseY,
-        baseRotZ,
-        phase: i * 2.37,
-      });
-    }
-
-    // B. Base Fire Sheaths (Continuous heat wall)
-    const flameWallTex = createFlameWallTexture(auraPalette);
-    const wallGeo = new THREE.PlaneGeometry(0.52, 2.9);
-
-    const leftWallMat = new THREE.MeshBasicMaterial({
-      map: flameWallTex,
-      transparent: true,
-      opacity: 0.75,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const leftWall = new THREE.Mesh(wallGeo, leftWallMat);
-    leftWall.position.set(-1.06, 0.06, -0.02);
-    saiyanAuraGroup.add(leftWall);
-
-    const rightWallMat = new THREE.MeshBasicMaterial({
-      map: flameWallTex,
-      transparent: true,
-      opacity: 0.75,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const rightWall = new THREE.Mesh(wallGeo, rightWallMat);
-    rightWall.position.set(1.06, 0.06, -0.02);
-    rightWall.rotation.y = Math.PI;
-    saiyanAuraGroup.add(rightWall);
-
-    // C. Rising Embers & Sparks tinted with rarity palette
-    const EMBER_COUNT = 90;
-    const emberGeo = new THREE.BufferGeometry();
-    const emberPositions = new Float32Array(EMBER_COUNT * 3);
-    const emberColors = new Float32Array(EMBER_COUNT * 3);
-    const emberSpeeds = new Float32Array(EMBER_COUNT);
-    const emberSides = new Float32Array(EMBER_COUNT);
-    const emberPhases = new Float32Array(EMBER_COUNT);
-
-    const [c1, c2, c3] = auraPalette.emberColors;
-
-    for (let i = 0; i < EMBER_COUNT; i++) {
-      const isRight = i >= EMBER_COUNT / 2;
-      const side = isRight ? 1 : -1;
-      emberSides[i] = side;
-
-      const x = side * (1.02 + Math.random() * 0.15);
-      const y = -1.25 + Math.random() * 2.8;
-      const z = -0.02 + (Math.random() - 0.5) * 0.04;
-
-      emberPositions[i * 3] = x;
-      emberPositions[i * 3 + 1] = y;
-      emberPositions[i * 3 + 2] = z;
-
-      emberSpeeds[i] = 0.024 + Math.random() * 0.038;
-      emberPhases[i] = Math.random() * Math.PI * 2;
-
-      const cPick = Math.random();
-      const chosenColor = cPick > 0.6 ? c1 : cPick > 0.2 ? c2 : c3;
-      emberColors[i * 3] = chosenColor[0];
-      emberColors[i * 3 + 1] = chosenColor[1];
-      emberColors[i * 3 + 2] = chosenColor[2];
-    }
-
-    emberGeo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(emberPositions, 3),
-    );
-    emberGeo.setAttribute("color", new THREE.BufferAttribute(emberColors, 3));
-
-    const emberTex = createEmberTexture();
-    const emberMat = new THREE.PointsMaterial({
-      size: 0.16,
-      map: emberTex,
-      vertexColors: true,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const emberPoints = new THREE.Points(emberGeo, emberMat);
-    saiyanAuraGroup.add(emberPoints);
-
-    // D. Super Saiyan 2 Lightning Arcs
-    const BOLT_COUNT = 8;
-    const SEGMENTS_PER_BOLT = 4;
-    const VERTICES_PER_BOLT = SEGMENTS_PER_BOLT * 2;
-    const TOTAL_LIGHTNING_VERTICES = BOLT_COUNT * VERTICES_PER_BOLT;
-    const lightningGeo = new THREE.BufferGeometry();
-    const lightningPositions = new Float32Array(TOTAL_LIGHTNING_VERTICES * 3);
-    lightningGeo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(lightningPositions, 3),
-    );
-
-    const lightningMat = new THREE.LineBasicMaterial({
-      color: auraPalette.lightningColor,
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending,
-    });
-    const lightningMesh = new THREE.LineSegments(lightningGeo, lightningMat);
-    saiyanAuraGroup.add(lightningMesh);
-
-    const boltLifetimes = new Float32Array(BOLT_COUNT);
-
-    // E. Point Lights matching rarity aura (Stationed behind the card sides)
-    const leftFireLight = new THREE.PointLight(
-      auraPalette.lightColor,
-      2.5,
-      3.8,
-    );
-    leftFireLight.position.set(-1.25, 0.15, -0.06);
-    saiyanAuraGroup.add(leftFireLight);
-
-    const rightFireLight = new THREE.PointLight(
-      auraPalette.lightColor,
-      2.5,
-      3.8,
-    );
-    rightFireLight.position.set(1.25, 0.15, -0.06);
-    saiyanAuraGroup.add(rightFireLight);
 
     // --- 8. Touch & Mouse Pointer Controls ---
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
@@ -1045,111 +750,8 @@ export function CreatureHologramStage({
         );
       }
 
-      // Gentle breathing float
-      if (creatureGroupRef.current) {
-        creatureGroupRef.current.position.y =
-          Math.sin(elapsedTime * 2.0) * 0.03;
-      }
-
-      // Animate Realistic Flame Tongues
-      for (let i = 0; i < TONGUE_COUNT; i++) {
-        const item = flameTongueMeshes[i];
-        const side = i < TONGUE_COUNT / 2 ? -1 : 1;
-        const p = item.phase;
-
-        const scaleY =
-          1.0 +
-          Math.sin(elapsedTime * 15 + p) * 0.28 +
-          Math.sin(elapsedTime * 29 + p * 1.5) * 0.14;
-        const scaleX = 1.0 + Math.sin(elapsedTime * 18 + p * 2) * 0.22;
-        item.mesh.scale.set(scaleX, scaleY, 1);
-
-        item.mesh.rotation.z =
-          item.baseRotZ + side * Math.sin(elapsedTime * 14 + p) * 0.1;
-        item.mesh.position.y =
-          item.baseY + Math.sin(elapsedTime * 12 + p) * 0.04;
-        item.material.opacity =
-          0.65 + Math.sin(elapsedTime * 21 + p * 3) * 0.25;
-      }
-
-      // Animate Base Flame Walls
-      const wallPulse =
-        Math.sin(elapsedTime * 20) * 0.12 + (Math.random() - 0.5) * 0.05;
-      leftWall.scale.x = 1.0 + wallPulse;
-      rightWall.scale.x = 1.0 + wallPulse;
-      leftWallMat.opacity = 0.65 + Math.sin(elapsedTime * 18) * 0.18;
-      rightWallMat.opacity = 0.65 + Math.sin(elapsedTime * 18 + 2.0) * 0.18;
-
-      // Animate Rising Embers (Rising strictly behind the card plane)
-      const ePos = emberGeo.attributes.position.array as Float32Array;
-      for (let i = 0; i < EMBER_COUNT; i++) {
-        const idx = i * 3;
-        const side = emberSides[i];
-        const speed = emberSpeeds[i];
-        const phase = emberPhases[i];
-
-        ePos[idx + 1] += speed;
-
-        const curY = ePos[idx + 1];
-        const drift = Math.sin(curY * 6 + elapsedTime * 5 + phase) * 0.035;
-        ePos[idx] =
-          side * (1.02 + Math.max(0, (curY - 0.15) * 0.08)) +
-          side * Math.abs(drift);
-
-        if (curY > 1.65) {
-          ePos[idx + 1] = -1.25 + Math.random() * 0.35;
-          ePos[idx + 2] = -0.02 + (Math.random() - 0.5) * 0.04;
-        }
-      }
-      emberGeo.attributes.position.needsUpdate = true;
-
-      // Animate SSJ2 Lightning Arcs (Discharging strictly behind the card perimeter)
-      const lPos = lightningGeo.attributes.position.array as Float32Array;
-      for (let b = 0; b < BOLT_COUNT; b++) {
-        boltLifetimes[b] -= 0.14;
-        const baseIdx = b * VERTICES_PER_BOLT * 3;
-
-        if (boltLifetimes[b] <= 0) {
-          if (Math.random() < 0.14) {
-            boltLifetimes[b] = 1.0;
-            const side = b < BOLT_COUNT / 2 ? -1 : 1;
-            let curX = side * (1.02 + Math.random() * 0.06);
-            let curY = -1.1 + Math.random() * 2.3;
-            let curZ = -0.02 + (Math.random() - 0.5) * 0.03;
-
-            for (let s = 0; s < SEGMENTS_PER_BOLT; s++) {
-              const vStart = baseIdx + s * 2 * 3;
-              const vEnd = vStart + 3;
-
-              lPos[vStart] = curX;
-              lPos[vStart + 1] = curY;
-              lPos[vStart + 2] = curZ;
-
-              curX +=
-                side *
-                (0.05 + Math.random() * 0.12) *
-                (Math.random() > 0.15 ? 1 : -0.2);
-              curY += Math.random() * 0.22 - 0.03;
-              curZ += (Math.random() - 0.5) * 0.03;
-
-              lPos[vEnd] = curX;
-              lPos[vEnd + 1] = curY;
-              lPos[vEnd + 2] = curZ;
-            }
-          } else {
-            for (let k = 0; k < VERTICES_PER_BOLT * 3; k++) {
-              lPos[baseIdx + k] = 0;
-            }
-          }
-        }
-      }
-      lightningGeo.attributes.position.needsUpdate = true;
-
-      // Firelight flicker
-      const fireFlicker =
-        Math.sin(elapsedTime * 24) * 0.4 + (Math.random() - 0.5) * 0.3;
-      leftFireLight.intensity = 2.4 + fireFlicker;
-      rightFireLight.intensity = 2.4 + fireFlicker;
+      // Gentle breathing float for the 3D card
+      cardMesh.position.y = 0.06 + Math.sin(elapsedTime * 2.0) * 0.03;
 
       renderer.render(scene, camera);
     };
@@ -1192,18 +794,6 @@ export function CreatureHologramStage({
       sideMat.dispose();
       frontMat.dispose();
       backMat.dispose();
-      flameTongueGeo.dispose();
-      flameTongueTex.dispose();
-      flameWallTex.dispose();
-      wallGeo.dispose();
-      leftWallMat.dispose();
-      rightWallMat.dispose();
-      emberGeo.dispose();
-      emberMat.dispose();
-      emberTex.dispose();
-      lightningGeo.dispose();
-      lightningMat.dispose();
-      flameTongueMeshes.forEach((item) => item.material.dispose());
       renderer.dispose();
       scene.clear();
     };
@@ -1250,7 +840,7 @@ export function CreatureHologramStage({
         </div>
       )}
 
-      {/* Main 3D WebGL Canvas Stage - Generous height for floating 3D card and aura flames */}
+      {/* Main 3D WebGL Canvas Stage - Generous height for floating 3D card */}
       <div
         className={`relative w-full flex items-center justify-center ${
           compact ? "h-[490px] sm:h-[550px]" : "h-[540px] sm:h-[600px]"

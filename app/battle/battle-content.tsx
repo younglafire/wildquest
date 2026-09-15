@@ -17,7 +17,7 @@ import {
   MatchStatus,
 } from "../generated/wildquest";
 import { BattlePlayback } from "./battle-playback";
-import { CreatureCard } from "../components/creature-card";
+import { CreatureModelCard } from "../components/creature-model-card";
 import { useCluster } from "../components/cluster-context";
 import {
   fetchBattleCreatures,
@@ -356,14 +356,14 @@ export function BattleContent() {
                     }
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => handleDrop(event, index)}
-                    className="min-h-32 rounded-xl p-1 text-left transition-all sm:min-h-44 sm:p-2 active:scale-95"
+                    className="min-h-32 rounded-xl text-left transition-all sm:min-h-44 active:scale-95"
                     style={{
-                      border: card ? "1px solid rgba(200,169,110,0.6)" : "2px dashed rgba(200,169,110,0.25)",
-                      background: "#221d14",
+                      border: card ? "none" : "2px dashed rgba(200,169,110,0.25)",
+                      background: card ? "transparent" : "#221d14",
                     }}
                   >
                     {card ? (
-                      <CreatureCard creature={card} compact />
+                      <CreatureModelCard creature={card} compact slotIndex={index + 1} />
                     ) : (
                       <div className="flex min-h-28 flex-col items-center justify-center p-1 sm:min-h-40">
                         <span
@@ -411,7 +411,7 @@ export function BattleContent() {
                     }
                     className="rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-emerald-500 active:scale-95"
                   >
-                    <CreatureCard
+                    <CreatureModelCard
                       creature={card}
                       compact
                       selected={armed === creatureAddress}
