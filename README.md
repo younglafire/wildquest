@@ -159,7 +159,7 @@ The main routes are:
 - `/` for landing and wallet connection;
 - `/home` for Player level, XP, quest progress, and recent discoveries;
 - `/quest` for target progress and `complete_quest` reward claiming;
-- `/capture` for photo selection and exact 40-creature identification;
+- `/capture` for phone-camera scanning and exact 40-creature identification;
 - `/collection` for all 40 battle cards and wallet-owned Creature accounts;
 - `/match/[matchAddress]` for a shareable battlefield, replay, and signed receipts;
 - `/collection/[speciesId]` for species facts and an unrewarded practice quiz;
@@ -175,17 +175,19 @@ uses the fixed bottom bar.
 The Home screen derives progression from confirmed Player and Discovery
 accounts. Level follows `1 + floor(total_xp / 100)`.
 
-The current battle-slice capture flow has three visible stages:
-
-- **Select** accepts one JPEG, PNG, or WebP file no larger than 4,000,000 bytes.
-- **Verify** sends the photo and connected wallet address to `/api/identify`.
-- **Result** reveals a battle card with the catalogue identity, onchain HP,
-  Damage, Defense, Speed, Shield, confidence, and balance version.
+The mobile battle-slice capture flow opens a full-screen rear-camera scanner.
+Light and movement guidance helps the player frame one animal, and the shutter
+sends the in-memory frame with the connected wallet address to `/api/identify`.
+The result spotlights a rotating battle card with the catalogue identity,
+onchain HP, Damage, Defense, Speed, Shield, confidence, and balance version.
+The capture route does not accept desktop or gallery uploads.
 
 Pending identification metadata lives in session storage. Photo bytes never
 enter browser storage. `capture_creature()` requires both the wallet and server
 capture authority signatures and creates the one-per-wallet/species Creature
-account.
+account. A failed transaction does not add a Creature to Collection. After a
+confirmed transaction, the app refreshes the wallet's Creature accounts and
+opens that species' Collection detail page.
 
 Collection and team selection render the same Creature card component with the
 same SpeciesConfig stats. An owner may release a card through

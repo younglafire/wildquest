@@ -19,4 +19,16 @@ describe("capture ownership recovery messages", () => {
       "RPC unavailable",
     );
   });
+
+  it("surfaces the simulation cause instead of the RPC wrapper", () => {
+    expect(
+      getCaptureTransactionError(
+        new Error("Transaction simulation failed", {
+          cause: new Error("insufficient funds for rent"),
+        }),
+      ),
+    ).toBe(
+      "Your wallet does not have enough Devnet SOL to create the Creature account.",
+    );
+  });
 });

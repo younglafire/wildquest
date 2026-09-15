@@ -47,6 +47,21 @@ describe("GameShell", () => {
     );
   });
 
+  it("gives the capture route the full viewport without shell navigation", () => {
+    mocks.pathname = "/capture";
+    render(
+      <GameShell>
+        <main>Camera scanner</main>
+      </GameShell>,
+    );
+
+    expect(screen.getByText("Camera scanner")).toBeVisible();
+    expect(screen.queryByText("Header")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Game navigation" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("returns a disconnected visitor to landing with the intended route", async () => {
     mocks.status = "disconnected";
     mocks.pathname = "/profile";

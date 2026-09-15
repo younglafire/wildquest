@@ -31,7 +31,8 @@ export function CreatureCard(props: Props | PreviewProps) {
       ? props.creature.config.data
       : props.stats;
   const name = species?.name ?? `Creature #${config.catalogueId}`;
-  const imageSrc = species?.imageUrl ?? species?.iconUrl;
+  const imageSrc =
+    species?.imageUrl ?? species?.iconUrl ?? "/creatures/bee.svg";
   const isVectorIcon =
     typeof imageSrc === "string" && imageSrc.endsWith(".svg");
   const stats = [

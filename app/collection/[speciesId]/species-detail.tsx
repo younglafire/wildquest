@@ -7,7 +7,6 @@ import { CreatureHologramStage } from "../../components/creature-hologram-stage"
 import { fetchCatalogueSpecies } from "../../lib/catalogue-client";
 import { formatDiscoveryDate } from "../../lib/game";
 import { useGameData } from "../../lib/hooks/use-game-data";
-import { isLocallyCapturedCreature } from "../../lib/captured-photo-storage";
 
 export function SpeciesDetail({ speciesId }: { speciesId: string }) {
   const species = useSWR(["catalogue-species", speciesId], () =>
@@ -35,9 +34,11 @@ export function SpeciesDetail({ speciesId }: { speciesId: string }) {
   const card = game.cards.find(
     (candidate) => candidate.species.speciesId === speciesId,
   );
-  const discovered =
-    (card?.count ?? 0) > 0 ||
-    isLocallyCapturedCreature(speciesId, species.data?.id);
+  const catalogueId = BigInt(species.data.id);
+  const owned = (game.creatures.data ?? []).some(
+    (creature) => creature.data.catalogueId === catalogueId,
+  );
+  const discovered = (card?.count ?? 0) > 0 || owned;
   const quiz = species.data.quiz;
   const displayImageUrl = species.data.imageUrl ?? species.data.iconUrl;
 

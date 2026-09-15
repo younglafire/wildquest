@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { WalletChooser } from "../components/wallet-chooser";
 import { CreatureCard } from "../components/creature-card";
 import { CreatureHologramStage } from "../components/creature-hologram-stage";
@@ -27,15 +28,12 @@ import {
 import { useWallet } from "../lib/wallet/context";
 import { useSubmitCaptureTransaction } from "../lib/hooks/use-submit-capture-transaction";
 import { useGameData } from "../lib/hooks/use-game-data";
-import { useCluster } from "../components/cluster-context";
 import { useSolanaClient } from "../lib/solana-client-context";
-import Link from "next/link";
 import { CaptureForm } from "./capture-form";
-import { saveCapturedCreature } from "../lib/captured-photo-storage";
 
 export function CaptureExperience() {
   const { wallet, status } = useWallet();
-  const { cluster } = useCluster();
+  const router = useRouter();
   const game = useGameData();
   const client = useSolanaClient();
   const {
@@ -50,7 +48,6 @@ export function CaptureExperience() {
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chooserOpen, setChooserOpen] = useState(false);
-  const [captureSignature, setCaptureSignature] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,10 +117,6 @@ export function CaptureExperience() {
       );
       savePendingIdentification(nextPending);
       setPending(nextPending);
-      saveCapturedCreature(
-        identification.species_id,
-        identification.catalogue_id,
-      );
     } catch (thrownObject) {
       setError(getIdentificationError(thrownObject));
     } finally {
@@ -136,13 +129,9 @@ export function CaptureExperience() {
     setError(null);
     try {
       const signature = await submit(pending.captureTransaction);
-      setCaptureSignature(signature);
       saveConfirmedDiscovery(pending, signature);
-      saveCapturedCreature(
-        pending.identification.species_id,
-        pending.identification.catalogue_id,
-      );
       await game.refresh();
+      router.replace(`/collection/${pending.identification.species_id}`);
     } catch (thrownObject) {
       setError(getCaptureTransactionError(thrownObject));
     }
@@ -154,9 +143,10 @@ export function CaptureExperience() {
       (creature) => creature.data.catalogueId === BigInt(result.catalogue_id),
     );
     return (
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="capture-result-backdrop fixed inset-0 z-50 overflow-y-auto px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] md:static md:overflow-visible md:p-0">
         <section
-          className="overflow-hidden rounded-2xl sm:rounded-3xl"
+          aria-labelledby="capture-result-heading"
+          className="capture-result-panel mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] sm:rounded-3xl"
           style={{
             background: "#1c1810",
             border: "1px solid #3a2e1e",
@@ -165,7 +155,7 @@ export function CaptureExperience() {
         >
           <div className="grid md:grid-cols-[1fr_1fr]">
             <div
-              className="relative flex flex-col justify-between overflow-hidden p-4 sm:p-5"
+              className="capture-result-stage relative flex min-h-[31rem] flex-col justify-between overflow-hidden p-4 sm:p-5"
               style={{
                 background: "#100e09",
                 borderRight: "1px solid #3a2e1e",
@@ -173,13 +163,11 @@ export function CaptureExperience() {
             >
               {/* Status Header Badge */}
               <div className="flex items-center justify-end gap-2 z-10">
-                <p className="wax-badge wax-badge-forest">
-                  Creature identified
-                </p>
+                <p className="wax-badge wax-badge-forest">Capture confirmed</p>
               </div>
 
               {/* 3D Hologram Card */}
-              <div className="my-2 flex w-full items-center justify-center">
+              <div className="capture-card-arrival my-2 flex w-full items-center justify-center">
                 <CreatureHologramStage
                   speciesId={result.species_id}
                   speciesName={result.common_name}
@@ -195,7 +183,6 @@ export function CaptureExperience() {
                   stats={battleStats}
                   summary={species?.cardSummary ?? species?.description}
                   habitat={species?.habitat}
-                  compact
                 />
               </div>
 
@@ -207,7 +194,7 @@ export function CaptureExperience() {
                     color: "#f0e8d4",
                   }}
                 >
-                  Exact match
+                  You captured
                 </p>
                 <p
                   className="mt-0.5 text-xs sm:text-sm"
@@ -236,10 +223,11 @@ export function CaptureExperience() {
               </div>
 
               <h1
+                id="capture-result-heading"
                 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl"
                 style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
               >
-                {result.common_name}
+                {result.common_name}!
               </h1>
               {species?.scientificName && (
                 <p
@@ -356,68 +344,41 @@ export function CaptureExperience() {
                 </p>
               )}
 
-              {captureSignature ? (
-                <div className="mt-5 space-y-3">
-                  <p
-                    role="status"
-                    className="text-sm font-bold"
-                    style={{
-                      color: "#6aab7a",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
-                    ✦ Creature owned! Add it to your battle team.
-                  </p>
-                  <Link href="/battle" className="btn-guild w-full">
-                    Build battle team
-                  </Link>
-                  <a
-                    href={`https://explorer.solana.com/tx/${captureSignature}?cluster=${cluster}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex min-h-12 items-center justify-center text-xs font-bold underline"
-                    style={{ color: "#c8a96e" }}
-                  >
-                    View transaction on Solana Explorer ↗
-                  </a>
-                </div>
-              ) : (
-                <div className="mt-5 space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => void handleOwnCreature()}
-                    disabled={isSubmitting || alreadyOwned}
-                    className="btn-guild w-full"
-                  >
-                    {alreadyOwned
-                      ? "Already owned"
-                      : submitStage === "signing"
-                        ? "Approve in wallet…"
-                        : submitStage === "confirming"
-                          ? "Submitted · confirming…"
-                          : "✦ Own this Creature"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearPendingIdentification();
-                      setPending(null);
-                      setSpecies(null);
-                      setBattleStats(null);
-                      setError(null);
-                    }}
-                    className="flex min-h-12 w-full items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      border: "1px solid #3a2e1e",
-                      color: "#8a7a62",
-                      background: "transparent",
-                    }}
-                  >
-                    Retake photo
-                  </button>
-                </div>
-              )}
+              <div className="mt-5 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => void handleOwnCreature()}
+                  disabled={isSubmitting || alreadyOwned}
+                  className="btn-guild w-full"
+                >
+                  {alreadyOwned
+                    ? "Already owned"
+                    : submitStage === "signing"
+                      ? "Approve in wallet…"
+                      : submitStage === "confirming"
+                        ? "Submitted · confirming…"
+                        : "✦ Own this Creature"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearPendingIdentification();
+                    setPending(null);
+                    setSpecies(null);
+                    setBattleStats(null);
+                    setError(null);
+                  }}
+                  className="flex min-h-12 w-full items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    border: "1px solid #3a2e1e",
+                    color: "#8a7a62",
+                    background: "transparent",
+                  }}
+                >
+                  Retake photo
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -430,15 +391,12 @@ export function CaptureExperience() {
       <div className="mx-auto mb-5 max-w-2xl">
         <CaptureSteps current={isIdentifying ? 2 : 1} />
       </div>
-      <CaptureForm onIdentify={handleIdentify} isIdentifying={isIdentifying} />
-      {error && (
-        <p
-          role="alert"
-          className="mx-auto mt-4 max-w-2xl rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
+      <CaptureForm
+        onIdentify={handleIdentify}
+        onReset={() => setError(null)}
+        isIdentifying={isIdentifying}
+        identificationError={error}
+      />
       <WalletChooser open={chooserOpen} onOpenChange={setChooserOpen} />
     </>
   );
@@ -475,21 +433,44 @@ function getIdentificationError(thrownObject: unknown) {
 }
 
 export function getCaptureTransactionError(thrownObject: unknown) {
+  const messages = getErrorMessages(thrownObject);
   const message =
-    thrownObject instanceof Error
-      ? thrownObject.message
-      : "The Creature transaction could not be completed.";
-  const normalized = message.toLowerCase();
+    messages.at(-1) ?? "The Creature transaction could not be completed.";
+  const normalized = messages.join(" ").toLowerCase();
   if (normalized.includes("reject") || normalized.includes("declin")) {
     return "You rejected the wallet request. Your identified Creature is saved here so you can try again.";
   }
   if (
     normalized.includes("already in use") ||
-    normalized.includes("already exists")
+    normalized.includes("already exists") ||
+    normalized.includes("already initialized")
   ) {
     return "You already own this exact Creature. Choose another supported species.";
   }
+  if (normalized.includes("insufficient funds")) {
+    return "Your wallet does not have enough Devnet SOL to create the Creature account.";
+  }
   return message;
+}
+
+function getErrorMessages(thrownObject: unknown): Array<string> {
+  const messages: Array<string> = [];
+  const visited = new Set<unknown>();
+  let current: unknown = thrownObject;
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    if (current instanceof Error && current.message) {
+      messages.push(current.message);
+      current = current.cause;
+      continue;
+    }
+    if (typeof current === "object" && "cause" in current) {
+      current = current.cause;
+      continue;
+    }
+    break;
+  }
+  return messages;
 }
 
 function CaptureSteps({ current }: { current: number }) {

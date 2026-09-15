@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { MatchStatus } from "../generated/wildquest";
 import useSWR from "swr";
-import { address, lamports, type Address } from "@solana/kit";
 import { CreatureModelCard } from "../components/creature-model-card";
 import { useCluster } from "../components/cluster-context";
 import {
@@ -26,8 +25,6 @@ import {
   fetchGenerationAccess,
 } from "../lib/admin/generate-creature";
 import { useSubmitCaptureTransaction } from "../lib/hooks/use-submit-capture-transaction";
-import { loadConfirmedDiscovery } from "../lib/expedition";
-import { isLocallyCapturedCreature } from "../lib/captured-photo-storage";
 
 const FILTERS = ["All", "Owned", "Missing"] as const;
 const SORTS = ["Name", "Rarity", "Battle role"] as const;
@@ -38,29 +35,6 @@ const RARITY_ORDER: Record<Rarity, number> = {
   Epic: 3,
   Legendary: 4,
 };
-
-function createOptimisticCreature(
-  catalogueId: bigint,
-  ownerAddress?: Address,
-): OwnedCreature {
-  const defaultAddress = address("11111111111111111111111111111111");
-  return {
-    address: defaultAddress,
-    data: {
-      discriminator: new Uint8Array(8),
-      owner: ownerAddress ?? defaultAddress,
-      catalogueId,
-      proofHash: new Uint8Array(32),
-      capturedAt: BigInt(Date.now()),
-      balanceVersion: 1,
-      bump: 0,
-    },
-    executable: false,
-    lamports: lamports(0n),
-    programAddress: defaultAddress,
-    space: 0n,
-  };
-}
 
 export function CollectionContent() {
   const game = useGameData();
@@ -97,33 +71,8 @@ export function CollectionContent() {
     for (const creature of game.creatures.data ?? []) {
       map.set(creature.data.catalogueId.toString(), creature);
     }
-    const confirmed = loadConfirmedDiscovery();
-    if (confirmed) {
-      const catId = String(confirmed.identification.catalogue_id);
-      if (!map.has(catId)) {
-        map.set(
-          catId,
-          createOptimisticCreature(
-            BigInt(confirmed.identification.catalogue_id),
-            game.address,
-          ),
-        );
-      }
-    }
-    for (const item of battleCatalogue.data ?? []) {
-      const catId = String(item.species.id);
-      if (
-        !map.has(catId) &&
-        isLocallyCapturedCreature(item.species.speciesId, item.species.id)
-      ) {
-        map.set(
-          catId,
-          createOptimisticCreature(BigInt(item.species.id), game.address),
-        );
-      }
-    }
     return map;
-  }, [game.creatures.data, game.address, battleCatalogue.data]);
+  }, [game.creatures.data]);
   const lockedCreatureAddresses = useMemo(() => {
     const addresses = new Set<string>();
     for (const match of matches.data ?? []) {
@@ -442,19 +391,8 @@ export function CollectionContent() {
                 {owned ? (
                   <button
                     type="button"
-                    disabled={
-                      isSending ||
-                      locked ||
-                      owned.address.startsWith("optimistic") ||
-                      owned.address.startsWith("local")
-                    }
+                    disabled={isSending || locked}
                     onClick={() => {
-                      if (
-                        owned.address.startsWith("optimistic") ||
-                        owned.address.startsWith("local")
-                      ) {
-                        return;
-                      }
                       setReleaseCandidate(owned);
                     }}
                     className="mt-2 min-h-10 w-full rounded-lg px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px]"
