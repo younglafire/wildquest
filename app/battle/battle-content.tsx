@@ -20,8 +20,9 @@ import { BattlePlayback } from "./battle-playback";
 import { CreatureModelCard } from "../components/creature-model-card";
 import { useCluster } from "../components/cluster-context";
 import {
-  fetchBattleCreatures,
   fetchMatchBattleCreatures,
+  fetchOwnedBattleCatalogue,
+  hasCurrentBattleBalance,
   type BattleCreature,
 } from "../lib/battle-creatures";
 import { useGameData } from "../lib/hooks/use-game-data";
@@ -38,6 +39,7 @@ import {
 import { useSolanaClient } from "../lib/solana-client-context";
 import { useWallet } from "../lib/wallet/context";
 import type { OwnedCreature } from "../lib/creatures";
+import { buildUpgradeCreatureBalanceInstruction } from "../lib/creatures";
 
 const STATUS_LABEL: Record<MatchStatus, string> = {
   [MatchStatus.Open]: "Open",
@@ -67,7 +69,11 @@ export function BattleContent() {
       ? ["battle-creatures", cluster, ...creatures.map((item) => item.address)]
       : null,
     () =>
-      fetchBattleCreatures(client.rpc, creatures, game.catalogue.data ?? []),
+      fetchOwnedBattleCatalogue(
+        client.rpc,
+        creatures,
+        game.catalogue.data ?? [],
+      ),
   );
   const [slots, setSlots] = useState<string[]>(["", "", ""]);
   const [armed, setArmed] = useState<string | null>(null);
@@ -176,6 +182,10 @@ export function BattleContent() {
     [battleCreatures.data],
   );
   const resultMatch = activeMatch.data ?? null;
+  const selectedOutdated = selected.some((creature) => {
+    const card = cardsByAddress.get(creature.address);
+    return card ? !hasCurrentBattleBalance(creature, card) : true;
+  });
 
   const rememberMatch = (matchAddress: Address) => {
     setLastMatchAddress(matchAddress);
@@ -223,6 +233,9 @@ export function BattleContent() {
   const createMatch = () =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
+      if (selectedOutdated) {
+        throw new Error("Upgrade selected Creatures before entering battle.");
+      }
       const matchId = BigInt(Date.now());
       const [matchAddress] = await findMatchAccountPda({
         creator: signer.address,
@@ -239,6 +252,9 @@ export function BattleContent() {
   const joinMatch = (match: GameMatch) =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
+      if (selectedOutdated) {
+        throw new Error("Upgrade selected Creatures before entering battle.");
+      }
       const creatorCreatures = await fetchAllCreature(
         client.rpc,
         [...match.data.creatorCreatures],
@@ -255,6 +271,25 @@ export function BattleContent() {
         ],
       });
       rememberMatch(match.address);
+      return signature;
+    });
+  const upgradeCreature = (
+    creature: OwnedCreature,
+    config: BattleCreature["config"],
+  ) =>
+    run(async () => {
+      if (!signer) throw new Error("Connect your wallet first.");
+      const signature = await send({
+        instructions: [
+          buildUpgradeCreatureBalanceInstruction(
+            signer,
+            game.address!,
+            config,
+            creature,
+          ),
+        ],
+      });
+      await battleCreatures.mutate();
       return signature;
     });
   const cancelMatch = (match: GameMatch) =>
@@ -422,31 +457,62 @@ export function BattleContent() {
             <div className="mt-2.5 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {(battleCreatures.data ?? []).map((card) => {
                 const creatureAddress = card.creature.address;
+                const creature = creatures.find(
+                  (item) => item.address === creatureAddress,
+                );
+                const needsUpgrade =
+                  !creature || !hasCurrentBattleBalance(creature, card);
                 const used = slots.includes(creatureAddress);
                 return (
-                  <button
-                    key={creatureAddress}
-                    type="button"
-                    draggable={!used}
-                    disabled={used}
-                    aria-pressed={armed === creatureAddress}
-                    onDragStart={(event) =>
-                      event.dataTransfer.setData("text/plain", creatureAddress)
-                    }
-                    onClick={() =>
-                      setArmed((value) =>
-                        value === creatureAddress ? null : creatureAddress,
-                      )
-                    }
-                    className="rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-emerald-500 active:scale-95"
-                  >
-                    <CreatureModelCard
-                      creature={card}
-                      compact
-                      selected={armed === creatureAddress}
-                      disabled={used}
-                    />
-                  </button>
+                  <div key={creatureAddress} className="flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      draggable={!used && !needsUpgrade}
+                      disabled={used || needsUpgrade}
+                      aria-pressed={armed === creatureAddress}
+                      onDragStart={(event) =>
+                        event.dataTransfer.setData(
+                          "text/plain",
+                          creatureAddress,
+                        )
+                      }
+                      onClick={() =>
+                        setArmed((value) =>
+                          value === creatureAddress ? null : creatureAddress,
+                        )
+                      }
+                      className="rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-emerald-500 active:scale-95 disabled:cursor-not-allowed"
+                    >
+                      <CreatureModelCard
+                        creature={card}
+                        compact
+                        selected={armed === creatureAddress}
+                        disabled={used || needsUpgrade}
+                        disabledBadge={
+                          needsUpgrade ? "UPGRADE" : used ? "IN TEAM" : null
+                        }
+                      />
+                    </button>
+                    {needsUpgrade && creature ? (
+                      <button
+                        type="button"
+                        disabled={isSending}
+                        onClick={() =>
+                          void upgradeCreature(creature, card.config)
+                        }
+                        className="min-h-9 rounded-lg px-2 text-[9px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45"
+                        style={{
+                          border: "1px solid rgba(200,169,110,0.55)",
+                          color: "#100e09",
+                          background:
+                            "linear-gradient(135deg, #c8a96e, #a07d48)",
+                          fontFamily: "var(--font-display)",
+                        }}
+                      >
+                        {isSending ? "Waiting…" : "Upgrade"}
+                      </button>
+                    ) : null}
+                  </div>
                 );
               })}
             </div>
@@ -470,7 +536,7 @@ export function BattleContent() {
           <button
             type="button"
             onClick={() => void createMatch()}
-            disabled={selected.length !== 3 || isSending}
+            disabled={selected.length !== 3 || selectedOutdated || isSending}
             className="btn-guild mt-5 w-full sm:mt-6"
           >
             {isSending

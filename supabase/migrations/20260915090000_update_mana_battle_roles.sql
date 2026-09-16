@@ -1,16 +1,6 @@
 alter table public.species
   drop constraint if exists species_battle_role_value;
 
-alter table public.species
-  add constraint species_battle_role_value
-    check (
-      battle_role is null
-      or battle_role in (
-        'Balanced', 'Brawler', 'Controller', 'Energizer',
-        'Guardian', 'Skirmisher', 'Striker', 'Support'
-      )
-    );
-
 update public.species
 set battle_role = case id
   when 1001 then 'Skirmisher' when 1002 then 'Support'
@@ -44,3 +34,13 @@ card_summary = case id
   )
 end
 where id between 1001 and 1040;
+
+alter table public.species
+  add constraint species_battle_role_value
+    check (
+      battle_role is null
+      or battle_role in (
+        'Balanced', 'Brawler', 'Controller', 'Energizer',
+        'Guardian', 'Skirmisher', 'Striker', 'Support'
+      )
+    );

@@ -182,7 +182,6 @@ export function CaptureExperience() {
                   confidence={result.confidence}
                   stats={battleStats}
                   summary={species?.cardSummary ?? species?.description}
-                  habitat={species?.habitat}
                 />
               </div>
 

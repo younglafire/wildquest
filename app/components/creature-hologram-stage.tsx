@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { creatureAbility } from "../lib/creature-abilities";
 import { playChimeSound } from "../lib/sfx";
 
 export interface CreatureHologramStageProps {
@@ -19,9 +20,13 @@ export interface CreatureHologramStageProps {
     attack?: number;
     defense?: number;
     maxMana?: number;
+    strikeCost?: number;
+    guardCost?: number;
+    rechargeGain?: number;
+    abilityId?: number;
+    abilityCost?: number;
   } | null;
   summary?: string | null;
-  habitat?: string | null;
 }
 
 export interface AuraPalette {
@@ -136,6 +141,11 @@ function deriveDisplayStats(
     attack?: number;
     defense?: number;
     maxMana?: number;
+    strikeCost?: number;
+    guardCost?: number;
+    rechargeGain?: number;
+    abilityId?: number;
+    abilityCost?: number;
   } | null,
 ) {
   if (stats && (stats.hp || stats.attack)) {
@@ -208,7 +218,6 @@ export function CreatureHologramStage({
   autoRotate = true,
   stats,
   summary,
-  habitat,
 }: CreatureHologramStageProps) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const [isLoadingModel, setIsLoadingModel] = useState(true);
@@ -476,11 +485,15 @@ export function CreatureHologramStage({
       });
 
       // =========================================================================
-      // 6. LOWER PANEL: LORE SUMMARY & VERIFICATION
-      // (Clean matte backing plate for high contrast and crystal-clear readability)
+      // 6. LOWER PANEL: ABILITY, ACTION COSTS & SUMMARY
       // =========================================================================
       const loreY = 1022;
       const loreH = 300;
+      const ability = creatureAbility(stats?.abilityId ?? 1);
+      const abilityCost = stats?.abilityCost ?? 3;
+      const strikeCost = stats?.strikeCost ?? 2;
+      const guardCost = stats?.guardCost ?? 1;
+      const rechargeGain = stats?.rechargeGain ?? 3;
 
       // Clean matte slate backing plate
       ctx.fillStyle = "rgba(6, 5, 4, 0.78)";
@@ -491,37 +504,68 @@ export function CreatureHologramStage({
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Habitat / Biome tag (Bold, bright gold)
-      const habitatStr = habitat
-        ? `🌍 HABITAT: ${habitat.toUpperCase()}`
-        : "🌍 HABITAT: WILD HARMONY SANCTUARY";
-      ctx.fillStyle = "#fef08a";
-      ctx.font = "900 28px monospace";
+      ctx.fillStyle = "#f3ba63";
+      ctx.font = "900 22px monospace";
       ctx.textAlign = "left";
-      ctx.fillText(habitatStr, artX + 28, loreY + 44);
+      ctx.fillText("ABILITY", artX + 28, loreY + 42);
 
-      // Trait / Specialty highlight
-      const traitStr = `⚡ TRAIT: ${role ? role.toUpperCase() : "BALANCED CREATURE"} · ${rarity.toUpperCase()}`;
-      ctx.fillStyle = "#4ade80";
-      ctx.font = "900 25px monospace";
-      ctx.textAlign = "left";
-      ctx.fillText(traitStr, artX + 28, loreY + 84);
-
-      // Brief summary / lore description
-      const summaryText =
-        summary ||
-        `An authentic specimen from the WildQuest wilderness. Possesses sharp instincts and natural balance in the arena.`;
       ctx.fillStyle = "#ffffff";
-      ctx.font = "700 26px system-ui, -apple-system, sans-serif";
+      ctx.font = `900 ${ability.name.length > 16 ? 33 : 38}px system-ui, -apple-system, sans-serif`;
+      ctx.fillText(
+        `${ability.name.toUpperCase()} · ${abilityCost} MANA`,
+        artX + 28,
+        loreY + 84,
+      );
+
+      const chips = [
+        {
+          label: `STRIKE ${strikeCost}`,
+          x: artX + 28,
+          border: "#ef4444",
+          text: "#fecaca",
+          bg: "#15100a",
+        },
+        {
+          label: `GUARD ${guardCost}`,
+          x: artX + 306,
+          border: "#3b82f6",
+          text: "#bfdbfe",
+          bg: "#0b0f14",
+        },
+        {
+          label: `RECHARGE +${rechargeGain}`,
+          x: artX + 584,
+          border: "#22c55e",
+          text: "#bbf7d0",
+          bg: "#0c120d",
+        },
+      ];
+      chips.forEach((chip) => {
+        ctx.fillStyle = chip.bg;
+        ctx.beginPath();
+        ctx.roundRect(chip.x, loreY + 112, 248, 56, 12);
+        ctx.fill();
+        ctx.strokeStyle = chip.border;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = chip.text;
+        ctx.font = "900 22px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(chip.label, chip.x + 124, loreY + 147);
+      });
+
+      const summaryText = summary || ability.summary;
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "800 26px system-ui, -apple-system, sans-serif";
       ctx.textAlign = "left";
       wrapCanvasText(
         ctx,
         summaryText,
         artX + 28,
-        loreY + 134,
+        loreY + 218,
         artW - 56,
-        38,
-        3,
+        34,
+        2,
       );
 
       // Solana Onchain Verified Watermark
@@ -807,7 +851,6 @@ export function CreatureHologramStage({
     imageUrl,
     stats,
     summary,
-    habitat,
     auraPalette,
   ]);
 

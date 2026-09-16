@@ -39,16 +39,17 @@ function getRarityTemplate(rarity?: string): string {
   return "/creatures/common.png";
 }
 
-/**
- * Stationary 3D-Style Card Model Component (Đứng yên)
- * Displays the high-fidelity Trading Card Model with:
- * - 2:3 aspect ratio
- * - Custom rarity carved nature/elemental frame (common.png, rare.png, legend.png, etc.)
- * - Creature artwork framed in upper art window
- * - Top header with rarity tag and bold creature name
- * - 4 Battle Stats (HP, ATK, DEF, SPD) with distinct badge colors and high-contrast numbers
- * - Lower lore backing plate with habitat, trait, and Solana onchain watermark
- */
+function splitSummary(summary: string): [string, string | null] {
+  if (summary.length <= 44) return [summary, null];
+  const breakIndex = summary.lastIndexOf(" ", 44);
+  const first = summary.slice(0, breakIndex > 24 ? breakIndex : 44).trim();
+  const second = summary.slice(first.length).trim();
+  return [
+    first,
+    second.length > 48 ? `${second.slice(0, 45).trim()}...` : second,
+  ];
+}
+
 export function CreatureModelCard(props: CreatureModelCardProps) {
   const {
     selected = false,
@@ -92,6 +93,13 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
   const defense = config?.defense ?? 65;
   const mana = config?.maxMana ?? 5;
   const ability = creatureAbility(config?.abilityId ?? 1);
+  const [summaryLine1, summaryLine2] = splitSummary(
+    species?.cardSummary ?? ability.summary,
+  );
+  const strikeCost = config?.strikeCost ?? 2;
+  const guardCost = config?.guardCost ?? 1;
+  const rechargeGain = config?.rechargeGain ?? 3;
+  const abilityCost = config?.abilityCost ?? 3;
 
   const frameSrc = getRarityTemplate(rarity);
 
@@ -372,7 +380,7 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           {mana}
         </text>
 
-        {/* 6. Lower Lore Panel: Habitat, Trait, Lore & Watermark */}
+        {/* 6. Lower gameplay panel */}
         <rect
           x="82"
           y="1022"
@@ -385,39 +393,116 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
         />
         <text
           x="110"
-          y="1066"
+          y="1064"
           fontFamily="ui-monospace, monospace"
-          fontSize="28"
+          fontSize="22"
           fontWeight="900"
-          fill="#fef08a"
-          letterSpacing="1"
+          fill="#f3ba63"
+          letterSpacing="1.5"
         >
-          {`STRIKE ${config?.strikeCost ?? 2} · GUARD ${config?.guardCost ?? 1} · RECHARGE +${config?.rechargeGain ?? 3}`}
+          ABILITY
         </text>
         <text
           x="110"
-          y="1106"
-          fontFamily="ui-monospace, monospace"
-          fontSize="25"
-          fontWeight="900"
-          fill="#4ade80"
-          letterSpacing="1"
-        >
-          {`${ability.name.toUpperCase()} · ${config?.abilityCost ?? 3} MANA`}
-        </text>
-        <text
-          x="110"
-          y="1152"
+          y="1104"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize="26"
-          fontWeight="700"
+          fontSize={ability.name.length > 16 ? "33" : "39"}
+          fontWeight="900"
           fill="#ffffff"
         >
-          {ability.summary}
+          {`${ability.name.toUpperCase()} · ${abilityCost} MANA`}
         </text>
+
+        {/* Action costs */}
+        <rect
+          x="110"
+          y="1134"
+          width="248"
+          height="56"
+          rx="12"
+          fill="#15100a"
+          stroke="#ef4444"
+          strokeWidth="2"
+        />
+        <text
+          x="234"
+          y="1169"
+          fontFamily="ui-monospace, monospace"
+          fontSize="22"
+          fontWeight="900"
+          fill="#fecaca"
+          textAnchor="middle"
+        >
+          {`STRIKE ${strikeCost}`}
+        </text>
+        <rect
+          x="388"
+          y="1134"
+          width="248"
+          height="56"
+          rx="12"
+          fill="#0b0f14"
+          stroke="#3b82f6"
+          strokeWidth="2"
+        />
         <text
           x="512"
-          y="1288"
+          y="1169"
+          fontFamily="ui-monospace, monospace"
+          fontSize="22"
+          fontWeight="900"
+          fill="#bfdbfe"
+          textAnchor="middle"
+        >
+          {`GUARD ${guardCost}`}
+        </text>
+        <rect
+          x="666"
+          y="1134"
+          width="248"
+          height="56"
+          rx="12"
+          fill="#0c120d"
+          stroke="#22c55e"
+          strokeWidth="2"
+        />
+        <text
+          x="790"
+          y="1169"
+          fontFamily="ui-monospace, monospace"
+          fontSize="22"
+          fontWeight="900"
+          fill="#bbf7d0"
+          textAnchor="middle"
+        >
+          {`RECHARGE +${rechargeGain}`}
+        </text>
+
+        <text
+          x="110"
+          y="1230"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          fontSize="26"
+          fontWeight="800"
+          fill="#f7f0de"
+        >
+          {summaryLine1}
+        </text>
+        {summaryLine2 ? (
+          <text
+            x="110"
+            y="1264"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            fontSize="25"
+            fontWeight="700"
+            fill="#d9ccb6"
+          >
+            {summaryLine2}
+          </text>
+        ) : null}
+        <text
+          x="512"
+          y="1310"
           fontFamily="ui-monospace, monospace"
           fontSize="22"
           fontWeight="900"

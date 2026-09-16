@@ -72,7 +72,10 @@ async function ensureGameConfig(
   client: ReturnType<typeof createClient>,
   admin: KeyPairSigner,
   captureAuthority: KeyPairSigner,
-) {
+): Promise<{
+  address: Awaited<ReturnType<typeof findGameConfigPda>>[0];
+  needsActivation: boolean;
+}> {
   const [address] = await findGameConfigPda();
   const existing = await fetchMaybeGameConfig(client.rpc, address, {
     commitment: "confirmed",
@@ -88,20 +91,11 @@ async function ensureGameConfig(
       );
     }
     console.info(`GameConfig already exists: ${address}`);
-    if (
-      existing.data.rulesVersion !== 2 ||
-      existing.data.balanceVersion !== 2
-    ) {
-      const instruction = getActivateTurnCombatInstruction({
-        admin,
-        gameConfig: address,
-      });
-      const result = await client.sendTransaction([instruction]);
-      console.info(
-        `Activated simultaneous turn rules: ${result.context.signature}`,
-      );
-    }
-    return;
+    return {
+      address,
+      needsActivation:
+        existing.data.rulesVersion !== 2 || existing.data.balanceVersion !== 2,
+    };
   }
 
   const instruction = await getInitializeGameConfigInstructionAsync({
@@ -110,6 +104,7 @@ async function ensureGameConfig(
   });
   const result = await client.sendTransaction([instruction]);
   console.info(`Created GameConfig: ${result.context.signature}`);
+  return { address, needsActivation: false };
 }
 
 async function ensureSpeciesConfigs(
@@ -135,6 +130,21 @@ async function ensureSpeciesConfigs(
       `Created SpeciesConfig ${catalogueId}: ${result.context.signature}`,
     );
   }
+}
+
+async function activateTurnCombat(
+  client: ReturnType<typeof createClient>,
+  admin: KeyPairSigner,
+  gameConfig: Awaited<ReturnType<typeof findGameConfigPda>>[0],
+) {
+  const instruction = getActivateTurnCombatInstruction({
+    admin,
+    gameConfig,
+  });
+  const result = await client.sendTransaction([instruction]);
+  console.info(
+    `Activated simultaneous turn rules: ${result.context.signature}`,
+  );
 }
 
 async function ensureRoster(
@@ -191,8 +201,15 @@ async function main() {
   }
   const adminClient = createClient({ url: devnet(rpcUrl), payer: admin });
   await requireBalance(adminClient.rpc, admin, MINIMUM_ADMIN_BALANCE);
-  await ensureGameConfig(adminClient, admin, captureAuthority);
+  const gameConfig = await ensureGameConfig(
+    adminClient,
+    admin,
+    captureAuthority,
+  );
   await ensureSpeciesConfigs(adminClient, admin);
+  if (gameConfig.needsActivation) {
+    await activateTurnCombat(adminClient, admin, gameConfig.address);
+  }
   if (configsOnly) {
     console.info("Battle configuration setup complete.");
     return;

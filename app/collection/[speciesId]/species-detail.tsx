@@ -4,16 +4,34 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
 import { CreatureHologramStage } from "../../components/creature-hologram-stage";
+import {
+  fetchMaybeSpeciesConfig,
+  findSpeciesConfigPda,
+} from "../../generated/wildquest";
 import { fetchCatalogueSpecies } from "../../lib/catalogue-client";
 import { formatDiscoveryDate } from "../../lib/game";
 import { useGameData } from "../../lib/hooks/use-game-data";
+import { useSolanaClient } from "../../lib/solana-client-context";
 
 export function SpeciesDetail({ speciesId }: { speciesId: string }) {
   const species = useSWR(["catalogue-species", speciesId], () =>
     fetchCatalogueSpecies(speciesId),
   );
   const game = useGameData();
+  const client = useSolanaClient();
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const speciesConfig = useSWR(
+    species.data ? ["species-config", String(species.data.id)] : null,
+    async () => {
+      const [address] = await findSpeciesConfigPda({
+        catalogueId: BigInt(species.data!.id),
+      });
+      const account = await fetchMaybeSpeciesConfig(client.rpc, address, {
+        commitment: "confirmed",
+      });
+      return account.exists ? account.data : null;
+    },
+  );
 
   if (species.isLoading)
     return (
@@ -85,8 +103,8 @@ export function SpeciesDetail({ speciesId }: { speciesId: string }) {
                 rarity={species.data.rarity}
                 role={species.data.battleRole}
                 imageUrl={displayImageUrl}
+                stats={speciesConfig.data}
                 summary={species.data.cardSummary ?? species.data.description}
-                habitat={species.data.habitat}
               />
             </div>
           </div>

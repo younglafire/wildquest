@@ -10,7 +10,7 @@ import type { OwnedCreature } from "./creatures";
 import type { SolanaClient } from "./solana-client";
 
 export type BattleCreature = {
-  creature: { address: Address };
+  creature: { address: Address; data?: { balanceVersion?: number } };
   species: CatalogueSpecies | null;
   config: Account<SpeciesConfig>;
 };
@@ -144,6 +144,51 @@ export async function fetchBattleCreatures(
       species: catalogueById.get(creature.data.catalogueId.toString()) ?? null,
     };
   });
+}
+
+export async function fetchOwnedBattleCatalogue(
+  rpc: SolanaClient["rpc"],
+  creatures: readonly OwnedCreature[],
+  catalogue: readonly CatalogueSpecies[],
+): Promise<BattleCreature[]> {
+  const addresses = await Promise.all(
+    creatures.map(
+      async (creature) =>
+        (
+          await findSpeciesConfigPda({ catalogueId: creature.data.catalogueId })
+        )[0],
+    ),
+  );
+  const configs = await fetchAllSpeciesConfig(rpc, addresses, {
+    commitment: "confirmed",
+  });
+  const catalogueById = new Map(
+    catalogue.map((species) => [BigInt(species.id).toString(), species]),
+  );
+  return creatures.map((creature, index) => {
+    const config = configs[index]!;
+    if (
+      config.data.catalogueId !== creature.data.catalogueId ||
+      !config.data.active
+    ) {
+      throw new Error("Creature battle configuration is inactive or missing.");
+    }
+    return {
+      creature,
+      config,
+      species: catalogueById.get(creature.data.catalogueId.toString()) ?? null,
+    };
+  });
+}
+
+export function hasCurrentBattleBalance(
+  creature: OwnedCreature,
+  battleCreature: BattleCreature,
+) {
+  return (
+    creature.data.catalogueId === battleCreature.config.data.catalogueId &&
+    creature.data.balanceVersion === battleCreature.config.data.balanceVersion
+  );
 }
 
 export function battleStats(creature: BattleCreature) {
