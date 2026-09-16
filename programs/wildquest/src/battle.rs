@@ -10,8 +10,12 @@ pub struct BattleStats {
     pub hp: u16,
     pub attack: u16,
     pub defense: u16,
-    pub speed: u16,
-    pub shield: u16,
+    pub max_mana: u16,
+    pub strike_cost: u16,
+    pub guard_cost: u16,
+    pub recharge_gain: u16,
+    pub ability_id: u16,
+    pub ability_cost: u16,
 }
 
 impl From<&SpeciesConfig> for BattleStats {
@@ -20,8 +24,12 @@ impl From<&SpeciesConfig> for BattleStats {
             hp: config.hp,
             attack: config.attack,
             defense: config.defense,
-            speed: config.speed,
-            shield: config.shield,
+            max_mana: config.max_mana,
+            strike_cost: config.strike_cost,
+            guard_cost: config.guard_cost,
+            recharge_gain: config.recharge_gain,
+            ability_id: config.ability_id,
+            ability_cost: config.ability_cost,
         }
     }
 }
@@ -46,8 +54,6 @@ pub struct BattleEvent {
     pub attacker_slot: u8,
     pub defender_slot: u8,
     pub damage: u64,
-    pub shield_before: u64,
-    pub shield_after: u64,
     pub hp_before: u64,
     pub hp_after: u64,
 }
@@ -62,14 +68,12 @@ pub struct BattleReport {
 struct Fighter {
     stats: BattleStats,
     hp: u64,
-    shield: u64,
 }
 
 impl From<BattleStats> for Fighter {
     fn from(stats: BattleStats) -> Self {
         Self {
             hp: u64::from(stats.hp),
-            shield: u64::from(stats.shield),
             stats,
         }
     }
@@ -86,9 +90,7 @@ fn damage(attack: u16, defense: u16) -> Result<u64> {
 }
 
 fn apply_damage(fighter: &mut Fighter, amount: u64) {
-    let shield_damage = fighter.shield.min(amount);
-    fighter.shield -= shield_damage;
-    fighter.hp = fighter.hp.saturating_sub(amount - shield_damage);
+    fighter.hp = fighter.hp.saturating_sub(amount);
 }
 
 fn apply_damage_and_emit(
@@ -100,7 +102,6 @@ fn apply_damage_and_emit(
     amount: u64,
     emit: &mut impl FnMut(BattleEvent),
 ) -> Result<()> {
-    let shield_before = defender.shield;
     let hp_before = defender.hp;
     apply_damage(defender, amount);
     emit(BattleEvent {
@@ -111,8 +112,6 @@ fn apply_damage_and_emit(
         defender_slot: u8::try_from(defender_slot)
             .map_err(|_| ErrorCode::BattleArithmeticOverflow)?,
         damage: amount,
-        shield_before,
-        shield_after: defender.shield,
         hp_before,
         hp_after: defender.hp,
     });
@@ -129,7 +128,7 @@ fn remaining_power(team: &[Fighter; TEAM_SIZE]) -> Result<u64> {
     team.iter().try_fold(0u64, |total, fighter| {
         total
             .checked_add(fighter.hp)
-            .and_then(|value| value.checked_add(fighter.shield))
+            .and_then(|value| value.checked_add(0))
             .ok_or_else(|| error!(ErrorCode::BattleArithmeticOverflow))
     })
 }
@@ -138,7 +137,7 @@ fn starting_power(team: &[BattleStats; TEAM_SIZE]) -> Result<u64> {
     team.iter().try_fold(0u64, |total, stats| {
         total
             .checked_add(u64::from(stats.hp))
-            .and_then(|value| value.checked_add(u64::from(stats.shield)))
+            .and_then(|value| value.checked_add(0))
             .ok_or_else(|| error!(ErrorCode::BattleArithmeticOverflow))
     })
 }
@@ -192,68 +191,24 @@ fn resolve_battle_with_events(
         let creator_damage = damage(creator.stats.attack, opponent.stats.defense)?;
         let opponent_damage = damage(opponent.stats.attack, creator.stats.defense)?;
 
-        if creator.stats.speed > opponent.stats.speed {
-            apply_damage_and_emit(
-                &mut opponent_team[opponent_active],
-                round,
-                BattleSide::Creator,
-                creator_active,
-                opponent_active,
-                creator_damage,
-                &mut emit,
-            )?;
-            if opponent_team[opponent_active].hp > 0 {
-                apply_damage_and_emit(
-                    &mut creator_team[creator_active],
-                    round,
-                    BattleSide::Opponent,
-                    opponent_active,
-                    creator_active,
-                    opponent_damage,
-                    &mut emit,
-                )?;
-            }
-        } else if opponent.stats.speed > creator.stats.speed {
-            apply_damage_and_emit(
-                &mut creator_team[creator_active],
-                round,
-                BattleSide::Opponent,
-                opponent_active,
-                creator_active,
-                opponent_damage,
-                &mut emit,
-            )?;
-            if creator_team[creator_active].hp > 0 {
-                apply_damage_and_emit(
-                    &mut opponent_team[opponent_active],
-                    round,
-                    BattleSide::Creator,
-                    creator_active,
-                    opponent_active,
-                    creator_damage,
-                    &mut emit,
-                )?;
-            }
-        } else {
-            apply_damage_and_emit(
-                &mut opponent_team[opponent_active],
-                round,
-                BattleSide::Creator,
-                creator_active,
-                opponent_active,
-                creator_damage,
-                &mut emit,
-            )?;
-            apply_damage_and_emit(
-                &mut creator_team[creator_active],
-                round,
-                BattleSide::Opponent,
-                opponent_active,
-                creator_active,
-                opponent_damage,
-                &mut emit,
-            )?;
-        }
+        apply_damage_and_emit(
+            &mut opponent_team[opponent_active],
+            round,
+            BattleSide::Creator,
+            creator_active,
+            opponent_active,
+            creator_damage,
+            &mut emit,
+        )?;
+        apply_damage_and_emit(
+            &mut creator_team[creator_active],
+            round,
+            BattleSide::Opponent,
+            opponent_active,
+            creator_active,
+            opponent_damage,
+            &mut emit,
+        )?;
     }
 
     let creator_remaining = remaining_power(&creator_team)?;
@@ -275,62 +230,35 @@ fn resolve_battle_with_events(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde::Deserialize;
-
-    #[derive(Deserialize)]
-    struct GoldenVector {
-        name: String,
-        creator: [[u16; 5]; TEAM_SIZE],
-        opponent: [[u16; 5]; TEAM_SIZE],
-        outcome: String,
-    }
-
-    fn vector_stats(values: [[u16; 5]; TEAM_SIZE]) -> [BattleStats; TEAM_SIZE] {
-        values.map(|value| stats(value[0], value[1], value[2], value[3], value[4]))
-    }
-
-    fn stats(hp: u16, attack: u16, defense: u16, speed: u16, shield: u16) -> BattleStats {
+    fn stats(hp: u16, attack: u16, defense: u16) -> BattleStats {
         BattleStats {
             hp,
             attack,
             defense,
-            speed,
-            shield,
+            max_mana: 5,
+            strike_cost: 2,
+            guard_cost: 1,
+            recharge_gain: 3,
+            ability_id: 1,
+            ability_cost: 3,
         }
     }
 
     #[test]
-    fn faster_creature_prevents_a_knocked_out_counterattack() {
-        let fast = [stats(10, 1000, 0, 20, 0); TEAM_SIZE];
-        let slow = [stats(1, 1000, 0, 10, 0); TEAM_SIZE];
-        assert_eq!(resolve_battle(fast, slow).unwrap(), BattleOutcome::Creator);
-    }
-
-    #[test]
-    fn equal_speed_attacks_resolve_simultaneously() {
-        let team = [stats(1, 1000, 0, 10, 0); TEAM_SIZE];
+    fn attacks_resolve_simultaneously() {
+        let team = [stats(1, 1000, 0); TEAM_SIZE];
         assert_eq!(resolve_battle(team, team).unwrap(), BattleOutcome::Tie);
     }
 
     #[test]
-    fn shield_absorbs_damage_before_hp() {
-        let defended = [stats(10, 1, u16::MAX, 10, 1000); TEAM_SIZE];
-        let attacker = [stats(10, 100, 0, 9, 0); TEAM_SIZE];
-        assert_eq!(
-            resolve_battle(defended, attacker).unwrap(),
-            BattleOutcome::Creator
-        );
-    }
-
-    #[test]
     fn fifty_round_cutoff_uses_remaining_power_ratio() {
-        let durable = [stats(1000, 1, u16::MAX, 10, 0); TEAM_SIZE];
+        let durable = [stats(1000, 1, u16::MAX); TEAM_SIZE];
         assert_eq!(
             resolve_battle(durable, durable).unwrap(),
             BattleOutcome::Tie
         );
 
-        let damaged = [stats(100, 10, 0, 11, 0); TEAM_SIZE];
+        let damaged = [stats(100, 10, 0); TEAM_SIZE];
         assert_eq!(
             resolve_battle(durable, damaged).unwrap(),
             BattleOutcome::Creator
@@ -338,9 +266,9 @@ mod tests {
     }
 
     #[test]
-    fn event_log_records_shield_hp_and_knockout_order() {
-        let creator = [stats(10, 100, 0, 20, 0); TEAM_SIZE];
-        let opponent = [stats(10, 1, 0, 10, 5); TEAM_SIZE];
+    fn event_log_records_hp_and_knockout_order() {
+        let creator = [stats(10, 100, 0); TEAM_SIZE];
+        let opponent = [stats(10, 1, 0); TEAM_SIZE];
         let report = simulate_battle(creator, opponent).unwrap();
         let first = report.events.first().unwrap();
         assert_eq!(first.round, 1);
@@ -348,31 +276,8 @@ mod tests {
         assert_eq!(first.attacker_slot, 0);
         assert_eq!(first.defender_slot, 0);
         assert_eq!(first.damage, 100);
-        assert_eq!((first.shield_before, first.shield_after), (5, 0));
         assert_eq!((first.hp_before, first.hp_after), (10, 0));
-        assert_eq!(report.events[1].defender_slot, 1);
+        assert_eq!(report.events[2].defender_slot, 1);
         assert_eq!(report.outcome, BattleOutcome::Creator);
-    }
-
-    #[test]
-    fn shared_golden_vectors_match_rust() {
-        let vectors: Vec<GoldenVector> =
-            serde_json::from_str(include_str!("../tests/fixtures/battle-vectors.json")).unwrap();
-        assert_eq!(vectors.len(), 10);
-        for vector in vectors {
-            let expected = match vector.outcome.as_str() {
-                "creator" => BattleOutcome::Creator,
-                "opponent" => BattleOutcome::Opponent,
-                "tie" => BattleOutcome::Tie,
-                _ => panic!("unknown outcome in {}", vector.name),
-            };
-            assert_eq!(
-                resolve_battle(vector_stats(vector.creator), vector_stats(vector.opponent))
-                    .unwrap(),
-                expected,
-                "{}",
-                vector.name
-            );
-        }
     }
 }

@@ -23,6 +23,12 @@ pub mod wildquest {
         handle_activate_turn_combat(context)
     }
 
+    pub fn upgrade_creature_balance(
+        context: Context<UpgradeCreatureBalanceAccountConstraints>,
+    ) -> Result<()> {
+        handle_upgrade_creature_balance(context)
+    }
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         crate::instructions::initialize::handle_initialize(ctx)
     }

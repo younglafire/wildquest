@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import {
   assertIsSignature,
   getBase58Decoder,
+  unwrapSimulationError,
   type Base64EncodedWireTransaction,
   type Signature,
 } from "@solana/kit";
@@ -64,6 +65,17 @@ export function useSubmitCaptureTransaction() {
       setIsSubmitting(true);
       setStage("signing");
       try {
+        const currentBlockHeight = await client.rpc
+          .getBlockHeight({ commitment: "confirmed" })
+          .send();
+        if (
+          currentBlockHeight >= BigInt(authorization.last_valid_block_height)
+        ) {
+          throw new Error(
+            "This capture approval expired. Retake the photo to create a fresh transaction.",
+          );
+        }
+
         const unsignedForWallet = decodeBase64(
           authorization.transaction_base64,
         );
@@ -92,6 +104,15 @@ export function useSubmitCaptureTransaction() {
         setStage("confirming");
         await waitForConfirmation(signature, client.rpc);
         return signature;
+      } catch (thrownObject) {
+        const simulationCause = unwrapSimulationError(thrownObject);
+        if (
+          simulationCause instanceof Error &&
+          simulationCause !== thrownObject
+        ) {
+          throw new Error(simulationCause.message, { cause: thrownObject });
+        }
+        throw thrownObject;
       } finally {
         setIsSubmitting(false);
         setStage("idle");

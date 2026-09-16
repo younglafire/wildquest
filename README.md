@@ -159,7 +159,7 @@ The main routes are:
 - `/` for landing and wallet connection;
 - `/home` for Player level, XP, quest progress, and recent discoveries;
 - `/quest` for target progress and `complete_quest` reward claiming;
-- `/capture` for photo selection and exact 40-creature identification;
+- `/capture` for phone-camera scanning and exact 40-creature identification;
 - `/collection` for all 40 battle cards and wallet-owned Creature accounts;
 - `/match/[matchAddress]` for a shareable battlefield, replay, and signed receipts;
 - `/collection/[speciesId]` for species facts and an unrewarded practice quiz;
@@ -175,17 +175,20 @@ uses the fixed bottom bar.
 The Home screen derives progression from confirmed Player and Discovery
 accounts. Level follows `1 + floor(total_xp / 100)`.
 
-The current battle-slice capture flow has three visible stages:
-
-- **Select** accepts one JPEG, PNG, or WebP file no larger than 4,000,000 bytes.
-- **Verify** sends the photo and connected wallet address to `/api/identify`.
-- **Result** reveals a battle card with the catalogue identity, onchain HP,
-  Damage, Defense, Speed, Shield, confidence, and balance version.
+The mobile battle-slice capture flow opens a full-screen rear-camera scanner.
+Light and movement guidance helps the player frame one animal, and the shutter
+sends the in-memory frame with the connected wallet address to `/api/identify`.
+The result spotlights a rotating battle card with the catalogue identity,
+onchain HP, Attack, Defense, Max Mana, action costs, Recharge gain, ability,
+confidence, and balance version.
+The capture route does not accept desktop or gallery uploads.
 
 Pending identification metadata lives in session storage. Photo bytes never
 enter browser storage. `capture_creature()` requires both the wallet and server
 capture authority signatures and creates the one-per-wallet/species Creature
-account.
+account. A failed transaction does not add a Creature to Collection. After a
+confirmed transaction, the app refreshes the wallet's Creature accounts and
+opens that species' Collection detail page.
 
 Collection and team selection render the same Creature card component with the
 same SpeciesConfig stats. An owner may release a card through
@@ -233,7 +236,8 @@ The earlier Counter instructions remain as scaffold functionality.
   balance version, rules version, and fixed stake.
 - **SpeciesConfig PDA** uses
   `["species_config", catalogue_id_le, balance_version_le]` and stores the
-  static battle stats.
+  static HP, Attack, Defense, Max Mana, action costs, Recharge gain, and
+  ability ID.
 - **Creature PDA** uses `["creature", wallet, catalogue_id_le]`, enforcing one
   owned Creature for each exact catalogue ID.
 - **Match PDA** uses `["match", creator, match_id_le]` and stores both ordered
@@ -248,7 +252,9 @@ and either participant can refund an Active Match after its server timeout.
 
 Opening or joining a Match routes both wallets to the same battlefield address.
 Each browser connects to the same battle room. Participants authenticate with a
-wallet-signed message, while spectators have read-only access. The server owns
+wallet-signed message, while spectators have read-only access. Players choose
+Strike, Guard, Ability, or Recharge. Each creature has its own mana cap and
+costs. Guard provides temporary mitigation derived from Defense. The server owns
 the deadline and broadcasts snapshots, so the live view has no pause or skip
 control and one player's choice remains hidden until both choices resolve.
 
@@ -271,9 +277,9 @@ Check the rules-version 2 roster before a demo or deployment:
 npm run battle:balance
 ```
 
-The deterministic matrix fails the command unless median length is 12 to 24
-turns, draws remain below 10%, no action exceeds 65% usage, and no creature
-exceeds a 65% sample win rate. Supabase stores creature presentation metadata;
+The deterministic simulation fails unless median length is 12 to 24 turns,
+draws remain below 10%, no action exceeds 65% usage, and no creature exceeds a
+65% sample win rate. Supabase stores creature presentation metadata;
 the program's `SpeciesConfig` accounts remain authoritative for battle stats.
 After deploying a program build with new stats, rerun `npm run setup:pk-config`
 with the configured admin so Devnet has every supported SpeciesConfig.

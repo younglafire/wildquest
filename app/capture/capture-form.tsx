@@ -6,24 +6,24 @@ import { validateImageUpload } from "@/app/lib/vision/upload";
 import { getCameraGuidance, type CameraGuidance } from "./camera-guidance";
 
 type CaptureState =
-  | { status: "empty" }
-  | { status: "ready"; file: File; previewUrl: string };
+  { status: "empty" } | { status: "ready"; file: File; previewUrl: string };
 
 type CameraStatus = "off" | "starting" | "ready";
 type CaptureDevice = "checking" | "mobile" | "desktop";
 
 const CAMERA_GUIDANCE_COPY: Record<CameraGuidance, string> = {
-  searching: "Checking the frame…",
-  add_light: "Move into brighter light",
+  searching: "Finding the animal...",
+  add_light: "Find brighter light",
   hold_still: "Hold your phone still",
-  ready: "Ready to scan this animal",
+  ready: "Animal locked",
 };
 
 function isMobileCaptureDevice() {
   if (typeof window === "undefined") return false;
   return (
     /Android.*Mobile|iPhone|iPod/i.test(navigator.userAgent) ||
-    (/Android|Mobile/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0)
+    (/Android|Mobile/i.test(navigator.userAgent) &&
+      navigator.maxTouchPoints > 0)
   );
 }
 
@@ -39,12 +39,16 @@ function getCameraError(error: unknown) {
 
 type CaptureFormProps = {
   onIdentify?: (file: File) => void;
+  onReset?: () => void;
   isIdentifying?: boolean;
+  identificationError?: string | null;
 };
 
 export function CaptureForm({
   onIdentify,
+  onReset,
   isIdentifying = false,
+  identificationError = null,
 }: CaptureFormProps = {}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -57,26 +61,6 @@ export function CaptureForm({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [guidance, setGuidance] = useState<CameraGuidance>("searching");
   const [isCapturingFrame, setIsCapturingFrame] = useState(false);
-
-  const selectImage = (file: File | undefined) => {
-    if (!file) return;
-    const validation = validateImageUpload(file);
-    if (!validation.valid) {
-      setCameraError(
-        validation.code === "IMAGE_TOO_LARGE"
-          ? "That photo is too large. Choose an image smaller than 4 MB."
-          : "Choose a JPEG, PNG, or WebP photo.",
-      );
-      return;
-    }
-    stopCamera();
-    setCameraError(null);
-    setState({
-      status: "ready",
-      file,
-      previewUrl: URL.createObjectURL(file),
-    });
-  };
 
   const stopCamera = () => {
     cameraGeneration.current += 1;
@@ -91,7 +75,9 @@ export function CaptureForm({
   };
 
   useEffect(() => {
-    queueMicrotask(() => setDevice(isMobileCaptureDevice() ? "mobile" : "desktop"));
+    queueMicrotask(() =>
+      setDevice(isMobileCaptureDevice() ? "mobile" : "desktop"),
+    );
   }, []);
 
   useEffect(() => {
@@ -115,7 +101,8 @@ export function CaptureForm({
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" || cameraStatus === "off") return;
+      if (document.visibilityState === "visible" || cameraStatus === "off")
+        return;
       stopCamera();
       setCameraError("Camera paused while WildQuest was in the background.");
     };
@@ -132,7 +119,14 @@ export function CaptureForm({
 
     const samplingInterval = window.setInterval(() => {
       const video = videoRef.current;
-      if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0 || video.videoHeight === 0) return;
+      if (
+        !video ||
+        video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+        video.videoWidth === 0 ||
+        video.videoHeight === 0
+      ) {
+        return;
+      }
       canvas.width = 96;
       canvas.height = 72;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -164,7 +158,10 @@ export function CaptureForm({
           height: { ideal: 720 },
         },
       });
-      if (generation !== cameraGeneration.current || document.visibilityState === "hidden") {
+      if (
+        generation !== cameraGeneration.current ||
+        document.visibilityState === "hidden"
+      ) {
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -179,19 +176,30 @@ export function CaptureForm({
 
   const captureFrame = () => {
     const video = videoRef.current;
-    if (framePending.current || !video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+    if (
+      framePending.current ||
+      !video ||
+      video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+      return;
+    }
     const generation = cameraGeneration.current;
     framePending.current = true;
     setIsCapturingFrame(true);
     const canvas = document.createElement("canvas");
-    const scale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
+    const scale = Math.min(
+      1,
+      1600 / Math.max(video.videoWidth, video.videoHeight),
+    );
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
     const context = canvas.getContext("2d");
     if (!context || canvas.width === 0 || canvas.height === 0) {
       framePending.current = false;
       setIsCapturingFrame(false);
-      setCameraError("The camera frame is not ready yet. Try again in a moment.");
+      setCameraError(
+        "The camera frame is not ready yet. Try again in a moment.",
+      );
       return;
     }
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -211,7 +219,10 @@ export function CaptureForm({
           setCameraError("The camera frame is invalid. Try again.");
           return;
         }
-        selectImage(file);
+        const previewUrl = URL.createObjectURL(file);
+        stopCamera();
+        setState({ status: "ready", file, previewUrl });
+        onIdentify?.(file);
       },
       "image/jpeg",
       0.88,
@@ -221,286 +232,198 @@ export function CaptureForm({
   const resetCapture = () => {
     setState({ status: "empty" });
     setCameraError(null);
+    onReset?.();
+  };
+
+  const closeScanner = () => {
+    if (cameraStatus !== "off") {
+      stopCamera();
+      return;
+    }
+    if (state.status === "ready" && !isIdentifying) {
+      resetCapture();
+      return;
+    }
+    window.history.back();
   };
 
   if (device === "checking") {
-    return <div className="mx-auto min-h-72 w-full max-w-2xl" aria-busy="true" />;
+    return <div className="fixed inset-0 z-50 bg-[#080906]" aria-busy="true" />;
   }
 
   if (device === "desktop") {
     return (
-      <section
-        className="mx-auto w-full max-w-2xl rounded-2xl p-6 text-center sm:rounded-3xl sm:p-8"
-        style={{
-          background: "#1c1810",
-          border: "1px solid #3a2e1e",
-          boxShadow: "0 24px 90px -55px rgba(0,0,0,0.8)",
-        }}
-      >
-        <p className="wax-badge wax-badge-forest">Neural Bio-Scanner</p>
+      <section className="mx-auto w-full max-w-2xl rounded-3xl border border-[#3a2e1e] bg-[#1c1810] p-8 text-center shadow-2xl">
+        <p className="wax-badge wax-badge-forest">Mobile field tool</p>
         <h1
-          className="mt-3 text-3xl font-black tracking-tight"
-          style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+          className="mt-4 text-3xl font-black tracking-tight text-[#f0e8d4]"
+          style={{ fontFamily: "var(--font-display)" }}
         >
-          Capture is available on a phone
+          Hunt with your phone
         </h1>
-        <p className="mt-3 text-sm leading-relaxed" style={{ color: "#8a7a62" }}>
-          Upload a photo here, or open WildQuest on your mobile phone to scan
-          wildlife directly with your phone camera.
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[#8a7a62]">
+          Open WildQuest on a phone to use the live rear-camera scanner. Your
+          collection, quests, and battles remain available here.
         </p>
-        <label className="btn-guild mt-6 cursor-pointer">
-          Choose an image
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
-            onChange={(event) => selectImage(event.target.files?.[0])}
-          />
-        </label>
-        {state.status === "ready" && (
-          <div className="mt-6 text-left">
-            <div
-              className="relative aspect-[4/3] overflow-hidden rounded-xl"
-              style={{ background: "#100e09", border: "1px solid #3a2e1e" }}
-            >
-              <Image
-                src={state.previewUrl}
-                alt="Selected animal photo"
-                fill
-                unoptimized
-                className="object-contain"
-              />
-            </div>
-            {onIdentify && (
-              <button
-                type="button"
-                disabled={isIdentifying}
-                onClick={() => onIdentify(state.file)}
-                className="btn-guild mt-4 w-full"
-              >
-                {isIdentifying ? "Identifying creature…" : "Identify creature"}
-              </button>
-            )}
-          </div>
-        )}
       </section>
     );
   }
 
+  const cameraIsOpen = cameraStatus !== "off";
+
   return (
     <section
       aria-labelledby="capture-heading"
-      className="mx-auto w-full max-w-2xl rounded-2xl p-4 sm:rounded-3xl sm:p-7"
-      style={{
-        background: "#1c1810",
-        border: "1px solid #3a2e1e",
-        boxShadow: "0 24px 90px -55px rgba(0,0,0,0.8)",
-      }}
+      className="fixed inset-0 z-50 overflow-hidden bg-[#080906] text-white"
     >
-      <div className="space-y-1.5 text-center sm:text-left">
-        <div className="inline-flex">
-          <p className="wax-badge wax-badge-forest">Neural Bio-Scanner</p>
+      {state.status === "ready" ? (
+        <Image
+          src={state.previewUrl}
+          alt="Captured animal"
+          fill
+          unoptimized
+          priority
+          className="object-cover"
+        />
+      ) : cameraIsOpen ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          aria-label="Live rear camera preview"
+          className="absolute inset-0 h-full w-full object-cover"
+          onLoadedMetadata={(event) => {
+            void event.currentTarget.play().catch(() => {
+              stopCamera();
+              setCameraError(
+                "Camera playback was interrupted. Open the camera again.",
+              );
+            });
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,#233126_0%,#10150f_42%,#080906_78%)]" />
+      )}
+
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/90" />
+      <header className="absolute inset-x-0 top-0 z-10 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <div className="mx-auto flex max-w-lg items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d7c18e]">
+              WildQuest field scanner
+            </p>
+            <h1
+              id="capture-heading"
+              className="mt-1 text-xl font-black tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {isIdentifying
+                ? "Reading the field signature"
+                : "Find one animal"}
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={closeScanner}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/35 text-xl backdrop-blur-md"
+            aria-label="Close scanner"
+          >
+            ×
+          </button>
         </div>
-        <h1
-          id="capture-heading"
-          className="text-2xl font-black tracking-tight sm:text-3xl"
-          style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+      </header>
+
+      <div className="pointer-events-none absolute inset-x-6 bottom-[9.5rem] top-[7rem] mx-auto max-w-lg">
+        <div
+          className={`capture-focus-frame relative h-full w-full rounded-[2rem] ${guidance === "ready" ? "is-ready" : ""}`}
         >
-          Scan your discovery
-        </h1>
-        <p id="capture-help" className="text-xs leading-relaxed sm:text-sm" style={{ color: "#8a7a62" }}>
-          Target one animal in frame. Keep steady to lock the neural scan.
-        </p>
+          <span className="capture-corner capture-corner-top-left" />
+          <span className="capture-corner capture-corner-top-right" />
+          <span className="capture-corner capture-corner-bottom-left" />
+          <span className="capture-corner capture-corner-bottom-right" />
+          {cameraStatus === "ready" && !isCapturingFrame && (
+            <span className="capture-scan-beam" />
+          )}
+          {isIdentifying && (
+            <div className="absolute inset-0 grid place-items-center rounded-[2rem] bg-black/25 backdrop-blur-[2px]">
+              <div className="text-center">
+                <span className="mx-auto block h-12 w-12 animate-spin rounded-full border-2 border-[#d7c18e]/30 border-t-[#f3d98c]" />
+                <p className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-[#f3d98c]">
+                  Identifying animal
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div
-        className="mt-4 overflow-hidden rounded-2xl"
-        style={{
-          background: "#100e09",
-          border: "1px solid #3a2e1e",
-        }}
-      >
-        {state.status === "ready" ? (
-          <div className="p-3 sm:p-4">
-            <div
-              className="relative aspect-[4/3] max-h-[50vh] overflow-hidden rounded-xl"
-              style={{ background: "#0a0805", border: "1px solid #3a2e1e" }}
-            >
-              <Image
-                src={state.previewUrl}
-                alt="Captured camera frame"
-                fill
-                unoptimized
-                className="object-contain"
-              />
-            </div>
+      <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-lg text-center">
+          {identificationError ? (
             <p
-              className="mt-3 text-center text-xs font-bold uppercase tracking-wider sm:text-left"
-              style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+              role="alert"
+              className="mb-4 rounded-2xl border border-amber-200/30 bg-[#21170b]/90 px-4 py-3 text-sm font-semibold leading-relaxed text-amber-50 backdrop-blur-md"
             >
-              Frame ready to identify
+              {identificationError}
             </p>
-            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+          ) : cameraError ? (
+            <p
+              role="alert"
+              className="mb-4 rounded-2xl border border-red-300/25 bg-red-950/70 px-4 py-3 text-sm text-red-100 backdrop-blur-md"
+            >
+              {cameraError}
+            </p>
+          ) : (
+            <p
+              aria-live="polite"
+              className="mb-4 text-sm font-bold drop-shadow-lg"
+            >
+              {isIdentifying
+                ? "Keep WildQuest open while the scan finishes"
+                : cameraStatus === "starting"
+                  ? "Opening the rear camera..."
+                  : cameraStatus === "ready"
+                    ? CAMERA_GUIDANCE_COPY[guidance]
+                    : "Fill the frame with the animal and keep the phone level"}
+            </p>
+          )}
+
+          {state.status === "ready" ? (
+            !isIdentifying && (
               <button
                 type="button"
                 onClick={resetCapture}
-                disabled={isIdentifying}
-                className="flex min-h-14 items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  border: "1px solid #3a2e1e",
-                  color: "#8a7a62",
-                  background: "rgba(58,46,30,0.2)",
-                }}
+                className="min-h-12 rounded-full border border-white/25 bg-black/55 px-6 text-xs font-black uppercase tracking-[0.18em] backdrop-blur-md"
               >
-                Scan again
+                {identificationError
+                  ? "Scan another animal"
+                  : "Try another photo"}
               </button>
-              {onIdentify && (
-                <button
-                  type="button"
-                  disabled={isIdentifying}
-                  onClick={() => onIdentify(state.file)}
-                  className="btn-guild w-full"
-                >
-                  {isIdentifying ? "Identifying creature…" : "Identify creature"}
-                </button>
-              )}
-            </div>
-          </div>
-        ) : cameraStatus !== "off" ? (
-          <div className="relative h-[55vh] min-h-[340px] max-h-[520px] w-full overflow-hidden bg-[#0a0805]">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              aria-label="Live rear camera preview"
-              className="absolute inset-0 h-full w-full object-cover"
-              onLoadedMetadata={(event) => {
-                void event.currentTarget.play().catch(() => {
-                  stopCamera();
-                  setCameraError("Camera playback was interrupted. Open the camera again.");
-                });
-              }}
-            />
-            {/* Tactical HUD Reticle Viewfinder */}
-            <div className="pointer-events-none absolute inset-4 rounded-2xl sm:inset-6">
-              {/* Corner brackets */}
-              <div className="absolute -left-0.5 -top-0.5 h-4 w-4 border-l-2 border-t-2 border-[#c8a96e]" />
-              <div className="absolute -right-0.5 -top-0.5 h-4 w-4 border-r-2 border-t-2 border-[#c8a96e]" />
-              <div className="absolute -bottom-0.5 -left-0.5 h-4 w-4 border-b-2 border-l-2 border-[#c8a96e]" />
-              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 border-b-2 border-r-2 border-[#c8a96e]" />
-
-              {/* Crosshair point */}
-              <span className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#c8a96e] shadow-[0_0_16px_4px_rgba(200,169,110,0.8)]" />
-
-              {/* Guidance status pill */}
-              <div
-                aria-live="polite"
-                className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full px-3 py-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] backdrop-blur-md"
-                style={{
-                  background: "rgba(16,14,9,0.88)",
-                  color: guidance === "ready" ? "#6aab7a" : "#c8a96e",
-                  border: "1px solid rgba(200,169,110,0.35)",
-                }}
-              >
-                {cameraStatus === "starting"
-                  ? "Opening camera…"
-                  : isCapturingFrame
-                    ? "Locking frame…"
-                    : CAMERA_GUIDANCE_COPY[guidance]}
-              </div>
-
-              {/* Animated scan line */}
-              {cameraStatus === "ready" && !isCapturingFrame && (
-                <span className="scan-line absolute inset-x-3 top-1/2 h-[2px] bg-gradient-to-r from-transparent via-[#c8a96e] to-transparent shadow-[0_0_12px_2px_rgba(200,169,110,0.6)]" />
-              )}
-            </div>
-
-            {/* Bottom action controls */}
-            <div className="absolute inset-x-4 bottom-4 flex gap-2.5 sm:gap-3">
+            )
+          ) : cameraIsOpen ? (
+            <div className="flex items-center justify-center">
               <button
                 type="button"
                 disabled={cameraStatus !== "ready" || isCapturingFrame}
                 onClick={captureFrame}
-                className="btn-guild min-h-14 flex-1 text-xs font-black uppercase tracking-wider shadow-2xl"
+                className="capture-shutter grid h-[4.75rem] w-[4.75rem] place-items-center rounded-full border-[3px] border-white/90 disabled:opacity-40"
+                aria-label="Scan this animal"
               >
-                {isCapturingFrame ? "Locking target…" : "Scan this animal"}
-              </button>
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="min-h-14 rounded-xl border border-[#3a2e1e] bg-[#100e09]/90 px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#f0e8d4] backdrop-blur-md transition-colors hover:border-[#c8a96e]"
-              >
-                Close
+                <span className="h-[3.65rem] w-[3.65rem] rounded-full bg-[#f3d98c] shadow-[0_0_28px_rgba(243,217,140,0.45)]" />
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-6 text-center sm:p-8">
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl"
-              style={{
-                background: "linear-gradient(135deg, rgba(200,169,110,0.2), rgba(200,169,110,0.05))",
-                border: "1px solid rgba(200,169,110,0.3)",
-                color: "#c8a96e",
-              }}
-              aria-hidden="true"
+          ) : (
+            <button
+              type="button"
+              onClick={() => void startCamera()}
+              className="btn-guild min-h-14 w-full"
             >
-              ⌁
-            </div>
-            <div className="w-full max-w-sm space-y-2">
-              <p
-                className="text-base font-bold sm:text-lg"
-                style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
-              >
-                Live Camera Scanner
-              </p>
-              <p className="text-xs leading-relaxed" style={{ color: "#8a7a62" }}>
-                Point rear camera at the creature. Photos are processed locally in memory.
-              </p>
-              <button
-                type="button"
-                onClick={() => void startCamera()}
-                className="btn-guild mt-3 w-full"
-              >
-                Start camera
-              </button>
-              <label
-                className="mt-2 flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition-colors active:scale-98"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  border: "1px solid #3a2e1e",
-                  color: "#c8a96e",
-                  background: "rgba(200,169,110,0.06)",
-                }}
-              >
-                Choose from library
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  capture="environment"
-                  className="sr-only"
-                  onChange={(event) => selectImage(event.target.files?.[0])}
-                />
-              </label>
-            </div>
-          </div>
-        )}
+              Open camera
+            </button>
+          )}
+        </div>
       </div>
-      {cameraError && (
-        <p
-          role="alert"
-          className="mt-3 rounded-lg p-3 text-xs font-semibold sm:text-sm"
-          style={{
-            background: "rgba(192,57,43,0.12)",
-            color: "#f8c8c4",
-            border: "1px solid rgba(192,57,43,0.3)",
-          }}
-        >
-          {cameraError}
-        </p>
-      )}
     </section>
   );
 }

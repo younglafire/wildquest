@@ -5,7 +5,7 @@ import { CaptureExperience } from "./capture-experience";
 
 export const metadata: Metadata = {
   title: "Capture a Creature | WildQuest",
-  description: "Photograph or upload one of the 40 battle creatures.",
+  description: "Scan one of the 40 battle creatures with your phone camera.",
 };
 
 export default function CapturePage() {
@@ -17,7 +17,6 @@ export default function CapturePage() {
           <Link href="/home" className="transition hover:text-foreground">
             ← Back to home
           </Link>
-          <span>Photos are processed in memory</span>
         </div>
       </main>
     </GameShell>

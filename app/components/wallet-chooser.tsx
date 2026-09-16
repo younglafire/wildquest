@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { playChimeSound, playTactileClick } from "../lib/sfx";
 import { useWallet } from "../lib/wallet/context";
 
@@ -60,12 +61,15 @@ export function WalletChooser({
     };
   }, [onOpenChange, open]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined" || !document.body) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:p-4"
       role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onOpenChange(false);
+      }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
@@ -75,7 +79,7 @@ export function WalletChooser({
         role="dialog"
         aria-modal="true"
         aria-labelledby="wallet-dialog-title"
-        className="w-full max-w-sm rounded-3xl border-2 border-emerald-900/20 bg-card p-6 shadow-[0_25px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md dark:border-emerald-500/20"
+        className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-3xl border-2 border-emerald-900/20 bg-card p-6 shadow-[0_25px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md dark:border-emerald-500/20"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -155,6 +159,7 @@ export function WalletChooser({
           </p>
         )}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

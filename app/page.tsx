@@ -33,28 +33,17 @@ export default function Home() {
               WildQuest · Season 01 // Solana Devnet
             </div>
 
-            <h1
-              className="text-3xl font-black leading-none sm:text-6xl lg:text-7xl"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              <span
-                className="block"
-                style={{
-                  background: "linear-gradient(135deg, #e0c58a 0%, #c8a96e 40%, #a07d48 70%, #c8a96e 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                WILDQUEST
-              </span>
-              <span
-                className="mt-1.5 block text-lg font-black tracking-tight sm:text-2xl lg:text-3xl"
-                style={{ color: "#f0e8d4" }}
-              >
+            <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/creatures/logo.png"
+                alt="WildQuest"
+                className="h-auto w-full max-w-[340px] sm:max-w-[500px] md:max-w-[640px] lg:max-w-[780px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
+              />
+              <h1 className="mt-3 text-center text-lg font-black tracking-tight sm:text-2xl lg:text-3xl" style={{ color: "#f0e8d4", fontFamily: "var(--font-display)" }}>
                 The Real-World Wildlife RPG on Solana
-              </span>
-            </h1>
+              </h1>
+            </div>
 
             <p
               className="mx-auto max-w-xl text-xs leading-relaxed sm:text-sm"

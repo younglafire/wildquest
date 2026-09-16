@@ -31,7 +31,7 @@ const species = {
 } satisfies CatalogueSpecies;
 
 describe("CreatureCard", () => {
-  it("shows local artwork, story, role, origin, and all authoritative stats", () => {
+  it("shows artwork, role, four stats, action costs, and ability only", () => {
     render(
       <CreatureCard
         species={species}
@@ -40,8 +40,12 @@ describe("CreatureCard", () => {
           hp: 100,
           attack: 72,
           defense: 55,
-          speed: 55,
-          shield: 18,
+          maxMana: 6,
+          strikeCost: 2,
+          guardCost: 1,
+          rechargeGain: 3,
+          abilityId: 1,
+          abilityCost: 3,
         }}
       />,
     );
@@ -49,10 +53,13 @@ describe("CreatureCard", () => {
       "/creatures/dog.svg",
     );
     expect(screen.getByText("Striker")).toBeTruthy();
-    expect(screen.getByText(/versatile working dog/i)).toBeTruthy();
-    expect(screen.getByText(/Origin · Germany/i)).toBeTruthy();
-    for (const label of ["HP", "Damage", "Defense", "Speed", "Shield"]) {
+    expect(screen.queryByText(/versatile working dog/i)).toBeNull();
+    expect(screen.queryByText(/Origin · Germany/i)).toBeNull();
+    for (const label of ["HP", "ATK", "DEF", "Mana"]) {
       expect(screen.getByText(label)).toBeTruthy();
     }
+    expect(screen.getByText(/Strike 2/)).toBeTruthy();
+    expect(screen.getByText(/Recharge \+3/)).toBeTruthy();
+    expect(screen.getByText(/Fearless Yap/)).toBeTruthy();
   });
 });

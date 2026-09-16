@@ -14,7 +14,7 @@ const identification: Identification = {
   common_name: "Frog",
   model_class_id: 31,
   model_label: "tree frog, tree-frog",
-  balance_version: 1,
+  balance_version: 2,
   confidence: 0.91,
   explanation: "Matched frog.",
   rarity: "Rare",

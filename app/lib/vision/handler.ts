@@ -96,7 +96,7 @@ function createIdentification(
     common_name: species.commonName,
     model_class_id: classification.classId,
     model_label: classification.label,
-    balance_version: 1,
+    balance_version: 2,
     confidence: classification.confidence,
     explanation: `ResNet-50 matched the ImageNet label "${classification.label}".`,
     rarity: species.rarity,

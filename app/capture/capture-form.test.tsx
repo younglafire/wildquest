@@ -8,7 +8,9 @@ import { CaptureForm } from "./capture-form";
 
 const getUserMedia = vi.fn();
 const stopTrack = vi.fn();
-const stream = { getTracks: () => [{ stop: stopTrack }] } as unknown as MediaStream;
+const stream = {
+  getTracks: () => [{ stop: stopTrack }],
+} as unknown as MediaStream;
 const canvasContext = {
   drawImage: vi.fn(),
   getImageData: vi.fn(() => ({
@@ -19,7 +21,9 @@ const canvasContext = {
 function setMobileDevice(isMobile: boolean) {
   Object.defineProperty(navigator, "userAgent", {
     configurable: true,
-    value: isMobile ? "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+    value: isMobile
+      ? "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"
+      : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
   });
   Object.defineProperty(navigator, "maxTouchPoints", {
     configurable: true,
@@ -79,17 +83,19 @@ describe("CaptureForm", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Capture is available on a phone",
+        name: "Hunt with your phone",
       }),
     ).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Start camera" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open camera" })).toBeNull();
   });
 
   it("opens the rear camera after an explicit phone action", async () => {
     const user = userEvent.setup();
     render(<CaptureForm />);
 
-    await user.click(await screen.findByRole("button", { name: "Start camera" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Open camera" }),
+    );
 
     await waitFor(() =>
       expect(screen.getByLabelText("Live rear camera preview")).toBeVisible(),
@@ -104,36 +110,12 @@ describe("CaptureForm", () => {
     });
   });
 
-  it("identifies an image selected from the library", async () => {
-    const user = userEvent.setup();
-    const onIdentify = vi.fn();
-    const file = new File([new Uint8Array([1, 2, 3])], "animal.jpg", {
-      type: "image/jpeg",
-    });
-    render(<CaptureForm onIdentify={onIdentify} />);
-
-    await user.upload(
-      await screen.findByLabelText("Choose from library"),
-      file,
-    );
-    expect(await screen.findByText("Frame ready to identify")).toBeVisible();
-
-    await user.click(screen.getByRole("button", { name: "Identify creature" }));
-    expect(onIdentify).toHaveBeenCalledWith(file);
-  });
-
-  it("allows image upload on desktop", async () => {
-    const user = userEvent.setup();
-    const onIdentify = vi.fn();
-    const file = new File([new Uint8Array([1, 2, 3])], "animal.png", {
-      type: "image/png",
-    });
+  it("does not offer a desktop or gallery upload path", async () => {
     setMobileDevice(false);
-    render(<CaptureForm onIdentify={onIdentify} />);
+    render(<CaptureForm />);
 
-    await user.upload(await screen.findByLabelText("Choose an image"), file);
-    await user.click(screen.getByRole("button", { name: "Identify creature" }));
-    expect(onIdentify).toHaveBeenCalledWith(file);
+    await screen.findByRole("heading", { name: "Hunt with your phone" });
+    expect(document.querySelector('input[type="file"]')).toBeNull();
   });
 
   it("explains a denied camera permission", async () => {
@@ -143,11 +125,38 @@ describe("CaptureForm", () => {
     );
     render(<CaptureForm />);
 
-    await user.click(await screen.findByRole("button", { name: "Start camera" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Open camera" }),
+    );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Camera permission was denied",
     );
+  });
+
+  it("shows an identification rejection above the retry action", async () => {
+    const user = userEvent.setup();
+    const onReset = vi.fn();
+    render(
+      <CaptureForm
+        identificationError="The animal was not clear enough to identify."
+        onReset={onReset}
+      />,
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: "Open camera" }),
+    );
+    await screen.findByLabelText("Live rear camera preview");
+    await user.click(screen.getByRole("button", { name: "Scan this animal" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The animal was not clear enough to identify.",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Scan another animal" }),
+    );
+    expect(onReset).toHaveBeenCalledOnce();
   });
 
   it("keeps the camera frame in memory until identification", async () => {
@@ -157,15 +166,14 @@ describe("CaptureForm", () => {
     const storageSpy = vi.spyOn(window.Storage.prototype, "setItem");
     render(<CaptureForm onIdentify={onIdentify} />);
 
-    await user.click(await screen.findByRole("button", { name: "Start camera" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Open camera" }),
+    );
     await screen.findByLabelText("Live rear camera preview");
     await user.click(screen.getByRole("button", { name: "Scan this animal" }));
 
-    expect(await screen.findByText("Frame ready to identify")).toBeVisible();
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(storageSpy).not.toHaveBeenCalled();
-
-    await user.click(screen.getByRole("button", { name: "Identify creature" }));
     expect(onIdentify).toHaveBeenCalledOnce();
     expect(onIdentify.mock.calls[0][0]).toBeInstanceOf(File);
     expect(stopTrack).toHaveBeenCalledOnce();
@@ -175,13 +183,15 @@ describe("CaptureForm", () => {
     const user = userEvent.setup();
     render(<CaptureForm />);
 
-    await user.click(await screen.findByRole("button", { name: "Start camera" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Open camera" }),
+    );
     await screen.findByLabelText("Live rear camera preview");
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Close scanner" }));
 
     expect(stopTrack).toHaveBeenCalledOnce();
     expect(
-      await screen.findByRole("button", { name: "Start camera" }),
+      await screen.findByRole("button", { name: "Open camera" }),
     ).toBeVisible();
   });
 });

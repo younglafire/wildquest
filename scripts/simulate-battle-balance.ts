@@ -22,14 +22,33 @@ async function loadCanonicalRoster() {
   }
   const ids = [...idsBlock.matchAll(/\d+/g)].map(([value]) => Number(value));
   const stats = [
-    ...statsBlock.matchAll(/\[(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\]/g),
-  ].map(([, hp, attack, defense, speed, shield]) => ({
-    hp: Number(hp),
-    attack: Number(attack),
-    defense: Number(defense),
-    speed: Number(speed),
-    shield: Number(shield),
-  }));
+    ...statsBlock.matchAll(
+      /\[(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\]/g,
+    ),
+  ].map(
+    ([
+      ,
+      hp,
+      attack,
+      defense,
+      maxMana,
+      strikeCost,
+      guardCost,
+      rechargeGain,
+      abilityId,
+      abilityCost,
+    ]) => ({
+      hp: Number(hp),
+      attack: Number(attack),
+      defense: Number(defense),
+      maxMana: Number(maxMana),
+      strikeCost: Number(strikeCost),
+      guardCost: Number(guardCost),
+      rechargeGain: Number(rechargeGain),
+      abilityId: Number(abilityId),
+      abilityCost: Number(abilityCost),
+    }),
+  );
   if (ids.length !== 40 || stats.length !== ids.length) {
     throw new Error(
       "Canonical battle roster must contain 40 complete entries.",

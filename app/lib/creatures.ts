@@ -13,8 +13,10 @@ import {
   getCreatureDiscriminatorBytes,
   getCreatureSize,
   getReleaseCreatureInstruction,
+  getUpgradeCreatureBalanceInstruction,
   WILDQUEST_PROGRAM_ADDRESS,
   type Creature,
+  type SpeciesConfig,
 } from "../generated/wildquest";
 import type { SolanaClient } from "./solana-client";
 
@@ -95,6 +97,26 @@ export function buildReleaseCreatureInstruction(
   }
   return getReleaseCreatureInstruction({
     owner: signer,
+    creature: creature.address,
+  });
+}
+
+export function buildUpgradeCreatureBalanceInstruction(
+  signer: TransactionSigner,
+  gameConfig: Address,
+  speciesConfig: Account<SpeciesConfig>,
+  creature: OwnedCreature,
+): Instruction {
+  if (creature.data.owner !== signer.address) {
+    throw new Error("Only the Creature owner can upgrade this card.");
+  }
+  if (creature.data.catalogueId !== speciesConfig.data.catalogueId) {
+    throw new Error("Creature and SpeciesConfig catalogue IDs do not match.");
+  }
+  return getUpgradeCreatureBalanceInstruction({
+    owner: signer,
+    gameConfig,
+    speciesConfig: speciesConfig.address,
     creature: creature.address,
   });
 }

@@ -2,6 +2,7 @@ import type { SpeciesConfig } from "../generated/wildquest";
 import type { BattleCreature } from "../lib/battle-creatures";
 import type { CatalogueSpecies } from "../lib/catalogue-client";
 import { SpeciesArt } from "./species-art";
+import { creatureAbility } from "../lib/creature-abilities";
 
 type Props = {
   creature: BattleCreature;
@@ -16,7 +17,16 @@ type PreviewProps = Omit<Props, "creature"> & {
   species: CatalogueSpecies;
   stats: Pick<
     SpeciesConfig,
-    "catalogueId" | "hp" | "attack" | "defense" | "speed" | "shield"
+    | "catalogueId"
+    | "hp"
+    | "attack"
+    | "defense"
+    | "maxMana"
+    | "strikeCost"
+    | "guardCost"
+    | "rechargeGain"
+    | "abilityId"
+    | "abilityCost"
   >;
 };
 
@@ -31,22 +41,24 @@ export function CreatureCard(props: Props | PreviewProps) {
       ? props.creature.config.data
       : props.stats;
   const name = species?.name ?? `Creature #${config.catalogueId}`;
+  const imageSrc =
+    species?.imageUrl ?? species?.iconUrl ?? "/creatures/bee.svg";
+  const isVectorIcon =
+    typeof imageSrc === "string" && imageSrc.endsWith(".svg");
   const stats = [
-    ["HP",      config.hp],
-    ["Damage",  config.attack],
-    ["Defense", config.defense],
-    ["Speed",   config.speed],
-    ["Shield",  config.shield],
+    ["HP", config.hp],
+    ["ATK", config.attack],
+    ["DEF", config.defense],
+    ["Mana", config.maxMana],
   ] as const;
+  const ability = creatureAbility(config.abilityId);
 
   return (
     <article
       className={`overflow-hidden rounded-xl text-left transition-all ${disabled ? "opacity-40 grayscale" : ""} ${className}`}
       style={{
         background: "#1c1810",
-        border: selected
-          ? "1px solid #c8a96e"
-          : "1px solid #3a2e1e",
+        border: selected ? "1px solid #c8a96e" : "1px solid #3a2e1e",
         boxShadow: selected
           ? "0 0 0 2px rgba(200,169,110,0.2), 0 4px 20px rgba(200,169,110,0.15)"
           : "0 2px 12px rgba(0,0,0,0.4)",
@@ -59,9 +71,9 @@ export function CreatureCard(props: Props | PreviewProps) {
         style={{ background: "#221d14" }}
       >
         <SpeciesArt
-          src={species?.iconUrl ?? species?.imageUrl}
+          src={imageSrc}
           alt={name}
-          className="object-contain p-3"
+          className={isVectorIcon ? "object-contain p-3" : "object-cover"}
         />
         {/* Role badge — wax pill */}
         <span
@@ -79,7 +91,11 @@ export function CreatureCard(props: Props | PreviewProps) {
         {/* Gold shimmer accent top border */}
         <div
           className="absolute inset-x-0 top-0 h-[1px]"
-          style={{ background: selected ? "linear-gradient(90deg, transparent, #c8a96e, transparent)" : "linear-gradient(90deg, transparent, rgba(200,169,110,0.2), transparent)" }}
+          style={{
+            background: selected
+              ? "linear-gradient(90deg, transparent, #c8a96e, transparent)"
+              : "linear-gradient(90deg, transparent, rgba(200,169,110,0.2), transparent)",
+          }}
         />
       </div>
 
@@ -91,18 +107,8 @@ export function CreatureCard(props: Props | PreviewProps) {
         >
           {name}
         </h3>
-        {!compact && (
-          <p
-            className="mt-1 line-clamp-2 min-h-10 text-xs leading-relaxed"
-            style={{ color: "#8a7a62" }}
-          >
-            {species?.cardSummary ??
-              "A field-discovered creature ready for deterministic battle."}
-          </p>
-        )}
-
         {/* Stats grid — JetBrains Mono */}
-        <dl className="mt-3 grid grid-cols-5 gap-1">
+        <dl className="mt-3 grid grid-cols-4 gap-1">
           {stats.map(([label, value]) => (
             <div
               key={label}
@@ -125,13 +131,20 @@ export function CreatureCard(props: Props | PreviewProps) {
           ))}
         </dl>
 
-        {!compact && species?.originRegion && (
-          <p
-            className="mt-3 text-[9px] font-semibold uppercase tracking-wider"
-            style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
-          >
-            Origin · {species.originRegion}
-          </p>
+        {!compact && (
+          <div className="mt-2 rounded-lg bg-[#100e09] p-2 text-[10px] text-[#c8a96e]">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 font-bold">
+              <span>Strike {config.strikeCost}</span>
+              <span>Guard {config.guardCost}</span>
+              <span>Recharge +{config.rechargeGain}</span>
+            </div>
+            <p className="mt-1 text-[#f0e8d4]">
+              <strong>
+                {ability.name} · {config.abilityCost}
+              </strong>{" "}
+              — {ability.summary}
+            </p>
+          </div>
         )}
       </div>
     </article>

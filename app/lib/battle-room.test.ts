@@ -1,13 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import { BattleRoom } from "./battle-room";
+import { BattleRoom, WAITING_FOR_OPPONENT_TIMEOUT_MS } from "./battle-room";
 import type { BattleStats } from "./battle-engine";
 
 const stats: BattleStats = {
   hp: 100,
   attack: 60,
   defense: 50,
-  speed: 50,
-  shield: 25,
+  maxMana: 5,
+  strikeCost: 2,
+  guardCost: 1,
+  rechargeGain: 3,
+  abilityId: 1,
+  abilityCost: 3,
 };
 const team = [stats, stats, stats];
 
@@ -22,6 +26,21 @@ describe("BattleRoom", () => {
     const snapshot = room.connect("opponent", 1_200);
     expect(snapshot.phase).toBe("choosing");
     expect(snapshot.deadline).toBe(6_200);
+  });
+
+  it("cancels as a draw when the opponent does not connect in time", () => {
+    const finish = vi.fn();
+    const room = new BattleRoom(
+      { matchAddress: "match", creatorStats: team, opponentStats: team },
+      finish,
+    );
+
+    room.connect("creator", 1_000);
+    const snapshot = room.tick(1_000 + WAITING_FOR_OPPONENT_TIMEOUT_MS);
+
+    expect(snapshot.phase).toBe("finished");
+    expect(snapshot.battle.outcome).toBe("tie");
+    expect(finish).toHaveBeenCalledOnce();
   });
 
   it("keeps the first choice hidden and resolves after the second", () => {

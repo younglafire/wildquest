@@ -25,3 +25,4 @@ export * from "./openMatch";
 export * from "./refundStaleMatch";
 export * from "./releaseCreature";
 export * from "./resolveMatch";
+export * from "./upgradeCreatureBalance";

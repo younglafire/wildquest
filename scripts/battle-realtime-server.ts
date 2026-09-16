@@ -47,7 +47,7 @@ const inputSchema = z.discriminatedUnion("type", [
     .object({
       type: z.literal("choose"),
       turn: z.number().int().positive(),
-      action: z.enum(["strike", "guard", "recharge"]),
+      action: z.enum(["strike", "guard", "ability", "recharge"]),
     })
     .strict(),
 ]);
@@ -171,8 +171,12 @@ async function main() {
         hp: data.hp,
         attack: data.attack,
         defense: data.defense,
-        speed: data.speed,
-        shield: data.shield,
+        maxMana: data.maxMana,
+        strikeCost: data.strikeCost,
+        guardCost: data.guardCost,
+        rechargeGain: data.rechargeGain,
+        abilityId: data.abilityId,
+        abilityCost: data.abilityCost,
       }));
       const session = {} as RoomSession;
       session.sockets = new Set();
@@ -191,6 +195,8 @@ async function main() {
             outcome,
             turnCount,
             events,
+            match.data.rulesVersion,
+            match.data.balanceVersion,
           );
           const resultHash = new Uint8Array(
             createHash("sha256").update(payload).digest(),

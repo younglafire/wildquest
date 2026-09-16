@@ -12,6 +12,8 @@ import {
   type TurnEvent,
 } from "./simultaneous-battle";
 
+export const WAITING_FOR_OPPONENT_TIMEOUT_MS = 20_000;
+
 export type BattleRoomPhase = "waiting" | "choosing" | "resolving" | "finished";
 
 export type BattleRoomSnapshot = {
@@ -51,6 +53,7 @@ export class BattleRoom {
   #events: Array<TurnEvent> = [];
   #sequence = 0;
   #phase: BattleRoomPhase = "waiting";
+  #connectionDeadline: number | null = null;
   #turnStartsAt: number | null = null;
   #deadline: number | null = null;
   #connected: Record<BattleSide, boolean> = {
@@ -77,6 +80,10 @@ export class BattleRoom {
   }
 
   connect(side: BattleSide, now = Date.now()) {
+    const wasWaitingForOpponent =
+      this.#phase === "waiting" &&
+      !this.#connected.creator &&
+      !this.#connected.opponent;
     this.#connected[side] = true;
     this.#sequence += 1;
     if (
@@ -84,7 +91,10 @@ export class BattleRoom {
       this.#connected.creator &&
       this.#connected.opponent
     ) {
+      this.#connectionDeadline = null;
       this.#startTurn(now);
+    } else if (wasWaitingForOpponent) {
+      this.#connectionDeadline = now + WAITING_FOR_OPPONENT_TIMEOUT_MS;
     }
     return this.snapshot();
   }
@@ -161,6 +171,13 @@ export class BattleRoom {
 
   #advanceClock(now: number) {
     if (
+      this.#phase === "waiting" &&
+      this.#connectionDeadline !== null &&
+      now >= this.#connectionDeadline
+    ) {
+      this.#cancelWaitingMatch(now);
+    }
+    if (
       this.#phase === "resolving" &&
       this.#turnStartsAt !== null &&
       now >= this.#turnStartsAt
@@ -174,6 +191,16 @@ export class BattleRoom {
     ) {
       this.#resolve(this.#deadline);
     }
+  }
+
+  #cancelWaitingMatch(now: number) {
+    this.#battle = { ...this.#battle, status: "finished", outcome: "tie" };
+    this.#connectionDeadline = null;
+    this.#phase = "finished";
+    this.#turnStartsAt = null;
+    this.#deadline = null;
+    this.#sequence += 1;
+    this.#notifyFinish(now);
   }
 
   #startTurn(now: number) {
@@ -281,6 +308,15 @@ export function serializeBattleResult(
   outcome: BattleOutcome,
   turnCount: number,
   events: ReadonlyArray<TurnEvent>,
+  rulesVersion?: number,
+  balanceVersion?: number,
 ) {
-  return JSON.stringify({ matchAddress, outcome, turnCount, events });
+  return JSON.stringify({
+    matchAddress,
+    outcome,
+    turnCount,
+    rulesVersion,
+    balanceVersion,
+    events,
+  });
 }
