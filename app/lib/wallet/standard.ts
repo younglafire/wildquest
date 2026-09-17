@@ -60,16 +60,28 @@ function createConnector(wallet: StandardWallet): WalletConnector {
       const session: WalletSession = {
         account: walletAccount,
         connector: metadata,
-        signMessage: SolanaSignMessage in wallet.features
-          ? async (message) => {
-              const feature = wallet.features[SolanaSignMessage] as SolanaSignMessageFeature[typeof SolanaSignMessage];
-              const [result] = await feature.signMessage({ account, message });
-              if (!result || result.signedMessage.length !== message.length || result.signedMessage.some((byte, index) => byte !== message[index])) {
-                throw new Error("The wallet signed a different message.");
+        signMessage:
+          SolanaSignMessage in wallet.features
+            ? async (message) => {
+                const feature = wallet.features[
+                  SolanaSignMessage
+                ] as SolanaSignMessageFeature[typeof SolanaSignMessage];
+                const [result] = await feature.signMessage({
+                  account,
+                  message,
+                });
+                if (
+                  !result ||
+                  result.signedMessage.length !== message.length ||
+                  result.signedMessage.some(
+                    (byte, index) => byte !== message[index],
+                  )
+                ) {
+                  throw new Error("The wallet signed a different message.");
+                }
+                return new Uint8Array(result.signature);
               }
-              return new Uint8Array(result.signature);
-            }
-          : undefined,
+            : undefined,
         disconnect: async () => {
           if (StandardDisconnect in wallet.features) {
             const feature = wallet.features[

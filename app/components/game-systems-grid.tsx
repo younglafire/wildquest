@@ -35,9 +35,9 @@ const SYSTEMS = [
   },
   {
     code: "04 // ONCHAIN LEDGER",
-    title: "Solana Discovery PDA",
+    title: "Solana Creature PDA",
     description:
-      "Every capture creates a permanent Discovery account on Solana Devnet. Program rules guarantee tamper-proof proof-of-find.",
+      "Every confirmed capture creates one Creature account for that wallet and catalogue species on Solana Devnet.",
     icon: "⚡",
     badge: "ANCHOR 0.31 PDA",
     accent: "hover:border-purple-500/50 hover:shadow-purple-500/10",
@@ -45,19 +45,19 @@ const SYSTEMS = [
   },
   {
     code: "05 // QUALITY ENGINE",
-    title: "Tiered Laplacian Grading",
+    title: "Battle-Ready Capture",
     description:
-      "Laplacian variance evaluates focus sharpness while center luminosity ensures crisp framing, automatically grading Bronze, Silver, or Gold XP.",
+      "A confirmed capture adds the animal to Collection with its current HP, Attack, Defense, Mana, actions, and ability.",
     icon: "🥇",
-    badge: "XP MULTIPLIER",
+    badge: "CREATURE STATS",
     accent: "hover:border-amber-500/50 hover:shadow-amber-500/10",
     badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   },
   {
     code: "06 // BOUNTY MISSIONS",
-    title: "Seasonal Field Quests",
+    title: "Incremental Field Quests",
     description:
-      "Discover all 5 designated target species within your survey expedition to unlock rare Founder Badges and level up your Explorer Passport.",
+      "Start with one capture, build a trio, find a butterfly and a rare animal, then attend your first battle. Each claim awards XP.",
     icon: "🏆",
     badge: "CAMPAIGN BOUNTY",
     accent: "hover:border-amber-500/50 hover:shadow-amber-500/10",

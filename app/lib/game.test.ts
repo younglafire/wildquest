@@ -1,12 +1,19 @@
-import { address, lamports } from "@solana/kit";
+import { address, lamports, type Account } from "@solana/kit";
 import { describe, expect, it } from "vitest";
-import { WILDQUEST_PROGRAM_ADDRESS } from "../generated/wildquest";
+import {
+  WILDQUEST_PROGRAM_ADDRESS,
+  type Creature,
+  type Quest,
+} from "../generated/wildquest";
 import type { CatalogueSpecies } from "./catalogue-client";
 import type { CollectionCard, PlayerDiscovery } from "./collection";
 import {
   calculatePlayerProgress,
+  calculateQuestProgress,
   getQuestTargets,
   getUniqueDiscoveryCount,
+  QUEST_OBJECTIVE_CAPTURE_ANY,
+  QUEST_OBJECTIVE_CAPTURE_COUNT,
 } from "./game";
 
 const player = address("11111111111111111111111111111111");
@@ -57,6 +64,53 @@ function discovery(speciesId: bigint): PlayerDiscovery {
   };
 }
 
+function creature(catalogueId: bigint): Account<Creature> {
+  return {
+    address: player,
+    executable: false,
+    lamports: lamports(1n),
+    programAddress: WILDQUEST_PROGRAM_ADDRESS,
+    space: 91n,
+    data: {
+      discriminator: new Uint8Array(8),
+      owner: player,
+      catalogueId,
+      proofHash: new Uint8Array(32),
+      capturedAt: 1n,
+      balanceVersion: 2,
+      bump: 1,
+    },
+  };
+}
+
+function quest(
+  objective: number,
+  requiredCount: number,
+  targets: bigint[] = [],
+): Account<Quest> {
+  const questId =
+    objective === QUEST_OBJECTIVE_CAPTURE_COUNT
+      ? 2n
+      : objective === QUEST_OBJECTIVE_CAPTURE_ANY
+        ? 3n
+        : 5n;
+  return {
+    address: player,
+    executable: false,
+    lamports: lamports(1n),
+    programAddress: WILDQUEST_PROGRAM_ADDRESS,
+    space: 67n,
+    data: {
+      discriminator: new Uint8Array(8),
+      questId,
+      speciesCount: requiredCount,
+      targets,
+      rewardXp: 25n,
+      bump: 1,
+    },
+  };
+}
+
 describe("game progress", () => {
   it("derives level progress from cumulative XP", () => {
     expect(calculatePlayerProgress(0n)).toEqual({
@@ -85,5 +139,25 @@ describe("game progress", () => {
     const targets = getQuestTargets([8n, 3n], cards);
     expect(targets.map((target) => target.species.id)).toEqual([8, 3]);
     expect(targets.map((target) => target.complete)).toEqual([false, true]);
+  });
+
+  it("derives capture-count and target quest progress from owned Creatures", () => {
+    const creatures = [creature(1001n), creature(1031n)];
+    expect(
+      calculateQuestProgress(
+        quest(QUEST_OBJECTIVE_CAPTURE_COUNT, 3),
+        creatures,
+        [],
+        player,
+      ),
+    ).toMatchObject({ current: 2, target: 3, percentage: 67, complete: false });
+    expect(
+      calculateQuestProgress(
+        quest(QUEST_OBJECTIVE_CAPTURE_ANY, 1, [1031n, 1032n]),
+        creatures,
+        [],
+        player,
+      ),
+    ).toMatchObject({ current: 1, target: 1, percentage: 100, complete: true });
   });
 });

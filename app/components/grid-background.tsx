@@ -43,9 +43,9 @@ export function GridBackground() {
     const colors = [
       { r: 200, g: 169, b: 110, glow: "rgba(224, 197, 138, 0.9)" }, // aged gold
       { r: 224, g: 197, b: 138, glow: "rgba(200, 169, 110, 0.9)" }, // gold light
-      { r: 160, g: 125, b: 72,  glow: "rgba(200, 169, 110, 0.8)" }, // gold dim
-      { r: 74,  g: 124, b: 89,  glow: "rgba(106, 171, 122, 0.85)" }, // forest deep
-      { r: 106, g: 171, b: 122, glow: "rgba(74, 124, 89, 0.85)" },  // forest light
+      { r: 160, g: 125, b: 72, glow: "rgba(200, 169, 110, 0.8)" }, // gold dim
+      { r: 74, g: 124, b: 89, glow: "rgba(106, 171, 122, 0.85)" }, // forest deep
+      { r: 106, g: 171, b: 122, glow: "rgba(74, 124, 89, 0.85)" }, // forest light
       { r: 240, g: 220, b: 180, glow: "rgba(240, 232, 212, 0.7)" }, // parchment cream
     ];
 

@@ -45,7 +45,8 @@ export function StartExpeditionButton() {
         onClick={start}
         className="group relative inline-flex min-h-14 items-center justify-center overflow-hidden rounded-xl px-8 py-4 text-base font-black tracking-wide shadow-[0_12px_35px_-10px_rgba(200,169,110,0.4)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-10px_rgba(200,169,110,0.6)] active:translate-y-0.5"
         style={{
-          background: "linear-gradient(135deg, #c8a96e 0%, #a07d48 50%, #c8a96e 100%)",
+          background:
+            "linear-gradient(135deg, #c8a96e 0%, #a07d48 50%, #c8a96e 100%)",
           color: "#100e09",
           border: "1px solid rgba(200,169,110,0.6)",
           fontFamily: "var(--font-display)",
