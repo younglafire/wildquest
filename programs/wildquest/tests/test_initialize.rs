@@ -294,26 +294,6 @@ fn complete_quest_instruction(
     (instruction, quest_completion)
 }
 
-fn create_discoveries(
-    svm: &mut LiteSVM,
-    payer: &Keypair,
-    player: Pubkey,
-    species_ids: &[u64],
-) -> Vec<Pubkey> {
-    species_ids
-        .iter()
-        .enumerate()
-        .map(|(index, species_id)| {
-            let mut proof_hash = [0u8; 32];
-            proof_hash[0] = u8::try_from(index).unwrap().checked_add(20).unwrap();
-            let (instruction, discovery) =
-                discovery_instruction(payer, player, *species_id, 1, 0, proof_hash);
-            assert!(send_instruction(svm, payer, instruction));
-            discovery
-        })
-        .collect()
-}
-
 fn write_player(svm: &mut LiteSVM, player: Pubkey, state: &wildquest::state::Player) {
     let mut account = svm.get_account(&player).unwrap();
     let mut data = Vec::with_capacity(account.data.len());
@@ -817,40 +797,24 @@ fn test_discover_species_rolls_back_progression_overflow() {
 }
 
 #[test]
-fn test_initialize_demo_quest() {
+fn test_initialize_incremental_quests() {
     let payer = Keypair::new();
     let mut svm = create_test_svm();
     svm.airdrop(&payer.pubkey(), 1_000_000_000).unwrap();
-    let balance_before = svm.get_balance(&payer.pubkey()).unwrap();
 
-    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
-    let quest_state = read_quest(&svm, &quest);
+    for quest_id in wildquest::constants::QUEST_IDS {
+        let quest = initialize_quest(&mut svm, &payer, quest_id);
+        let quest_state = read_quest(&svm, &quest);
+        let definition = wildquest::constants::quest_definition(quest_id).unwrap();
+        assert_eq!(quest_state.quest_id, quest_id);
+        assert_eq!(quest_state.species_count, definition.required_count);
+        assert_eq!(quest_state.targets, definition.targets);
+        assert_eq!(quest_state.reward_xp, definition.reward_xp);
+    }
 
-    assert_eq!(quest_state.quest_id, wildquest::constants::DEMO_QUEST_ID);
-    assert_eq!(
-        usize::from(quest_state.species_count),
-        wildquest::constants::DEMO_QUEST_TARGETS.len()
-    );
-    assert_eq!(
-        quest_state.targets,
-        wildquest::constants::DEMO_QUEST_TARGETS
-    );
-    assert_eq!(
-        quest_state.reward_xp,
-        wildquest::constants::DEMO_QUEST_REWARD_XP
-    );
-    assert_eq!(
-        quest_state.bump,
-        Pubkey::find_program_address(
-            &[
-                wildquest::constants::QUEST_SEED,
-                wildquest::constants::DEMO_QUEST_ID.to_le_bytes().as_ref(),
-            ],
-            &wildquest::id(),
-        )
-        .1
-    );
-    assert!(svm.get_balance(&payer.pubkey()).unwrap() < balance_before);
+    svm.expire_blockhash();
+    let existing_quest = initialize_quest(&mut svm, &payer, 1);
+    assert_eq!(read_quest(&svm, &existing_quest).species_count, 1);
 }
 
 #[test]
@@ -879,154 +843,220 @@ fn test_initialize_quest_rejects_unknown_definition() {
 }
 
 #[test]
-fn test_complete_quest_awards_xp_level_and_badge_once() {
-    let payer = Keypair::new();
+fn test_complete_quests_in_order_awards_only_xp() {
+    let admin = Keypair::new();
+    let player_wallet = Keypair::new();
+    let opponent = Keypair::new();
+    let capture_authority = Keypair::new();
     let mut svm = create_test_svm();
-    svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
-    let player = initialize_player(&mut svm, &payer);
-    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
-    let discoveries = create_discoveries(
+    for wallet in [&admin, &player_wallet, &opponent] {
+        svm.airdrop(&wallet.pubkey(), 3_000_000_000).unwrap();
+    }
+    let player = initialize_player(&mut svm, &player_wallet);
+    let quests = wildquest::constants::QUEST_IDS
+        .map(|quest_id| initialize_quest(&mut svm, &admin, quest_id));
+    let game_config = initialize_game_config(&mut svm, &admin, capture_authority.pubkey());
+
+    let catalogue_ids = [1001, 1002, 1003, 1004, 1005, 1006, 1031, 1011];
+    let species_configs = catalogue_ids
+        .map(|catalogue_id| initialize_species_config(&mut svm, &admin, game_config, catalogue_id));
+    let player_creatures: [Pubkey; 5] = [0, 1, 2, 6, 7].map(|index| {
+        capture_creature(
+            &mut svm,
+            &player_wallet,
+            &capture_authority,
+            game_config,
+            species_configs[index],
+            catalogue_ids[index],
+            u8::try_from(index).unwrap() + 40,
+        )
+    });
+    let opponent_creatures: [Pubkey; 3] = [3, 4, 5].map(|index| {
+        capture_creature(
+            &mut svm,
+            &opponent,
+            &capture_authority,
+            game_config,
+            species_configs[index],
+            catalogue_ids[index],
+            u8::try_from(index).unwrap() + 60,
+        )
+    });
+
+    let (foreign_creature_instruction, completion_one) = complete_quest_instruction(
+        &player_wallet,
+        player,
+        quests[0],
+        1,
+        &opponent_creatures[..1],
+    );
+    assert!(!send_instruction(
         &mut svm,
-        &payer,
-        player,
-        &wildquest::constants::DEMO_QUEST_TARGETS,
-    );
-    let balance_before = svm.get_balance(&payer.pubkey()).unwrap();
-    let expected_timestamp = svm
-        .get_sysvar::<anchor_lang::prelude::Clock>()
-        .unix_timestamp;
+        &player_wallet,
+        foreign_creature_instruction
+    ));
+    assert!(svm.get_account(&completion_one).is_none());
 
-    let (instruction, quest_completion) = complete_quest_instruction(
-        &payer,
-        player,
-        quest,
-        wildquest::constants::DEMO_QUEST_ID,
-        &discoveries,
-    );
-    assert!(send_instruction(&mut svm, &payer, instruction));
-
-    let player_state = read_player(&svm, &player);
-    assert_eq!(player_state.xp, 350);
-    assert_eq!(player_state.level, 4);
-    assert_eq!(player_state.discovery_count, 5);
-    assert_eq!(player_state.badge_count, 1);
-
-    let completion_account = svm.get_account(&quest_completion).unwrap();
-    let mut data: &[u8] = &completion_account.data;
-    let completion = wildquest::state::QuestCompletion::try_deserialize(&mut data).unwrap();
-    assert_eq!(completion.quest, quest);
-    assert_eq!(completion.player, payer.pubkey());
-    assert_eq!(
-        completion.reward_xp,
-        wildquest::constants::DEMO_QUEST_REWARD_XP
-    );
-    assert_eq!(completion.completed_at, expected_timestamp);
-    assert!(svm.get_balance(&payer.pubkey()).unwrap() < balance_before);
-
-    let (duplicate_instruction, _) = complete_quest_instruction(
-        &payer,
-        player,
-        quest,
-        wildquest::constants::DEMO_QUEST_ID,
-        &discoveries,
-    );
-    assert!(!send_instruction(&mut svm, &payer, duplicate_instruction));
-    let unchanged_player = read_player(&svm, &player);
-    assert_eq!(unchanged_player.xp, 350);
-    assert_eq!(unchanged_player.badge_count, 1);
-}
-
-#[test]
-fn test_complete_quest_rejects_missing_or_wrong_targets() {
-    let payer = Keypair::new();
-    let mut svm = create_test_svm();
-    svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
-    let player = initialize_player(&mut svm, &payer);
-    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
-    let wrong_species = [3, 5, 8, 9, 12];
-    let discoveries = create_discoveries(&mut svm, &payer, player, &wrong_species);
-
-    let (short_instruction, completion) = complete_quest_instruction(
-        &payer,
-        player,
-        quest,
-        wildquest::constants::DEMO_QUEST_ID,
-        &discoveries[..4],
-    );
-    assert!(!send_instruction(&mut svm, &payer, short_instruction));
-    assert!(svm.get_account(&completion).is_none());
-
-    let (wrong_instruction, completion) = complete_quest_instruction(
-        &payer,
-        player,
-        quest,
-        wildquest::constants::DEMO_QUEST_ID,
-        &discoveries,
-    );
-    assert!(!send_instruction(&mut svm, &payer, wrong_instruction));
-    assert!(svm.get_account(&completion).is_none());
-    let player_state = read_player(&svm, &player);
-    assert_eq!(player_state.xp, 250);
-    assert_eq!(player_state.badge_count, 0);
-}
-
-#[test]
-fn test_complete_quest_rejects_another_players_discovery() {
-    let payer = Keypair::new();
-    let other_payer = Keypair::new();
-    let mut svm = create_test_svm();
-    svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
-    svm.airdrop(&other_payer.pubkey(), 1_000_000_000).unwrap();
-    let player = initialize_player(&mut svm, &payer);
-    let other_player = initialize_player(&mut svm, &other_payer);
-    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
-    let mut discoveries = create_discoveries(
+    let (quest_one_instruction, completion_one) =
+        complete_quest_instruction(&player_wallet, player, quests[0], 1, &player_creatures[..1]);
+    assert!(send_instruction(
         &mut svm,
-        &payer,
-        player,
-        &wildquest::constants::DEMO_QUEST_TARGETS,
-    );
-    let other_discovery = create_discoveries(&mut svm, &other_payer, other_player, &[11])[0];
-    discoveries[4] = other_discovery;
+        &player_wallet,
+        quest_one_instruction
+    ));
 
-    let (instruction, completion) = complete_quest_instruction(
-        &payer,
+    let (skipped_prerequisite, completion_two) =
+        complete_quest_instruction(&player_wallet, player, quests[1], 2, &player_creatures[..3]);
+    assert!(!send_instruction(
+        &mut svm,
+        &player_wallet,
+        skipped_prerequisite
+    ));
+    assert!(svm.get_account(&completion_two).is_none());
+
+    let quest_two_evidence = [
+        completion_one,
+        player_creatures[0],
+        player_creatures[1],
+        player_creatures[2],
+    ];
+    let (quest_two_instruction, completion_two) =
+        complete_quest_instruction(&player_wallet, player, quests[1], 2, &quest_two_evidence);
+    assert!(send_instruction(
+        &mut svm,
+        &player_wallet,
+        quest_two_instruction
+    ));
+
+    let wrong_butterfly_evidence = [completion_two, player_creatures[0]];
+    let (wrong_butterfly_instruction, completion_three) = complete_quest_instruction(
+        &player_wallet,
         player,
-        quest,
-        wildquest::constants::DEMO_QUEST_ID,
-        &discoveries,
+        quests[2],
+        3,
+        &wrong_butterfly_evidence,
     );
-    assert!(!send_instruction(&mut svm, &payer, instruction));
-    assert!(svm.get_account(&completion).is_none());
+    assert!(!send_instruction(
+        &mut svm,
+        &player_wallet,
+        wrong_butterfly_instruction
+    ));
+    assert!(svm.get_account(&completion_three).is_none());
+
+    let quest_three_evidence = [completion_two, player_creatures[3]];
+    let (quest_three_instruction, completion_three) =
+        complete_quest_instruction(&player_wallet, player, quests[2], 3, &quest_three_evidence);
+    assert!(send_instruction(
+        &mut svm,
+        &player_wallet,
+        quest_three_instruction
+    ));
+
+    let quest_four_evidence = [completion_three, player_creatures[4]];
+    let (quest_four_instruction, completion_four) =
+        complete_quest_instruction(&player_wallet, player, quests[3], 4, &quest_four_evidence);
+    assert!(send_instruction(
+        &mut svm,
+        &player_wallet,
+        quest_four_instruction
+    ));
+
+    let (open_instruction, match_account) = open_match_instruction(
+        player_wallet.pubkey(),
+        game_config,
+        77,
+        [
+            player_creatures[0],
+            player_creatures[1],
+            player_creatures[2],
+        ],
+    );
+    assert!(send_instruction(&mut svm, &player_wallet, open_instruction));
+
+    let open_match_evidence = [completion_four, match_account];
+    let (open_match_quest_instruction, completion_five) =
+        complete_quest_instruction(&player_wallet, player, quests[4], 5, &open_match_evidence);
+    assert!(!send_instruction(
+        &mut svm,
+        &player_wallet,
+        open_match_quest_instruction
+    ));
+    assert!(svm.get_account(&completion_five).is_none());
+    svm.expire_blockhash();
+
+    let join_instruction = join_match_instruction(
+        opponent.pubkey(),
+        player_wallet.pubkey(),
+        game_config,
+        match_account,
+        [
+            player_creatures[0],
+            player_creatures[1],
+            player_creatures[2],
+        ],
+        opponent_creatures,
+        [species_configs[0], species_configs[1], species_configs[2]],
+        [species_configs[3], species_configs[4], species_configs[5]],
+    );
+    assert!(send_instruction(&mut svm, &opponent, join_instruction));
+
+    let quest_five_evidence = [completion_four, match_account];
+    let (quest_five_instruction, completion_five) =
+        complete_quest_instruction(&player_wallet, player, quests[4], 5, &quest_five_evidence);
+    assert!(send_instruction(
+        &mut svm,
+        &player_wallet,
+        quest_five_instruction
+    ));
+
     let player_state = read_player(&svm, &player);
-    assert_eq!(player_state.xp, 250);
+    assert_eq!(player_state.xp, 400);
+    assert_eq!(player_state.level, 5);
+    assert_eq!(player_state.discovery_count, 0);
     assert_eq!(player_state.badge_count, 0);
+
+    let completion_account = svm.get_account(&completion_five).unwrap();
+    let mut completion_data: &[u8] = &completion_account.data;
+    let completion =
+        wildquest::state::QuestCompletion::try_deserialize(&mut completion_data).unwrap();
+    assert_eq!(completion.reward_xp, 150);
+
+    let (duplicate_instruction, _) =
+        complete_quest_instruction(&player_wallet, player, quests[4], 5, &quest_five_evidence);
+    assert!(!send_instruction(
+        &mut svm,
+        &player_wallet,
+        duplicate_instruction
+    ));
+    assert_eq!(read_player(&svm, &player).xp, 400);
 }
 
 #[test]
 fn test_complete_quest_rolls_back_progression_overflow() {
     let payer = Keypair::new();
+    let capture_authority = Keypair::new();
     let mut svm = create_test_svm();
     svm.airdrop(&payer.pubkey(), 2_000_000_000).unwrap();
     let player = initialize_player(&mut svm, &payer);
-    let quest = initialize_quest(&mut svm, &payer, wildquest::constants::DEMO_QUEST_ID);
-    let discoveries = create_discoveries(
+    let quest = initialize_quest(&mut svm, &payer, 1);
+    let game_config = initialize_game_config(&mut svm, &payer, capture_authority.pubkey());
+    let catalogue_id = wildquest::constants::BATTLE_CATALOGUE_IDS[0];
+    let species_config = initialize_species_config(&mut svm, &payer, game_config, catalogue_id);
+    let creature = capture_creature(
         &mut svm,
         &payer,
-        player,
-        &wildquest::constants::DEMO_QUEST_TARGETS,
+        &capture_authority,
+        game_config,
+        species_config,
+        catalogue_id,
+        90,
     );
     let mut player_state = read_player(&svm, &player);
     player_state.xp = u64::MAX;
     write_player(&mut svm, player, &player_state);
 
-    let (instruction, completion) = complete_quest_instruction(
-        &payer,
-        player,
-        quest,
-        wildquest::constants::DEMO_QUEST_ID,
-        &discoveries,
-    );
+    let (instruction, completion) =
+        complete_quest_instruction(&payer, player, quest, 1, &[creature]);
     assert!(!send_instruction(&mut svm, &payer, instruction));
     assert!(svm.get_account(&completion).is_none());
     let unchanged_player = read_player(&svm, &player);

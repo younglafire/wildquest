@@ -24,59 +24,72 @@ export default function Home() {
           {/* Hero Section: Centered Cinematic Layout */}
           <section className="flex flex-col items-center text-center space-y-4 sm:space-y-5">
             {/* Top Badge & Titles */}
-          <div className="space-y-3 max-w-3xl mx-auto">
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em]"
-              style={{ background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", color: "#c8a96e" }}
-            >
-              <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#c8a96e" }} />
-              WildQuest · Season 01 // Solana Devnet
-            </div>
-
-            <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/creatures/logo.png"
-                alt="WildQuest"
-                className="h-auto w-full max-w-[340px] sm:max-w-[500px] md:max-w-[640px] lg:max-w-[780px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
-              />
-              <h1 className="mt-3 text-center text-lg font-black tracking-tight sm:text-2xl lg:text-3xl" style={{ color: "#f0e8d4", fontFamily: "var(--font-display)" }}>
-                The Real-World Wildlife RPG on Solana
-              </h1>
-            </div>
-
-            <p
-              className="mx-auto max-w-xl text-xs leading-relaxed sm:text-sm"
-              style={{ color: "#8a7a62" }}
-            >
-              Step outside, hunt real animals with your phone camera, and
-              prove your finds with on-device AI vision.
-            </p>
-
-            {/* Feature Tags — leather bordered */}
-            <div className="flex flex-wrap justify-center gap-1.5 pt-1">
-              {[
-                "🐾 8 Species",
-                "⚡ ResNet-50 Vision",
-                "🛡️ Anti-Cheat pHash",
-                "🏆 Onchain Quests",
-              ].map((tag) => (
+            <div className="space-y-3 max-w-3xl mx-auto">
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em]"
+                style={{
+                  background: "rgba(200,169,110,0.1)",
+                  border: "1px solid rgba(200,169,110,0.25)",
+                  color: "#c8a96e",
+                }}
+              >
                 <span
-                  key={tag}
-                  className="rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                  className="h-2 w-2 rounded-full animate-pulse"
+                  style={{ background: "#c8a96e" }}
+                />
+                WildQuest · Season 01 // Solana Devnet
+              </div>
+
+              <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/creatures/logo.png"
+                  alt="WildQuest"
+                  className="h-auto w-full max-w-[340px] sm:max-w-[500px] md:max-w-[640px] lg:max-w-[780px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
+                />
+                <h1
+                  className="mt-3 text-center text-lg font-black tracking-tight sm:text-2xl lg:text-3xl"
                   style={{
-                    background: "rgba(58,46,30,0.6)",
-                    border: "1px solid rgba(200,169,110,0.2)",
-                    color: "#8a7a62",
+                    color: "#f0e8d4",
                     fontFamily: "var(--font-display)",
-                    backdropFilter: "blur(4px)",
                   }}
                 >
-                  {tag}
-                </span>
-              ))}
+                  The Real-World Wildlife RPG on Solana
+                </h1>
+              </div>
+
+              <p
+                className="mx-auto max-w-xl text-xs leading-relaxed sm:text-sm"
+                style={{ color: "#8a7a62" }}
+              >
+                Step outside, hunt real animals with your phone camera, and
+                prove your finds with on-device AI vision.
+              </p>
+
+              {/* Feature Tags — leather bordered */}
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+                {[
+                  "🐾 8 Species",
+                  "⚡ ResNet-50 Vision",
+                  "🛡️ Anti-Cheat pHash",
+                  "🏆 Onchain Quests",
+                ].map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                    style={{
+                      background: "rgba(58,46,30,0.6)",
+                      border: "1px solid rgba(200,169,110,0.2)",
+                      color: "#8a7a62",
+                      fontFamily: "var(--font-display)",
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
 
             {/* Centerpiece Visual: Frameless 3D Bio-Scanner & Cards */}
             <div className="w-full">
@@ -111,14 +124,18 @@ export default function Home() {
           <section
             className="mt-28 overflow-hidden rounded-xl p-6 shadow-xl sm:p-8"
             style={{
-              background: "linear-gradient(135deg, rgba(74,124,89,0.12) 0%, #1c1810 60%)",
+              background:
+                "linear-gradient(135deg, rgba(74,124,89,0.12) 0%, #1c1810 60%)",
               border: "1px solid rgba(200,169,110,0.2)",
             }}
           >
             {/* Top gold rule */}
             <div
               className="mb-5 h-[1px]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.4), transparent)" }}
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(200,169,110,0.4), transparent)",
+              }}
             />
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
@@ -127,14 +144,17 @@ export default function Home() {
                 </div>
                 <h3
                   className="mt-3 text-2xl font-black sm:text-3xl"
-                  style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "#f0e8d4",
+                  }}
                 >
-                  Campus Field Survey #01
+                  First Discovery
                 </h3>
                 <p className="mt-1.5 text-sm" style={{ color: "#8a7a62" }}>
-                  Locate all 5 target species:{" "}
-                  <strong style={{ color: "#c8a96e" }}>Bee, Chicken, Butterfly, Dragonfly, and Frog</strong>{" "}
-                  to earn the Founder Badge and +100 XP.
+                  Capture your first animal to complete Quest 01 and claim{" "}
+                  <strong style={{ color: "#c8a96e" }}>+25 XP</strong>. Each
+                  completed quest unlocks the next field challenge.
                 </p>
               </div>
               <div className="shrink-0">
@@ -164,17 +184,27 @@ export default function Home() {
             {/* Gold ornamental rules */}
             <div
               className="absolute inset-x-8 top-0 h-[1px]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent)" }}
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent)",
+              }}
             />
             <div
               className="absolute inset-x-8 bottom-0 h-[1px]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.25), transparent)" }}
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(200,169,110,0.25), transparent)",
+              }}
             />
 
             <div className="relative z-10 max-w-2xl mx-auto space-y-4">
               <div
                 className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-widest"
-                style={{ background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", color: "#c8a96e" }}
+                style={{
+                  background: "rgba(200,169,110,0.1)",
+                  border: "1px solid rgba(200,169,110,0.25)",
+                  color: "#c8a96e",
+                }}
               >
                 <span>✦ SEASON 01 IS LIVE</span>
               </div>
@@ -184,7 +214,10 @@ export default function Home() {
               >
                 Ready to Step Into the Wild?
               </h2>
-              <p className="text-sm leading-relaxed sm:text-base" style={{ color: "#8a7a62" }}>
+              <p
+                className="text-sm leading-relaxed sm:text-base"
+                style={{ color: "#8a7a62" }}
+              >
                 Your mobile phone is your neural scanner. Solana is your
                 immutable ledger. Begin tracking local wildlife, level up your
                 Explorer Passport, and mint your discoveries today.

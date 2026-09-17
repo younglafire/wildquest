@@ -172,8 +172,10 @@ uses the fixed bottom bar.
 
 ## Player Journey
 
-The Home screen derives progression from confirmed Player and Discovery
-accounts. Level follows `1 + floor(total_xp / 100)`.
+The Home screen reads XP and level from the confirmed Player account. Capture
+and unique-species totals come from the wallet's confirmed Creature accounts,
+and quest progress comes from QuestCompletion accounts. Level follows
+`1 + floor(total_xp / 100)`.
 
 The mobile battle-slice capture flow opens a full-screen rear-camera scanner.
 Light and movement guidance helps the player frame one animal, and the shutter
@@ -228,8 +230,8 @@ The earlier Counter instructions remain as scaffold functionality.
   discovery count, and badge count.
 - **Discovery PDA** uses `["discovery", wallet, proof_hash]` and stores the
   Player wallet, catalogue species ID, timestamp, grade, rarity, and proof.
-- **Quest PDA** uses `["quest", quest_id_le_bytes]` and stores its targets and
-  XP reward.
+- **Quest PDA** uses `["quest", quest_id_le_bytes]` and stores its objective,
+  required count, optional catalogue targets, and XP reward.
 - **QuestCompletion PDA** uses `["quest_completion", quest_pda, wallet]` and
   prevents the same wallet from claiming one quest twice.
 - **GameConfig PDA** uses `["game_config"]` and stores the capture authority,
@@ -284,9 +286,9 @@ the program's `SpeciesConfig` accounts remain authoritative for battle stats.
 After deploying a program build with new stats, rerun `npm run setup:pk-config`
 with the configured admin so Devnet has every supported SpeciesConfig.
 
-`discover_species` derives XP from the validated grade code inside the program:
-Bronze awards 50 XP, Silver 75 XP, and Gold 100 XP. It updates Player
-progression and creates the Discovery account atomically.
+The earlier `discover_species` handler remains readable for historical
+Discovery accounts. The active capture and quest UI uses Creature ownership as
+the source of capture progress and awards new XP through completed quests.
 
 ## Capture Identification
 
@@ -308,17 +310,25 @@ insertion so concurrent copies cannot both succeed.
 
 ## Quest Progression
 
-Demo Quest ID `1` targets catalogue IDs `3`, `5`, `8`, `9`, and `11`: bee,
-chicken, butterfly, dragonfly, and frog. Completing it awards 100 XP and one
-badge.
+Five starter quests unlock in order:
 
-`complete_quest` receives the five Discovery accounts as read-only remaining
-accounts. The program verifies ownership, account type, Player wallet, and all
-required species before updating the Player and creating QuestCompletion.
+- Quest 1 verifies one owned Creature and awards 25 XP.
+- Quest 2 verifies three distinct owned Creatures and awards 50 XP.
+- Quest 3 verifies an owned Ringlet or Cabbage Butterfly and awards 75 XP.
+- Quest 4 verifies the Rare Sea Snake and awards 100 XP.
+- Quest 5 verifies participation in a Match that another player joined and
+  awards 150 XP. Winning is not required.
+
+`complete_quest` receives the previous QuestCompletion account when required,
+followed by the Creature or Match evidence for the active objective. The
+program verifies account ownership, PDA derivation, objective progress, and
+quest order before updating Player XP and creating the next QuestCompletion.
+Quest rewards do not increment badges.
 
 The quest screen stays unavailable until the current program version is
-deployed and Quest ID `1` is initialized on that cluster. Quest initialization
-is a one-time operator action, not a transaction charged to each player.
+deployed and all five Quest accounts are initialized on that cluster. Quest
+initialization is a one-time operator action, not a transaction charged to each
+player.
 
 ### Program ID
 
@@ -442,8 +452,8 @@ The script is idempotent: it verifies existing accounts and creates only the
 missing ones. It submits Devnet transactions and therefore must not be run
 against production keys.
 
-After deploying quest support, initialize Quest ID `1` once and verify its PDA
-before enabling quest claiming for users.
+After deploying quest support, `npm run setup:pk-config` initializes and
+verifies Quest IDs `1` through `5` together with the battle configuration.
 
 ## API
 

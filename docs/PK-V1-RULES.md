@@ -85,12 +85,15 @@ The five-day build stays on Devnet. It makes no mainnet or real-money safety cla
 - Mainnet deployment or a real-value launch
 - Upgrades, levels, items, breeding, abilities, and elemental types
 - Internal currency, shops, and rewards unrelated to the stake
-- Quizzes, quests, capture grades, XP, badges, and legacy progression in battle calculations
+- Quizzes, capture grades, XP, badges, and quest rewards in battle calculations
 - Creature trading, NFTs, and marketplaces
 - Battle audio and deep profile screens
 - Geographic maps and location verification
 
-The existing Player, Discovery, Quest, and QuestCompletion accounts remain readable legacy state. The vertical-slice battle handlers do not read their XP, level, grade, rarity, quest, or badge fields.
+Player XP and the incremental Quest and QuestCompletion accounts remain
+separate from battle calculations. The first-battle quest reads a Match account
+only to verify participation; battle damage and settlement do not read XP,
+level, grade, rarity, quest, or badge fields.
 
 ## The architecture contract is separate from presentation
 

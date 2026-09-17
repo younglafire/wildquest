@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { getInitializePlayerInstructionAsync } from "../generated/wildquest";
-import { formatDiscoveryDate } from "../lib/game";
+import { formatDiscoveryDate, getQuestCopy, QUEST_IDS } from "../lib/game";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useWallet } from "../lib/wallet/context";
@@ -53,10 +53,21 @@ export function HomeContent() {
       <main className="mx-auto max-w-3xl px-5 pb-20 pt-10 sm:px-6 sm:pt-20">
         <section
           className="overflow-hidden rounded-xl"
-          style={{ border: "1px solid #3a2e1e", background: "#1c1810", boxShadow: "0 24px 90px -40px rgba(0,0,0,0.8), 0 0 0 1px rgba(200,169,110,0.06) inset" }}
+          style={{
+            border: "1px solid #3a2e1e",
+            background: "#1c1810",
+            boxShadow:
+              "0 24px 90px -40px rgba(0,0,0,0.8), 0 0 0 1px rgba(200,169,110,0.06) inset",
+          }}
         >
           {/* Header */}
-          <div className="p-6 sm:p-9" style={{ background: "rgba(200,169,110,0.07)", borderBottom: "1px solid rgba(200,169,110,0.15)" }}>
+          <div
+            className="p-6 sm:p-9"
+            style={{
+              background: "rgba(200,169,110,0.07)",
+              borderBottom: "1px solid rgba(200,169,110,0.15)",
+            }}
+          >
             <p className="wax-badge">First Expedition</p>
             <h1
               className="mt-4 text-4xl font-black tracking-tight sm:text-5xl"
@@ -64,9 +75,12 @@ export function HomeContent() {
             >
               Create your Explorer Passport
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed" style={{ color: "#8a7a62", fontFamily: "var(--font-sans)" }}>
-              Your Passport is a Player account that holds your level, XP,
-              discovery count, and badges on Solana Devnet.
+            <p
+              className="mt-4 max-w-xl text-sm leading-relaxed"
+              style={{ color: "#8a7a62", fontFamily: "var(--font-sans)" }}
+            >
+              Your Passport is a Player account that holds your level and XP
+              from claimed quests on Solana Devnet.
             </p>
           </div>
 
@@ -91,7 +105,11 @@ export function HomeContent() {
               <p
                 role="alert"
                 className="mt-5 rounded-lg p-4 text-sm"
-                style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
+                style={{
+                  background: "rgba(192,57,43,0.12)",
+                  color: "#f8c8c4",
+                  border: "1px solid rgba(192,57,43,0.3)",
+                }}
               >
                 {setupError}
               </p>
@@ -119,20 +137,26 @@ export function HomeContent() {
   }
 
   const player = game.player.data.data;
-  const questCompleteCount = game.questTargets.filter(
-    (target) => target.complete,
-  ).length;
-  const latest = game.cards
-    .filter((card) => card.latestTimestamp !== null)
-    .sort((left, right) => {
-      const rightTimestamp = right.latestTimestamp ?? 0n;
-      const leftTimestamp = left.latestTimestamp ?? 0n;
-      return rightTimestamp > leftTimestamp
-        ? 1
-        : rightTimestamp < leftTimestamp
-          ? -1
-          : 0;
-    })[0];
+  const creatures = game.creatures.data ?? [];
+  const capturedSpeciesCount = new Set(
+    creatures.map((creature) => creature.data.catalogueId.toString()),
+  ).size;
+  const latestCreature = [...creatures].sort((left, right) =>
+    right.data.capturedAt > left.data.capturedAt
+      ? 1
+      : right.data.capturedAt < left.data.capturedAt
+        ? -1
+        : 0,
+  )[0];
+  const latestSpecies = latestCreature
+    ? game.catalogue.data?.find(
+        (species) =>
+          String(species.id) === latestCreature.data.catalogueId.toString(),
+      )
+    : null;
+  const activeQuestCopy = game.activeQuest
+    ? getQuestCopy(game.activeQuest.data.questId)
+    : null;
 
   return (
     <main className="mx-auto max-w-6xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
@@ -141,7 +165,12 @@ export function HomeContent() {
         {/* Level card */}
         <div
           className="rounded-xl p-4 sm:p-8"
-          style={{ background: "#1c1810", border: "1px solid #3a2e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(200,169,110,0.05) inset" }}
+          style={{
+            background: "#1c1810",
+            border: "1px solid #3a2e1e",
+            boxShadow:
+              "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(200,169,110,0.05) inset",
+          }}
         >
           <div className="flex items-center justify-between">
             <p className="wax-badge wax-badge-forest">Expedition Active</p>
@@ -160,17 +189,25 @@ export function HomeContent() {
               >
                 Level {player.level.toString()} Explorer
               </h1>
-              <p className="mt-1 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
-                <span style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}>{player.xp.toString()}</span>
-                {" "}total XP ·{" "}
-                <span style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}>{game.uniqueDiscoveryCount}</span>
-                {" "}unique species
+              <p
+                className="mt-1 text-xs sm:text-sm"
+                style={{ color: "#8a7a62" }}
+              >
+                <span
+                  style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}
+                >
+                  {player.xp.toString()}
+                </span>{" "}
+                total XP ·{" "}
+                <span
+                  style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}
+                >
+                  {capturedSpeciesCount}
+                </span>{" "}
+                unique species
               </p>
             </div>
-            <Link
-              href="/capture"
-              className="btn-guild w-full sm:w-auto"
-            >
+            <Link href="/capture" className="btn-guild w-full sm:w-auto">
               ✦ Hunt & Capture
             </Link>
           </div>
@@ -186,9 +223,12 @@ export function HomeContent() {
 
         {/* Stat tiles */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <Stat value={player.discoveryCount.toString()} label="Captures" />
-          <Stat value={game.uniqueDiscoveryCount.toString()} label="Species" />
-          <Stat value={player.badgeCount.toString()} label="Badges" />
+          <Stat
+            value={`${game.completedQuestCount}/${QUEST_IDS.length}`}
+            label="Quests"
+          />
+          <Stat value={creatures.length.toString()} label="Captured" />
+          <Stat value={capturedSpeciesCount.toString()} label="Species" />
         </div>
       </section>
 
@@ -238,30 +278,33 @@ export function HomeContent() {
                 className="mt-2 text-2xl font-black"
                 style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
               >
-                Campus Field Survey
+                {activeQuestCopy?.title ?? "Starter Questline Complete"}
               </h2>
             </div>
-            {game.quest.data?.exists && (
+            {game.activeQuest && (
               <span className="wax-badge">
-                +{game.quest.data.data.rewardXp.toString()} XP
+                +{game.activeQuest.data.rewardXp.toString()} XP
               </span>
             )}
           </div>
 
-          {game.quest.error || !game.quest.data?.exists ? (
+          {game.quests.error ||
+          game.quests.data?.length !== QUEST_IDS.length ? (
             <p
               className="mt-5 rounded-lg p-4 text-sm"
               style={{ background: "#221d14", color: "#8a7a62" }}
             >
-              This quest is not available on the connected Devnet program yet.
+              The incremental quest update is not available on this cluster yet.
+            </p>
+          ) : !game.activeQuest ? (
+            <p className="mt-5 text-sm" style={{ color: "#8a7a62" }}>
+              All five starter quests completed · 400 XP claimed
             </p>
           ) : (
             <div className="mt-6">
               <ProgressBar
-                value={Math.round(
-                  (questCompleteCount / game.quest.data.data.speciesCount) * 100,
-                )}
-                label={`${questCompleteCount} / ${game.quest.data.data.speciesCount} targets found`}
+                value={game.activeQuestProgress?.percentage ?? 0}
+                label={game.activeQuestProgress?.label ?? "Checking progress…"}
               />
             </div>
           )}
@@ -280,36 +323,51 @@ export function HomeContent() {
           className="overflow-hidden rounded-xl"
           style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
         >
-          {latest ? (
+          {latestCreature && latestSpecies ? (
             <Link
-              href={`/collection/${latest.species.speciesId}`}
+              href={`/collection/${latestSpecies.speciesId}`}
               className="grid h-full min-h-40 grid-cols-[6rem_1fr] sm:grid-cols-[0.85fr_1.15fr]"
             >
-              <div className="relative overflow-hidden" style={{ background: "#221d14" }}>
+              <div
+                className="relative overflow-hidden"
+                style={{ background: "#221d14" }}
+              >
                 <SpeciesArt
-                  src={latest.species.imageUrl ?? latest.species.iconUrl}
-                  alt={latest.species.name}
+                  src={latestSpecies.imageUrl ?? latestSpecies.iconUrl}
+                  alt={latestSpecies.name}
                   className="p-2 sm:p-4"
                 />
               </div>
               <div className="flex flex-col justify-center p-3.5 sm:p-6">
                 <p
                   className="text-[9px] font-bold uppercase tracking-[0.22em] sm:text-[10px]"
-                  style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                  style={{
+                    color: "#8a7a62",
+                    fontFamily: "var(--font-display)",
+                  }}
                 >
                   Latest Discovery
                 </p>
                 <h2
                   className="mt-1 text-lg font-black sm:mt-2 sm:text-2xl"
-                  style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "#f0e8d4",
+                  }}
                 >
-                  {latest.species.name}
+                  {latestSpecies.name}
                 </h2>
-                <p className="mt-1 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
-                  {latest.species.rarity} · {latest.bestGrade ?? "Unscored"}
+                <p
+                  className="mt-1 text-xs sm:text-sm"
+                  style={{ color: "#8a7a62" }}
+                >
+                  {latestSpecies.rarity} · Battle card owned
                 </p>
-                <p className="mt-2 text-[10px] sm:mt-5 sm:text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}>
-                  {formatDiscoveryDate(latest.latestTimestamp)}
+                <p
+                  className="mt-2 text-[10px] sm:mt-5 sm:text-xs"
+                  style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}
+                >
+                  {formatDiscoveryDate(latestCreature.data.capturedAt)}
                 </p>
               </div>
             </Link>
@@ -327,8 +385,12 @@ export function HomeContent() {
               >
                 Your first discovery awaits
               </h2>
-              <p className="mt-2 text-xs leading-relaxed sm:text-sm" style={{ color: "#8a7a62" }}>
-                Hunt a supported wild creature to start your onchain expedition journal.
+              <p
+                className="mt-2 text-xs leading-relaxed sm:text-sm"
+                style={{ color: "#8a7a62" }}
+              >
+                Hunt a supported wild creature to start your onchain expedition
+                journal.
               </p>
             </div>
           )}
@@ -340,10 +402,26 @@ export function HomeContent() {
         aria-label="Dashboard shortcuts"
         className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:grid-cols-4 sm:gap-3"
       >
-        <QuickLink href="/battle" title="Battle" copy="3v3 onchain match · 0.01 SOL" />
-        <QuickLink href="/quest" title="Quest" copy="Active survey targets & XP" />
-        <QuickLink href="/collection" title="Collection" copy="40 species field guide" />
-        <QuickLink href="/profile" title="Passport" copy="Explorer rank & wallet stats" />
+        <QuickLink
+          href="/battle"
+          title="Battle"
+          copy="3v3 onchain match · 0.01 SOL"
+        />
+        <QuickLink
+          href="/quest"
+          title="Quest"
+          copy="Active survey targets & XP"
+        />
+        <QuickLink
+          href="/collection"
+          title="Collection"
+          copy="40 species field guide"
+        />
+        <QuickLink
+          href="/profile"
+          title="Passport"
+          copy="Explorer rank & wallet stats"
+        />
       </nav>
     </main>
   );
@@ -360,7 +438,12 @@ function DashboardMessage({
 }) {
   return (
     <main className="mx-auto max-w-3xl px-5 py-20 text-center">
-      <p className="text-sm" style={{ color: "#8a7a62", fontFamily: "var(--font-sans)" }}>{message}</p>
+      <p
+        className="text-sm"
+        style={{ color: "#8a7a62", fontFamily: "var(--font-sans)" }}
+      >
+        {message}
+      </p>
       {action && onAction && (
         <button
           type="button"
@@ -393,7 +476,11 @@ function Stat({ value, label }: { value: string; label: string }) {
       </p>
       <p
         className="mt-0.5 text-[9px] uppercase tracking-wider sm:text-xs"
-        style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.62rem" }}
+        style={{
+          color: "#8a7a62",
+          fontFamily: "var(--font-display)",
+          fontSize: "0.62rem",
+        }}
       >
         {label}
       </p>
@@ -418,11 +505,14 @@ function QuickLink({
         background: "#1c1810",
         border: "1px solid #3a2e1e",
         boxShadow: "none",
-        transition: "transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease",
+        transition:
+          "transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(200,169,110,0.4)";
-        (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 4px 16px rgba(200,169,110,0.1)";
+        (e.currentTarget as HTMLAnchorElement).style.borderColor =
+          "rgba(200,169,110,0.4)";
+        (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+          "0 4px 16px rgba(200,169,110,0.1)";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLAnchorElement).style.borderColor = "#3a2e1e";

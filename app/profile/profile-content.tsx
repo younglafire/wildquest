@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCluster } from "../components/cluster-context";
 import { ProgressBar } from "../components/progress-bar";
-import { formatDiscoveryDate } from "../lib/game";
+import { getQuestCopy, QUEST_IDS } from "../lib/game";
 import { useBalance } from "../lib/hooks/use-balance";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { lamportsToSolString } from "../lib/lamports";
@@ -37,15 +37,19 @@ export function ProfileContent() {
     return (
       <ProfileMessage
         title="Passport not created"
-        copy="Create your Explorer Passport before collecting XP, levels, and badges."
+        copy="Create your Explorer Passport before claiming quest XP and levels."
         action="Create Passport"
         href="/home"
       />
     );
 
   const player = game.player.data.data;
-  const completion = game.questCompletion.data?.exists
-    ? game.questCompletion.data.data
+  const creatures = game.creatures.data ?? [];
+  const speciesCount = new Set(
+    creatures.map((creature) => creature.data.catalogueId.toString()),
+  ).size;
+  const activeQuestCopy = game.activeQuest
+    ? getQuestCopy(game.activeQuest.data.questId)
     : null;
   const copyAddress = async () => {
     if (!game.address) return;
@@ -64,13 +68,17 @@ export function ProfileContent() {
           style={{
             background: "#1c1810",
             border: "1px solid #3a2e1e",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,169,110,0.06) inset",
+            boxShadow:
+              "0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,169,110,0.06) inset",
           }}
         >
           {/* Top rule */}
           <div
             className="mb-3 h-[1px] w-full sm:mb-4"
-            style={{ background: "linear-gradient(90deg, transparent, #c8a96e, transparent)" }}
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, #c8a96e, transparent)",
+            }}
           />
           <p className="wax-badge">Explorer Passport</p>
           <h1
@@ -79,7 +87,10 @@ export function ProfileContent() {
           >
             Level {player.level.toString()}
           </h1>
-          <p className="mt-1 text-xs sm:mt-2 sm:text-sm" style={{ color: "#8a7a62" }}>
+          <p
+            className="mt-1 text-xs sm:mt-2 sm:text-sm"
+            style={{ color: "#8a7a62" }}
+          >
             WildQuest field explorer · Solana {cluster}
           </p>
           {game.playerProgress && (
@@ -90,18 +101,25 @@ export function ProfileContent() {
               />
             </div>
           )}
-          <dl className="mt-5 grid grid-cols-3 gap-2 sm:mt-8 sm:gap-3">
+          <dl className="mt-5 grid grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-4 sm:gap-3">
             <PassportStat label="Total XP" value={player.xp.toString()} />
             <PassportStat
-              label="Captures"
-              value={player.discoveryCount.toString()}
+              label="Captured"
+              value={creatures.length.toString()}
             />
-            <PassportStat label="Badges" value={player.badgeCount.toString()} />
+            <PassportStat label="Species" value={speciesCount.toString()} />
+            <PassportStat
+              label="Quests"
+              value={`${game.completedQuestCount}/${QUEST_IDS.length}`}
+            />
           </dl>
           {/* Bottom rule */}
           <div
             className="mt-4 h-[1px] w-full sm:mt-6"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.3), transparent)" }}
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(200,169,110,0.3), transparent)",
+            }}
           />
         </div>
 
@@ -118,7 +136,11 @@ export function ProfileContent() {
           </p>
           <p
             className="mt-4 break-all text-sm"
-            style={{ fontFamily: "var(--font-mono)", color: "#8a7a62", fontSize: "0.72rem" }}
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "#8a7a62",
+              fontSize: "0.72rem",
+            }}
           >
             {game.address}
           </p>
@@ -129,10 +151,7 @@ export function ProfileContent() {
             {balance.lamports !== null
               ? lamportsToSolString(balance.lamports)
               : "—"}{" "}
-            <span
-              className="text-sm font-medium"
-              style={{ color: "#8a7a62" }}
-            >
+            <span className="text-sm font-medium" style={{ color: "#8a7a62" }}>
               SOL
             </span>
           </p>
@@ -141,7 +160,11 @@ export function ProfileContent() {
               type="button"
               onClick={() => void copyAddress()}
               className="min-h-12 rounded-lg text-sm font-bold transition-colors"
-              style={{ border: "1px solid #3a2e1e", color: "#c8a96e", background: "rgba(200,169,110,0.06)" }}
+              style={{
+                border: "1px solid #3a2e1e",
+                color: "#c8a96e",
+                background: "rgba(200,169,110,0.06)",
+              }}
             >
               {copied ? "Copied ✓" : "Copy address"}
             </button>
@@ -150,7 +173,11 @@ export function ProfileContent() {
               target="_blank"
               rel="noopener noreferrer"
               className="flex min-h-12 items-center justify-center rounded-lg text-sm font-bold transition-colors"
-              style={{ border: "1px solid #3a2e1e", color: "#c8a96e", background: "rgba(200,169,110,0.06)" }}
+              style={{
+                border: "1px solid #3a2e1e",
+                color: "#c8a96e",
+                background: "rgba(200,169,110,0.06)",
+              }}
             >
               Explorer ↗
             </a>
@@ -159,14 +186,18 @@ export function ProfileContent() {
             type="button"
             onClick={() => void disconnect()}
             className="mt-3 min-h-12 w-full rounded-lg text-sm font-bold"
-            style={{ border: "1px solid rgba(192,57,43,0.35)", color: "#f8c8c4", background: "rgba(192,57,43,0.08)" }}
+            style={{
+              border: "1px solid rgba(192,57,43,0.35)",
+              color: "#f8c8c4",
+              background: "rgba(192,57,43,0.08)",
+            }}
           >
             Disconnect
           </button>
         </div>
       </section>
 
-      {/* Badges */}
+      {/* Quest progress */}
       <section
         className="mt-4 rounded-xl p-6 sm:p-8"
         style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
@@ -177,65 +208,39 @@ export function ProfileContent() {
               className="text-[10px] font-bold uppercase tracking-[0.22em]"
               style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
             >
-              Badges
+              Quest Progress
             </p>
             <h2
               className="mt-2 text-2xl font-black"
               style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
             >
-              Expedition Achievements
+              Starter Questline
             </h2>
           </div>
           <span className="wax-badge">
-            {player.badgeCount.toString()} earned
+            {game.completedQuestCount} / {QUEST_IDS.length}
           </span>
         </div>
 
-        {completion ? (
-          <article
-            className="mt-6 flex items-center gap-4 rounded-xl p-5"
-            style={{ background: "rgba(74,124,89,0.1)", border: "1px solid rgba(74,124,89,0.3)" }}
+        <div className="mt-6 rounded-xl p-5" style={{ background: "#221d14" }}>
+          <p
+            className="font-bold"
+            style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
           >
-            <span
-              aria-hidden="true"
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl"
-              style={{ background: "linear-gradient(135deg, #4a7c59, #6aab7a)", color: "#fff" }}
-            >
-              ✦
-            </span>
-            <div>
-              <h3
-                className="font-black"
-                style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
-              >
-                Campus Field Survey
-              </h3>
-              <p className="mt-1 text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}>
-                Completed {formatDiscoveryDate(completion.completedAt)} · +
-                {completion.rewardXp.toString()} XP
-              </p>
-            </div>
-          </article>
-        ) : (
-          <div
-            className="mt-6 rounded-xl p-5"
-            style={{ background: "#221d14" }}
+            {activeQuestCopy?.title ?? "All starter quests completed"}
+          </p>
+          <p className="mt-1 text-sm" style={{ color: "#8a7a62" }}>
+            {activeQuestCopy?.description ??
+              "You claimed every starter quest XP reward."}
+          </p>
+          <Link
+            href="/quest"
+            className="mt-4 inline-flex min-h-12 items-center font-bold underline-offset-4 hover:underline"
+            style={{ color: "#c8a96e" }}
           >
-            <p className="font-bold" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>
-              Your first badge is waiting
-            </p>
-            <p className="mt-1 text-sm" style={{ color: "#8a7a62" }}>
-              Complete the Campus Field Survey to earn it.
-            </p>
-            <Link
-              href="/quest"
-              className="mt-4 inline-flex min-h-12 items-center font-bold underline-offset-4 hover:underline"
-              style={{ color: "#c8a96e" }}
-            >
-              View quest →
-            </Link>
-          </div>
-        )}
+            View quests →
+          </Link>
+        </div>
       </section>
 
       {/* Battle record */}
@@ -261,10 +266,7 @@ export function ProfileContent() {
             receipt on Explorer.
           </p>
         </div>
-        <Link
-          href="/battle#history"
-          className="btn-guild whitespace-nowrap"
-        >
+        <Link href="/battle#history" className="btn-guild whitespace-nowrap">
           View Match History
         </Link>
       </section>
@@ -280,7 +282,11 @@ function PassportStat({ label, value }: { label: string; value: string }) {
     >
       <dt
         className="text-[9px] uppercase tracking-wider"
-        style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.62rem" }}
+        style={{
+          color: "#8a7a62",
+          fontFamily: "var(--font-display)",
+          fontSize: "0.62rem",
+        }}
       >
         {label}
       </dt>
@@ -317,14 +323,14 @@ function ProfileMessage({
         >
           {title}
         </h1>
-        <p className="mt-3 text-sm leading-relaxed" style={{ color: "#8a7a62" }}>
+        <p
+          className="mt-3 text-sm leading-relaxed"
+          style={{ color: "#8a7a62" }}
+        >
           {copy}
         </p>
         {action && href && (
-          <Link
-            href={href}
-            className="btn-guild mt-6 inline-flex"
-          >
+          <Link href={href} className="btn-guild mt-6 inline-flex">
             {action}
           </Link>
         )}
