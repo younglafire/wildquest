@@ -17,6 +17,37 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  async rewrites() {
+    return [
+      // UI assets backwards compatibility
+      { source: "/creatures/logo.png", destination: "/ui/logo.png" },
+      { source: "/creatures/nav_bar.png", destination: "/ui/nav_bar.png" },
+      { source: "/creatures/button.png", destination: "/ui/button.png" },
+      {
+        source: "/creatures/button_tab.png",
+        destination: "/ui/button_tab.png",
+      },
+      // Card assets backwards compatibility
+      {
+        source: "/creatures/background_wildcard.png",
+        destination: "/cards/back/background_wildcard.png",
+      },
+      {
+        source: "/creatures/:rarity(common|uncommon|rare|epic|legend).png",
+        destination: "/cards/frames/:rarity.png",
+      },
+      // Creature artwork backwards compatibility
+      {
+        source: "/creatures/:file([a-z0-9_-]+).png",
+        destination: "/creatures/artwork/:file.png",
+      },
+      // Creature vector icons backwards compatibility
+      {
+        source: "/creatures/:file([a-z0-9_-]+\\.svg)",
+        destination: "/creatures/icons/:file",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

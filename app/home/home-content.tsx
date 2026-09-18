@@ -52,66 +52,114 @@ export function HomeContent() {
     return (
       <main className="mx-auto max-w-3xl px-5 pb-20 pt-10 sm:px-6 sm:pt-20">
         <section
-          className="overflow-hidden rounded-xl"
-          style={{ border: "1px solid #3a2e1e", background: "#1c1810", boxShadow: "0 24px 90px -40px rgba(0,0,0,0.8), 0 0 0 1px rgba(200,169,110,0.06) inset" }}
+          className="relative overflow-hidden rounded-2xl p-6 sm:p-9"
+          style={{
+            background:
+              "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 75%)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200, 169, 110, 0.3)",
+          }}
         >
+          {/* Top gold hairline */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
+          {/* Corner Runes */}
+          <span className="absolute top-2.5 left-2.5 text-[11px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute top-2.5 right-2.5 text-[11px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute bottom-2.5 left-2.5 text-[11px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute bottom-2.5 right-2.5 text-[11px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+
           {/* Header */}
-          <div className="p-6 sm:p-9" style={{ background: "rgba(200,169,110,0.07)", borderBottom: "1px solid rgba(200,169,110,0.15)" }}>
-            <p className="wax-badge">First Expedition</p>
+          <div className="relative">
+            <div
+              className="relative inline-flex min-h-9 sm:min-h-10 items-center justify-center px-6 sm:px-8 py-1 sm:py-1.5 select-none"
+              style={{
+                backgroundImage: "url('/ui/tag_frame.png')",
+                backgroundSize: "100% 100%",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }}
+            >
+              <span
+                className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                ✦ FIRST EXPEDITION ✦
+              </span>
+            </div>
+
             <h1
-              className="mt-4 text-4xl font-black tracking-tight sm:text-5xl"
+              className="mt-4 text-3xl font-black tracking-tight sm:text-5xl"
               style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
             >
               Create your Explorer Passport
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed" style={{ color: "#8a7a62", fontFamily: "var(--font-sans)" }}>
+            <p
+              className="mt-3 max-w-xl text-sm leading-relaxed"
+              style={{ color: "#a89880" }}
+            >
               Your Passport is a Player account that holds your level, XP,
               discovery count, and badges on Solana Devnet.
             </p>
           </div>
 
           {/* Body */}
-          <div className="p-6 sm:p-9">
+          <div className="mt-6 border-t border-[rgba(200,169,110,0.15)] pt-6">
             <ul className="space-y-3 text-sm" style={{ color: "#f0e8d4" }}>
               <li className="flex gap-3 items-center">
-                <span style={{ color: "#c8a96e" }}>✦</span>
-                One wallet approval creates it.
+                <span className="text-[#c8a96e]">✦</span>
+                <span>One wallet approval creates it.</span>
               </li>
               <li className="flex gap-3 items-center">
-                <span style={{ color: "#c8a96e" }}>✦</span>
-                No XP or discovery is awarded yet.
+                <span className="text-[#c8a96e]">✦</span>
+                <span>No XP or discovery is awarded yet.</span>
               </li>
               <li className="flex gap-3 items-center">
-                <span style={{ color: "#c8a96e" }}>✦</span>
-                You pay only the Devnet transaction fee and account rent.
+                <span className="text-[#c8a96e]">✦</span>
+                <span>
+                  You pay only the Devnet transaction fee and account rent.
+                </span>
               </li>
             </ul>
 
             {setupError && (
               <p
                 role="alert"
-                className="mt-5 rounded-lg p-4 text-sm"
-                style={{ background: "rgba(192,57,43,0.12)", color: "#f8c8c4", border: "1px solid rgba(192,57,43,0.3)" }}
+                className="mt-5 rounded-xl p-4 text-sm"
+                style={{
+                  background: "rgba(192,57,43,0.15)",
+                  color: "#f8c8c4",
+                  border: "1px solid rgba(192,57,43,0.35)",
+                }}
               >
                 {setupError}
               </p>
             )}
 
-            <button
-              type="button"
-              onClick={() => void initializePlayer()}
-              disabled={!signer || isSending}
-              className="btn-guild mt-7"
-            >
-              {isSending ? "Creating Passport…" : "Create Passport"}
-            </button>
-            <Link
-              href="/collection"
-              className="mt-4 inline-flex min-h-12 items-center text-sm font-semibold underline-offset-4 hover:underline sm:ml-5"
-              style={{ color: "#8a7a62" }}
-            >
-              Browse the field guide first
-            </Link>
+            <div className="mt-7 flex flex-wrap items-center gap-4">
+              <button
+                type="button"
+                onClick={() => void initializePlayer()}
+                disabled={!signer || isSending}
+                className="btn-guild min-h-12 px-8 text-sm font-black tracking-wider transition-all duration-200 active:scale-95 disabled:opacity-50"
+              >
+                {isSending ? "Creating Passport…" : "✦ Create Passport"}
+              </button>
+              <Link
+                href="/collection"
+                className="inline-flex min-h-12 items-center text-sm font-semibold text-[#a89880] underline-offset-4 hover:text-[#f0e8d4] hover:underline"
+              >
+                Browse the field guide first →
+              </Link>
+            </div>
           </div>
         </section>
       </main>
@@ -140,19 +188,56 @@ export function HomeContent() {
       <section className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
         {/* Level card */}
         <div
-          className="rounded-xl p-4 sm:p-8"
-          style={{ background: "#1c1810", border: "1px solid #3a2e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(200,169,110,0.05) inset" }}
+          className="relative overflow-hidden rounded-2xl p-5 sm:p-8"
+          style={{
+            background:
+              "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 75%)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(200, 169, 110, 0.25)",
+          }}
         >
+          {/* Top gold hairline */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
+          {/* Corner Runes */}
+          <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+
           <div className="flex items-center justify-between">
-            <p className="wax-badge wax-badge-forest">Expedition Active</p>
+            <div
+              className="relative inline-flex min-h-9 sm:min-h-10 items-center justify-center px-6 sm:px-8 py-1 sm:py-1.5 select-none"
+              style={{
+                backgroundImage: "url('/ui/tag_frame.png')",
+                backgroundSize: "100% 100%",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }}
+            >
+              <span
+                className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                ✦ EXPEDITION ACTIVE ✦
+              </span>
+            </div>
             <span
-              className="text-[10px] font-bold uppercase tracking-wider md:hidden"
-              style={{ color: "#c8a96e", fontFamily: "var(--font-mono)" }}
+              className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider md:hidden"
+              style={{
+                background: "rgba(18, 16, 11, 0.85)",
+                border: "1px solid rgba(200, 169, 110, 0.3)",
+                color: "#c8a96e",
+                fontFamily: "var(--font-mono)",
+              }}
             >
               {player.xp.toString()} XP
             </span>
           </div>
-          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-5">
+
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-5">
             <div>
               <h1
                 className="text-2xl font-black tracking-tight sm:text-5xl"
@@ -160,22 +245,47 @@ export function HomeContent() {
               >
                 Level {player.level.toString()} Explorer
               </h1>
-              <p className="mt-1 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
-                <span style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}>{player.xp.toString()}</span>
-                {" "}total XP ·{" "}
-                <span style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}>{game.uniqueDiscoveryCount}</span>
-                {" "}unique species
+              <p
+                className="mt-1.5 text-xs sm:text-sm"
+                style={{ color: "#a89880" }}
+              >
+                <span
+                  style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}
+                >
+                  {player.xp.toString()}
+                </span>{" "}
+                total XP ·{" "}
+                <span
+                  style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}
+                >
+                  {game.uniqueDiscoveryCount}
+                </span>{" "}
+                unique species
               </p>
             </div>
             <Link
               href="/capture"
-              className="btn-guild w-full sm:w-auto"
+              aria-label="Hunt & Capture"
+              className="group relative inline-flex cursor-pointer items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 shrink-0"
+              style={{
+                filter:
+                  "drop-shadow(0 10px 24px rgba(0,0,0,0.8)) drop-shadow(0 0 16px rgba(52,211,153,0.25))",
+              }}
             >
-              ✦ Hunt & Capture
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/ui/hunt_capture.png"
+                alt="Hunt & Capture"
+                width={300}
+                height={90}
+                className="h-auto w-56 sm:w-64 select-none object-contain transition-all duration-200 group-hover:brightness-120 group-hover:drop-shadow-[0_0_28px_rgba(52,211,153,0.7)]"
+                draggable={false}
+              />
             </Link>
           </div>
+
           {game.playerProgress && (
-            <div className="mt-5 sm:mt-8">
+            <div className="mt-6 sm:mt-8">
               <ProgressBar
                 value={game.playerProgress.percentage}
                 label={`${game.playerProgress.currentLevelXp.toString()} / ${game.playerProgress.nextLevelXp.toString()} XP to next level`}
@@ -195,26 +305,47 @@ export function HomeContent() {
       {/* Pending identification banner */}
       {game.pending && (
         <section
-          className="mt-4 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
+          className="relative mt-4 overflow-hidden rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between flex flex-col gap-4"
           style={{
-            background: "rgba(200,169,110,0.08)",
-            border: "1px solid rgba(200,169,110,0.25)",
+            background:
+              "radial-gradient(120% 120% at 50% 0%, rgba(160, 125, 72, 0.25) 0%, rgba(18, 16, 11, 0.95) 85%)",
+            border: "1px solid rgba(200, 169, 110, 0.4)",
+            boxShadow: "0 12px 36px rgba(0,0,0,0.6)",
           }}
         >
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
           <div>
-            <p className="wax-badge">Result Ready</p>
+            <div
+              className="relative inline-flex min-h-8 items-center justify-center px-5 py-1 select-none"
+              style={{
+                backgroundImage: "url('/ui/tag_frame.png')",
+                backgroundSize: "100% 100%",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }}
+            >
+              <span
+                className="text-[9px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                ✦ RESULT READY ✦
+              </span>
+            </div>
             <h2
               className="mt-2 text-xl font-black"
               style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
             >
               Resume {game.pending.identification.common_name}
             </h2>
-            <p className="mt-1 text-sm" style={{ color: "#8a7a62" }}>
-              Your verified result is waiting to be recorded.
+            <p className="mt-1 text-sm text-[#a89880]">
+              Your verified result is waiting to be recorded on Solana Devnet.
             </p>
           </div>
-          <Link href="/capture" className="btn-guild whitespace-nowrap">
-            Resume Identification
+          <Link
+            href="/capture"
+            className="btn-guild whitespace-nowrap min-h-12 px-6 text-xs font-black tracking-wider uppercase transition-all duration-200 active:scale-95"
+          >
+            ✦ Resume Identification
           </Link>
         </section>
       )}
@@ -223,14 +354,28 @@ export function HomeContent() {
       <section className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Active quest */}
         <article
-          className="rounded-xl p-6 sm:p-8"
-          style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+          className="relative overflow-hidden rounded-2xl p-6 sm:p-8"
+          style={{
+            background: "rgba(18, 16, 11, 0.92)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+          }}
         >
+          {/* Top gold hairline */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+          <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+
           <div className="flex items-start justify-between gap-4">
             <div>
               <p
-                className="text-[10px] font-bold uppercase tracking-[0.22em]"
-                style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                className="text-[10px] font-bold uppercase tracking-[0.24em]"
+                style={{ color: "#c8a96e", fontFamily: "var(--font-display)" }}
               >
                 Active Quest
               </p>
@@ -242,16 +387,33 @@ export function HomeContent() {
               </h2>
             </div>
             {game.quest.data?.exists && (
-              <span className="wax-badge">
-                +{game.quest.data.data.rewardXp.toString()} XP
-              </span>
+              <div
+                className="relative inline-flex min-h-8 items-center justify-center px-5 py-1 select-none"
+                style={{
+                  backgroundImage: "url('/ui/tag_frame.png')",
+                  backgroundSize: "100% 100%",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                }}
+              >
+                <span
+                  className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  +{game.quest.data.data.rewardXp.toString()} XP
+                </span>
+              </div>
             )}
           </div>
 
           {game.quest.error || !game.quest.data?.exists ? (
             <p
-              className="mt-5 rounded-lg p-4 text-sm"
-              style={{ background: "#221d14", color: "#8a7a62" }}
+              className="mt-5 rounded-xl p-4 text-sm"
+              style={{
+                background: "rgba(14, 12, 8, 0.95)",
+                color: "#8a7a62",
+                border: "1px solid rgba(200, 169, 110, 0.2)",
+              }}
             >
               This quest is not available on the connected Devnet program yet.
             </p>
@@ -259,7 +421,8 @@ export function HomeContent() {
             <div className="mt-6">
               <ProgressBar
                 value={Math.round(
-                  (questCompleteCount / game.quest.data.data.speciesCount) * 100,
+                  (questCompleteCount / game.quest.data.data.speciesCount) *
+                    100,
                 )}
                 label={`${questCompleteCount} / ${game.quest.data.data.speciesCount} targets found`}
               />
@@ -268,56 +431,87 @@ export function HomeContent() {
 
           <Link
             href="/quest"
-            className="mt-6 inline-flex min-h-12 items-center text-sm font-bold underline-offset-4 hover:underline"
-            style={{ color: "#c8a96e" }}
+            className="mt-6 inline-flex min-h-12 items-center text-sm font-bold text-[#c8a96e] underline-offset-4 hover:text-[#f0e8d4] hover:underline"
           >
-            View quest →
+            View quest details →
           </Link>
         </article>
 
         {/* Latest discovery */}
         <article
-          className="overflow-hidden rounded-xl"
-          style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+          className="relative overflow-hidden rounded-2xl"
+          style={{
+            background: "rgba(18, 16, 11, 0.92)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+          }}
         >
+          {/* Top gold hairline */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+          <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+
           {latest ? (
             <Link
               href={`/collection/${latest.species.speciesId}`}
-              className="grid h-full min-h-40 grid-cols-[6rem_1fr] sm:grid-cols-[0.85fr_1.15fr]"
+              className="grid h-full min-h-40 grid-cols-[6rem_1fr] sm:grid-cols-[0.85fr_1.15fr] group"
             >
-              <div className="relative overflow-hidden" style={{ background: "#221d14" }}>
+              <div
+                className="relative overflow-hidden flex items-center justify-center p-2 sm:p-4"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, rgba(30, 45, 35, 0.8), rgba(12, 10, 8, 0.95))",
+                }}
+              >
                 <SpeciesArt
                   src={latest.species.imageUrl ?? latest.species.iconUrl}
                   alt={latest.species.name}
-                  className="p-2 sm:p-4"
+                  className="transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
               <div className="flex flex-col justify-center p-3.5 sm:p-6">
                 <p
-                  className="text-[9px] font-bold uppercase tracking-[0.22em] sm:text-[10px]"
-                  style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                  className="text-[9px] font-bold uppercase tracking-[0.24em] sm:text-[10px]"
+                  style={{
+                    color: "#c8a96e",
+                    fontFamily: "var(--font-display)",
+                  }}
                 >
                   Latest Discovery
                 </p>
                 <h2
                   className="mt-1 text-lg font-black sm:mt-2 sm:text-2xl"
-                  style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "#f0e8d4",
+                  }}
                 >
                   {latest.species.name}
                 </h2>
-                <p className="mt-1 text-xs sm:text-sm" style={{ color: "#8a7a62" }}>
-                  {latest.species.rarity} · {latest.bestGrade ?? "Unscored"}
+                <p className="mt-1 text-xs sm:text-sm text-[#a89880]">
+                  <span className="font-semibold text-[#c8a96e]">
+                    {latest.species.rarity}
+                  </span>{" "}
+                  · {latest.bestGrade ?? "Unscored"}
                 </p>
-                <p className="mt-2 text-[10px] sm:mt-5 sm:text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}>
+                <p
+                  className="mt-2 text-[10px] sm:mt-4 sm:text-xs"
+                  style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}
+                >
                   {formatDiscoveryDate(latest.latestTimestamp)}
                 </p>
               </div>
             </Link>
           ) : (
-            <div className="flex min-h-40 flex-col justify-center p-4 sm:min-h-64 sm:p-8">
+            <div className="flex min-h-40 flex-col justify-center p-5 sm:min-h-64 sm:p-8">
               <p
-                className="text-[10px] font-bold uppercase tracking-[0.22em]"
-                style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+                className="text-[10px] font-bold uppercase tracking-[0.24em]"
+                style={{ color: "#c8a96e", fontFamily: "var(--font-display)" }}
               >
                 Collection
               </p>
@@ -327,9 +521,16 @@ export function HomeContent() {
               >
                 Your first discovery awaits
               </h2>
-              <p className="mt-2 text-xs leading-relaxed sm:text-sm" style={{ color: "#8a7a62" }}>
-                Hunt a supported wild creature to start your onchain expedition journal.
+              <p className="mt-2 text-xs leading-relaxed sm:text-sm text-[#a89880]">
+                Hunt a supported wild creature to start your onchain expedition
+                journal.
               </p>
+              <Link
+                href="/capture"
+                className="mt-4 inline-flex items-center text-xs font-bold text-[#c8a96e] underline-offset-4 hover:underline"
+              >
+                ✦ Hunt supported animals →
+              </Link>
             </div>
           )}
         </article>
@@ -340,10 +541,26 @@ export function HomeContent() {
         aria-label="Dashboard shortcuts"
         className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:grid-cols-4 sm:gap-3"
       >
-        <QuickLink href="/battle" title="Battle" copy="3v3 onchain match · 0.01 SOL" />
-        <QuickLink href="/quest" title="Quest" copy="Active survey targets & XP" />
-        <QuickLink href="/collection" title="Collection" copy="40 species field guide" />
-        <QuickLink href="/profile" title="Passport" copy="Explorer rank & wallet stats" />
+        <QuickLink
+          href="/battle"
+          title="Battle"
+          copy="3v3 onchain match · 0.01 SOL"
+        />
+        <QuickLink
+          href="/quest"
+          title="Quest"
+          copy="Active survey targets & XP"
+        />
+        <QuickLink
+          href="/collection"
+          title="Collection"
+          copy="40 species field guide"
+        />
+        <QuickLink
+          href="/profile"
+          title="Passport"
+          copy="Explorer rank & wallet stats"
+        />
       </nav>
     </main>
   );
@@ -360,21 +577,27 @@ function DashboardMessage({
 }) {
   return (
     <main className="mx-auto max-w-3xl px-5 py-20 text-center">
-      <p className="text-sm" style={{ color: "#8a7a62", fontFamily: "var(--font-sans)" }}>{message}</p>
-      {action && onAction && (
-        <button
-          type="button"
-          onClick={onAction}
-          className="mt-5 min-h-12 rounded-lg px-5 text-sm font-bold transition hover:-translate-y-0.5"
-          style={{
-            border: "1px solid #3a2e1e",
-            color: "#c8a96e",
-            background: "rgba(200,169,110,0.07)",
-          }}
-        >
-          {action}
-        </button>
-      )}
+      <section
+        className="relative overflow-hidden rounded-2xl p-8"
+        style={{
+          background:
+            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.6) 0%, rgba(18, 16, 11, 0.95) 75%)",
+          border: "1px solid rgba(200, 169, 110, 0.3)",
+          boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
+        }}
+      >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <p className="text-sm text-[#a89880]">{message}</p>
+        {action && onAction && (
+          <button
+            type="button"
+            onClick={onAction}
+            className="btn-guild mt-5 min-h-12 px-6 text-xs font-bold uppercase tracking-wider transition hover:-translate-y-0.5"
+          >
+            {action}
+          </button>
+        )}
+      </section>
     </main>
   );
 }
@@ -382,18 +605,28 @@ function DashboardMessage({
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div
-      className="flex min-h-20 flex-col justify-center rounded-xl p-2.5 text-center sm:min-h-28 sm:p-4"
-      style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+      className="relative overflow-hidden flex min-h-20 flex-col justify-center rounded-2xl p-2.5 text-center sm:min-h-28 sm:p-4"
+      style={{
+        background: "rgba(18, 16, 11, 0.95)",
+        border: "1px solid rgba(200, 169, 110, 0.35)",
+        boxShadow:
+          "0 8px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+      }}
     >
+      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.5)] to-transparent pointer-events-none" />
       <p
-        className="text-2xl font-black tabular-nums sm:text-3xl"
-        style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+        className="text-2xl font-black tabular-nums sm:text-3xl text-[#c8a96e] drop-shadow-[0_2px_8px_rgba(200,169,110,0.2)]"
+        style={{ fontFamily: "var(--font-display)" }}
       >
         {value}
       </p>
       <p
         className="mt-0.5 text-[9px] uppercase tracking-wider sm:text-xs"
-        style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.62rem" }}
+        style={{
+          color: "#a89880",
+          fontFamily: "var(--font-display)",
+          fontSize: "0.62rem",
+        }}
       >
         {label}
       </p>
@@ -413,32 +646,37 @@ function QuickLink({
   return (
     <Link
       href={href}
-      className="group min-h-20 rounded-xl p-3 sm:min-h-24 sm:p-5 transition-all active:scale-98"
+      className="group relative overflow-hidden min-h-20 rounded-2xl p-3 sm:min-h-24 sm:p-5 transition-all duration-200 active:scale-98"
       style={{
-        background: "#1c1810",
-        border: "1px solid #3a2e1e",
-        boxShadow: "none",
-        transition: "transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease",
+        background: "rgba(18, 16, 11, 0.92)",
+        border: "1px solid rgba(200, 169, 110, 0.3)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(200,169,110,0.4)";
-        (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 4px 16px rgba(200,169,110,0.1)";
+        (e.currentTarget as HTMLAnchorElement).style.borderColor =
+          "rgba(200,169,110,0.6)";
+        (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+          "0 8px 28px rgba(200,169,110,0.18)";
+        (e.currentTarget as HTMLAnchorElement).style.transform =
+          "translateY(-2px)";
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.borderColor = "#3a2e1e";
-        (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
+        (e.currentTarget as HTMLAnchorElement).style.borderColor =
+          "rgba(200,169,110,0.3)";
+        (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+          "0 8px 24px rgba(0,0,0,0.5)";
+        (e.currentTarget as HTMLAnchorElement).style.transform =
+          "translateY(0)";
       }}
     >
+      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.4)] to-transparent pointer-events-none" />
       <span
-        className="block font-black text-xs sm:text-sm"
-        style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+        className="block font-black text-xs sm:text-sm text-[#f0e8d4] group-hover:text-[#c8a96e] transition-colors"
+        style={{ fontFamily: "var(--font-display)" }}
       >
-        {title}
+        {title} ✦
       </span>
-      <span
-        className="mt-1 block text-[10px] leading-relaxed sm:text-xs line-clamp-2"
-        style={{ color: "#8a7a62" }}
-      >
+      <span className="mt-1 block text-[10px] leading-relaxed sm:text-xs line-clamp-2 text-[#8a7a62] group-hover:text-[#a89880] transition-colors">
         {copy}
       </span>
     </Link>

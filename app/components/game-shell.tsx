@@ -175,7 +175,7 @@ export function GameShell({ children }: { children: ReactNode }) {
             {/* Ornate Fantasy HUD Dock Bar Frame */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/creatures/nav_bar.png"
+              src="/ui/nav_bar.png"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_-8px_32px_rgba(0,0,0,0.95)]"

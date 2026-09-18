@@ -1,6 +1,7 @@
 # OS and editor files
 .DS_Store
 .vscode/
+*.zip
 
 # Environment files and local secrets
 .env.local

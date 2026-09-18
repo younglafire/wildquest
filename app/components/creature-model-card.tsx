@@ -32,11 +32,11 @@ export type CreatureModelCardProps = {
 
 function getRarityTemplate(rarity?: string): string {
   const r = (rarity ?? "common").toLowerCase().trim();
-  if (r.includes("legend")) return "/creatures/legend.png";
-  if (r.includes("epic")) return "/creatures/epic.png";
-  if (r.includes("rare")) return "/creatures/rare.png";
-  if (r.includes("uncommon")) return "/creatures/uncommon.png";
-  return "/creatures/common.png";
+  if (r.includes("legend")) return "/cards/frames/legend.png";
+  if (r.includes("epic")) return "/cards/frames/epic.png";
+  if (r.includes("rare")) return "/cards/frames/rare.png";
+  if (r.includes("uncommon")) return "/cards/frames/uncommon.png";
+  return "/cards/frames/common.png";
 }
 
 function splitSummary(summary: string): [string, string | null] {
@@ -131,7 +131,7 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
             <stop offset="100%" stopColor="#080605" />
           </linearGradient>
           <clipPath id={clipId}>
-            <rect x="82" y="196" width="860" height="650" rx="16" />
+            <rect x="137" y="150" width="750" height="715" rx="20" />
           </clipPath>
         </defs>
 
@@ -140,20 +140,20 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
 
         {/* 2. Creature Artwork in Upper Window */}
         <g clipPath={`url(#${clipId})`}>
-          <rect x="82" y="196" width="860" height="650" fill="#120e0a" />
+          <rect x="137" y="150" width="750" height="715" fill="#120e0a" />
           {imageSrc ? (
             <image
               href={imageSrc}
-              x="82"
-              y="196"
-              width="860"
-              height="650"
+              x="137"
+              y="150"
+              width="750"
+              height="715"
               preserveAspectRatio="xMidYMid slice"
             />
           ) : (
             <text
               x="512"
-              y="530"
+              y="510"
               fill="#c8a96e"
               fontSize="34"
               fontWeight="900"
@@ -177,65 +177,57 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
 
         {/* 4. Top Header Bar: Rarity Tag & Creature Name */}
         <rect
-          x="212"
-          y="88"
-          width="600"
-          height="86"
-          rx="12"
-          fill="rgba(8, 6, 4, 0.92)"
+          x="182"
+          y="215"
+          width="660"
+          height="84"
+          rx="14"
+          fill="rgba(8, 7, 5, 0.88)"
           stroke="#c8a96e"
-          strokeWidth="2.5"
+          strokeWidth="2"
         />
         <text
           x="512"
-          y="118"
+          y="244"
           fontFamily="ui-monospace, monospace"
-          fontSize="23"
+          fontSize="20"
           fontWeight="900"
           fill="#fbbf24"
           textAnchor="middle"
-          letterSpacing="1.5"
+          letterSpacing="2"
         >
           {`[ ${rarity.toUpperCase()} · ${role.toUpperCase()} ]`}
         </text>
         <text
           x="512"
-          y="156"
+          y="283"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize={name.length > 18 ? "36" : "44"}
+          fontSize={name.length > 20 ? "30" : name.length > 15 ? "34" : "38"}
           fontWeight="900"
           fill="#ffffff"
           textAnchor="middle"
-          letterSpacing="1"
+          letterSpacing="1.5"
         >
           {name.toUpperCase()}
         </text>
 
-        {/* 5. Four Battle Stats Badges */}
+        {/* 5. Four Battle Stats Badges (Positioned inside lower frame tablet) */}
         {/* HP */}
         <rect
-          x="82"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="#0c0f0d"
+          x="115"
+          y="996"
+          width="182"
+          height="86"
+          rx="12"
+          fill="rgba(12, 20, 14, 0.9)"
           stroke="#22c55e"
-          strokeWidth="2.5"
-        />
-        <rect
-          x="82"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="rgba(34, 197, 94, 0.16)"
+          strokeWidth="2"
         />
         <text
-          x="184"
-          y="916"
+          x="206"
+          y="1026"
           fontFamily="ui-monospace, monospace"
-          fontSize="24"
+          fontSize="20"
           fontWeight="900"
           fill="#4ade80"
           textAnchor="middle"
@@ -243,10 +235,10 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           HP
         </text>
         <text
-          x="184"
-          y="984"
+          x="206"
+          y="1068"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize="62"
+          fontSize="42"
           fontWeight="900"
           fill="#ffffff"
           textAnchor="middle"
@@ -256,28 +248,20 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
 
         {/* ATK */}
         <rect
-          x="300"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="#120c0b"
+          x="319"
+          y="996"
+          width="182"
+          height="86"
+          rx="12"
+          fill="rgba(24, 12, 12, 0.9)"
           stroke="#ef4444"
-          strokeWidth="2.5"
-        />
-        <rect
-          x="300"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="rgba(239, 68, 68, 0.16)"
+          strokeWidth="2"
         />
         <text
-          x="402"
-          y="916"
+          x="410"
+          y="1026"
           fontFamily="ui-monospace, monospace"
-          fontSize="24"
+          fontSize="20"
           fontWeight="900"
           fill="#f87171"
           textAnchor="middle"
@@ -285,10 +269,10 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           ATK
         </text>
         <text
-          x="402"
-          y="984"
+          x="410"
+          y="1068"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize="62"
+          fontSize="42"
           fontWeight="900"
           fill="#ffffff"
           textAnchor="middle"
@@ -298,28 +282,20 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
 
         {/* DEF */}
         <rect
-          x="518"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="#0b0f14"
+          x="523"
+          y="996"
+          width="182"
+          height="86"
+          rx="12"
+          fill="rgba(12, 18, 26, 0.9)"
           stroke="#3b82f6"
-          strokeWidth="2.5"
-        />
-        <rect
-          x="518"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="rgba(59, 130, 246, 0.16)"
+          strokeWidth="2"
         />
         <text
-          x="620"
-          y="916"
+          x="614"
+          y="1026"
           fontFamily="ui-monospace, monospace"
-          fontSize="24"
+          fontSize="20"
           fontWeight="900"
           fill="#60a5fa"
           textAnchor="middle"
@@ -327,10 +303,10 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           DEF
         </text>
         <text
-          x="620"
-          y="984"
+          x="614"
+          y="1068"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize="62"
+          fontSize="42"
           fontWeight="900"
           fill="#ffffff"
           textAnchor="middle"
@@ -340,28 +316,20 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
 
         {/* Mana */}
         <rect
-          x="736"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="#12100a"
+          x="727"
+          y="996"
+          width="182"
+          height="86"
+          rx="12"
+          fill="rgba(24, 20, 10, 0.9)"
           stroke="#eab308"
-          strokeWidth="2.5"
-        />
-        <rect
-          x="736"
-          y="880"
-          width="204"
-          height="126"
-          rx="14"
-          fill="rgba(234, 179, 8, 0.16)"
+          strokeWidth="2"
         />
         <text
-          x="838"
-          y="916"
+          x="818"
+          y="1026"
           fontFamily="ui-monospace, monospace"
-          fontSize="24"
+          fontSize="20"
           fontWeight="900"
           fill="#facc15"
           textAnchor="middle"
@@ -369,10 +337,10 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           MANA
         </text>
         <text
-          x="838"
-          y="984"
+          x="818"
+          y="1068"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize="62"
+          fontSize="42"
           fontWeight="900"
           fill="#ffffff"
           textAnchor="middle"
@@ -380,33 +348,23 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           {mana}
         </text>
 
-        {/* 6. Lower gameplay panel */}
-        <rect
-          x="82"
-          y="1022"
-          width="860"
-          height="300"
-          rx="14"
-          fill="rgba(6, 5, 4, 0.82)"
-          stroke="rgba(200, 169, 110, 0.35)"
-          strokeWidth="1.5"
-        />
+        {/* 6. Ability & Action Costs (Inside lower frame tablet) */}
         <text
-          x="110"
-          y="1064"
+          x="120"
+          y="1120"
           fontFamily="ui-monospace, monospace"
-          fontSize="22"
+          fontSize="19"
           fontWeight="900"
           fill="#f3ba63"
-          letterSpacing="1.5"
+          letterSpacing="2"
         >
           ABILITY
         </text>
         <text
-          x="110"
-          y="1104"
+          x="120"
+          y="1154"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize={ability.name.length > 16 ? "33" : "39"}
+          fontSize={ability.name.length > 18 ? "26" : "32"}
           fontWeight="900"
           fill="#ffffff"
         >
@@ -415,20 +373,20 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
 
         {/* Action costs */}
         <rect
-          x="110"
-          y="1134"
-          width="248"
-          height="56"
-          rx="12"
-          fill="#15100a"
+          x="115"
+          y="1176"
+          width="254"
+          height="50"
+          rx="10"
+          fill="rgba(20, 10, 8, 0.85)"
           stroke="#ef4444"
-          strokeWidth="2"
+          strokeWidth="1.8"
         />
         <text
-          x="234"
-          y="1169"
+          x="242"
+          y="1208"
           fontFamily="ui-monospace, monospace"
-          fontSize="22"
+          fontSize="20"
           fontWeight="900"
           fill="#fecaca"
           textAnchor="middle"
@@ -436,20 +394,20 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           {`STRIKE ${strikeCost}`}
         </text>
         <rect
-          x="388"
-          y="1134"
-          width="248"
-          height="56"
-          rx="12"
-          fill="#0b0f14"
+          x="385"
+          y="1176"
+          width="254"
+          height="50"
+          rx="10"
+          fill="rgba(8, 14, 24, 0.85)"
           stroke="#3b82f6"
-          strokeWidth="2"
+          strokeWidth="1.8"
         />
         <text
           x="512"
-          y="1169"
+          y="1208"
           fontFamily="ui-monospace, monospace"
-          fontSize="22"
+          fontSize="20"
           fontWeight="900"
           fill="#bfdbfe"
           textAnchor="middle"
@@ -457,20 +415,20 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           {`GUARD ${guardCost}`}
         </text>
         <rect
-          x="666"
-          y="1134"
-          width="248"
-          height="56"
-          rx="12"
-          fill="#0c120d"
+          x="655"
+          y="1176"
+          width="254"
+          height="50"
+          rx="10"
+          fill="rgba(8, 20, 12, 0.85)"
           stroke="#22c55e"
-          strokeWidth="2"
+          strokeWidth="1.8"
         />
         <text
-          x="790"
-          y="1169"
+          x="782"
+          y="1208"
           fontFamily="ui-monospace, monospace"
-          fontSize="22"
+          fontSize="20"
           fontWeight="900"
           fill="#bbf7d0"
           textAnchor="middle"
@@ -478,37 +436,40 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           {`RECHARGE +${rechargeGain}`}
         </text>
 
+        {/* Lore / Description */}
         <text
-          x="110"
-          y="1230"
+          x="120"
+          y="1264"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize="26"
-          fontWeight="800"
+          fontSize="24"
+          fontWeight="700"
           fill="#f7f0de"
         >
           {summaryLine1}
         </text>
         {summaryLine2 ? (
           <text
-            x="110"
-            y="1264"
+            x="120"
+            y="1298"
             fontFamily="system-ui, -apple-system, sans-serif"
-            fontSize="25"
-            fontWeight="700"
-            fill="#d9ccb6"
+            fontSize="22"
+            fontWeight="600"
+            fill="#c8ba9e"
           >
             {summaryLine2}
           </text>
         ) : null}
+
+        {/* Onchain Specimen Watermark */}
         <text
           x="512"
-          y="1310"
+          y="1354"
           fontFamily="ui-monospace, monospace"
-          fontSize="22"
+          fontSize="20"
           fontWeight="900"
           fill="#f3ba63"
           textAnchor="middle"
-          letterSpacing="1.5"
+          letterSpacing="2"
         >
           {catalogueId
             ? `✦ SPECIES #${catalogueId} · SOLANA DEVNET ONCHAIN ✦`

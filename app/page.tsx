@@ -24,59 +24,78 @@ export default function Home() {
           {/* Hero Section: Centered Cinematic Layout */}
           <section className="flex flex-col items-center text-center space-y-4 sm:space-y-5">
             {/* Top Badge & Titles */}
-          <div className="space-y-3 max-w-3xl mx-auto">
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em]"
-              style={{ background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", color: "#c8a96e" }}
-            >
-              <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#c8a96e" }} />
-              WildQuest · Season 01 // Solana Devnet
-            </div>
-
-            <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/creatures/logo.png"
-                alt="WildQuest"
-                className="h-auto w-full max-w-[340px] sm:max-w-[500px] md:max-w-[640px] lg:max-w-[780px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
-              />
-              <h1 className="mt-3 text-center text-lg font-black tracking-tight sm:text-2xl lg:text-3xl" style={{ color: "#f0e8d4", fontFamily: "var(--font-display)" }}>
-                The Real-World Wildlife RPG on Solana
-              </h1>
-            </div>
-
-            <p
-              className="mx-auto max-w-xl text-xs leading-relaxed sm:text-sm"
-              style={{ color: "#8a7a62" }}
-            >
-              Step outside, hunt real animals with your phone camera, and
-              prove your finds with on-device AI vision.
-            </p>
-
-            {/* Feature Tags — leather bordered */}
-            <div className="flex flex-wrap justify-center gap-1.5 pt-1">
-              {[
-                "🐾 8 Species",
-                "⚡ ResNet-50 Vision",
-                "🛡️ Anti-Cheat pHash",
-                "🏆 Onchain Quests",
-              ].map((tag) => (
+            <div className="space-y-3 max-w-3xl mx-auto">
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.25em]"
+                style={{
+                  background: "rgba(200,169,110,0.1)",
+                  border: "1px solid rgba(200,169,110,0.25)",
+                  color: "#c8a96e",
+                }}
+              >
                 <span
-                  key={tag}
-                  className="rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                  className="h-2 w-2 rounded-full animate-pulse"
+                  style={{ background: "#c8a96e" }}
+                />
+                WildQuest · Season 01 // Solana Devnet
+              </div>
+
+              <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/ui/logo.png"
+                  alt="WildQuest"
+                  className="h-auto w-full max-w-[340px] sm:max-w-[500px] md:max-w-[640px] lg:max-w-[780px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
+                />
+                <h1
+                  className="mt-3 text-center text-lg font-black tracking-tight sm:text-2xl lg:text-3xl"
                   style={{
-                    background: "rgba(58,46,30,0.6)",
-                    border: "1px solid rgba(200,169,110,0.2)",
-                    color: "#8a7a62",
+                    color: "#f0e8d4",
                     fontFamily: "var(--font-display)",
-                    backdropFilter: "blur(4px)",
                   }}
                 >
-                  {tag}
-                </span>
-              ))}
+                  The Real-World Wildlife RPG on Solana
+                </h1>
+              </div>
+
+              <p
+                className="mx-auto max-w-xl text-xs leading-relaxed sm:text-sm"
+                style={{ color: "#8a7a62" }}
+              >
+                Step outside, hunt real animals with your phone camera, and
+                prove your finds with on-device AI vision.
+              </p>
+
+              {/* Feature Tags — Ornate fantasy ribbon plaques */}
+              <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3.5 pt-1">
+                {[
+                  "🐾 8 Species",
+                  "⚡ ResNet-50 Vision",
+                  "🛡️ Anti-Cheat pHash",
+                  "🏆 Onchain Quests",
+                ].map((tag) => (
+                  <div
+                    key={tag}
+                    className="group relative inline-flex min-h-9 sm:min-h-11 items-center justify-center px-7 py-2 sm:px-9 sm:py-2.5 transition-transform duration-150 hover:scale-105 select-none"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/ui/tag_frame.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] brightness-95 transition-all group-hover:brightness-110"
+                      draggable={false}
+                    />
+                    <span
+                      className="relative z-10 text-xs sm:text-sm font-black tracking-wide text-[#f0e8d4] drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {tag}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
             {/* Centerpiece Visual: Frameless 3D Bio-Scanner & Cards */}
             <div className="w-full">
@@ -109,34 +128,94 @@ export default function Home() {
 
           {/* Section: Active Bounty Quest Highlight */}
           <section
-            className="mt-28 overflow-hidden rounded-xl p-6 shadow-xl sm:p-8"
+            className="relative mt-28 overflow-hidden rounded-2xl p-6 sm:p-9 shadow-[0_24px_64px_rgba(0,0,0,0.85)] select-none transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_24px_64px_rgba(52,211,153,0.2)]"
             style={{
-              background: "linear-gradient(135deg, rgba(74,124,89,0.12) 0%, #1c1810 60%)",
-              border: "1px solid rgba(200,169,110,0.2)",
+              background:
+                "radial-gradient(120% 120% at 20% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 70%)",
+              border: "1px solid rgba(200, 169, 110, 0.35)",
+              boxShadow:
+                "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200, 169, 110, 0.25), inset 0 0 35px rgba(10, 24, 16, 0.6)",
             }}
           >
             {/* Top gold rule */}
             <div
-              className="mb-5 h-[1px]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.4), transparent)" }}
+              className="pointer-events-none absolute inset-x-0 top-0 h-[1px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(200,169,110,0.7), transparent)",
+              }}
             />
+
+            {/* Corner Runes */}
+            <span className="pointer-events-none absolute top-2 left-2.5 font-mono text-[10px] text-[#c8a96e]/40 select-none">
+              ❖
+            </span>
+            <span className="pointer-events-none absolute top-2 right-2.5 font-mono text-[10px] text-[#c8a96e]/40 select-none">
+              ❖
+            </span>
+            <span className="pointer-events-none absolute bottom-2 left-2.5 font-mono text-[10px] text-[#c8a96e]/40 select-none">
+              ❖
+            </span>
+            <span className="pointer-events-none absolute bottom-2 right-2.5 font-mono text-[10px] text-[#c8a96e]/40 select-none">
+              ❖
+            </span>
+
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
-                <div className="wax-badge wax-badge-forest inline-flex">
-                  🎯 Active Bounty Quest
+                {/* Bounty Tag Badge — Enlarged with generous safe-zone padding */}
+                <div className="group relative inline-flex min-h-10 sm:min-h-12 items-center justify-center px-9 sm:px-12 py-2 sm:py-2.5 select-none transition-transform duration-200 hover:scale-105">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/ui/tag_frame.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] brightness-95 transition-all group-hover:brightness-110"
+                    draggable={false}
+                  />
+                  <span
+                    className="relative z-10 text-xs sm:text-sm font-black uppercase tracking-[0.16em] text-[#f0e8d4] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    Active Bounty Quest
+                  </span>
                 </div>
+
                 <h3
-                  className="mt-3 text-2xl font-black sm:text-3xl"
-                  style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+                  className="mt-3 text-2xl font-black sm:text-3xl lg:text-4xl text-[#f0e8d4] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
                   Campus Field Survey #01
                 </h3>
-                <p className="mt-1.5 text-sm" style={{ color: "#8a7a62" }}>
-                  Locate all 5 target species:{" "}
-                  <strong style={{ color: "#c8a96e" }}>Bee, Chicken, Butterfly, Dragonfly, and Frog</strong>{" "}
-                  to earn the Founder Badge and +100 XP.
+
+                {/* Target Species Tokens */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 pt-0.5">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#a89880]">
+                    Targets:
+                  </span>
+                  {[
+                    { name: "Bee", icon: "🐝" },
+                    { name: "Chicken", icon: "🐔" },
+                    { name: "Butterfly", icon: "🦋" },
+                    { name: "Dragonfly", icon: "🪰" },
+                    { name: "Frog", icon: "🐸" },
+                  ].map((sp) => (
+                    <div
+                      key={sp.name}
+                      className="group/sp relative inline-flex items-center gap-1.5 rounded-lg border border-[#c8a96e]/30 bg-black/50 px-2.5 py-1 text-xs text-[#f0e8d4] transition-all hover:border-emerald-500/50 hover:bg-emerald-950/30"
+                    >
+                      <span>{sp.icon}</span>
+                      <span className="font-bold text-[#c8a96e]">{sp.name}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="mt-2 text-xs sm:text-sm text-[#a89880]">
+                  Locate all 5 target species to earn the{" "}
+                  <strong className="text-emerald-400">Founder Badge</strong> and{" "}
+                  <strong className="text-amber-400">+100 XP</strong> on Solana Devnet.
                 </p>
               </div>
+
               <div className="shrink-0">
                 <StartExpeditionButton />
               </div>
@@ -148,47 +227,90 @@ export default function Home() {
 
           {/* Pre-Footer Call to Action Banner */}
           <section
-            className="mt-28 relative overflow-hidden rounded-xl p-8 text-center sm:p-12"
+            className="relative mt-28 overflow-hidden rounded-2xl p-8 text-center sm:p-12 shadow-[0_24px_64px_rgba(0,0,0,0.85)] select-none transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_24px_64px_rgba(52,211,153,0.2)]"
             style={{
-              background: "linear-gradient(180deg, #1c1810 0%, #221d14 100%)",
-              border: "1px solid rgba(200,169,110,0.2)",
-              boxShadow: "0 20px 80px -20px rgba(200,169,110,0.15)",
+              background:
+                "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 75%)",
+              border: "1px solid rgba(200, 169, 110, 0.35)",
+              boxShadow:
+                "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200, 169, 110, 0.25), inset 0 0 45px rgba(10, 24, 16, 0.6)",
             }}
           >
-            {/* Ambient gold glow */}
+            {/* Ambient emerald & gold glow */}
             <div
-              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full blur-3xl"
-              style={{ background: "rgba(200,169,110,0.12)" }}
+              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-56 w-[500px] rounded-full blur-3xl opacity-40"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(52, 211, 153, 0.35) 0%, rgba(200, 169, 110, 0.15) 60%, transparent 80%)",
+              }}
               aria-hidden="true"
             />
+
             {/* Gold ornamental rules */}
             <div
-              className="absolute inset-x-8 top-0 h-[1px]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent)" }}
+              className="pointer-events-none absolute inset-x-0 top-0 h-[1px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(200,169,110,0.8), transparent)",
+              }}
             />
             <div
-              className="absolute inset-x-8 bottom-0 h-[1px]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.25), transparent)" }}
+              className="pointer-events-none absolute inset-x-8 bottom-0 h-[1px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(200,169,110,0.35), transparent)",
+              }}
             />
 
+            {/* Corner Runes */}
+            <span className="pointer-events-none absolute top-2.5 left-3 font-mono text-[11px] text-[#c8a96e]/45 select-none">
+              ❖
+            </span>
+            <span className="pointer-events-none absolute top-2.5 right-3 font-mono text-[11px] text-[#c8a96e]/45 select-none">
+              ❖
+            </span>
+            <span className="pointer-events-none absolute bottom-2.5 left-3 font-mono text-[11px] text-[#c8a96e]/45 select-none">
+              ❖
+            </span>
+            <span className="pointer-events-none absolute bottom-2.5 right-3 font-mono text-[11px] text-[#c8a96e]/45 select-none">
+              ❖
+            </span>
+
             <div className="relative z-10 max-w-2xl mx-auto space-y-4">
-              <div
-                className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-widest"
-                style={{ background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", color: "#c8a96e" }}
-              >
-                <span>✦ SEASON 01 IS LIVE</span>
+              {/* Season Badge in Ornate Frame */}
+              <div className="group relative inline-flex min-h-10 sm:min-h-12 items-center justify-center px-9 sm:px-12 py-2 select-none transition-transform duration-200 hover:scale-105">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/ui/tag_frame.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] brightness-105 transition-all group-hover:brightness-115"
+                  draggable={false}
+                />
+                <span
+                  className="relative z-10 text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-[#f0e8d4] drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  ✦ SEASON 01 IS LIVE ✦
+                </span>
               </div>
+
               <h2
-                className="text-3xl font-black tracking-tight sm:text-5xl"
+                className="text-3xl font-black tracking-tight sm:text-5xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]"
                 style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
               >
                 Ready to Step Into the Wild?
               </h2>
-              <p className="text-sm leading-relaxed sm:text-base" style={{ color: "#8a7a62" }}>
+
+              <p
+                className="text-sm leading-relaxed sm:text-base max-w-xl mx-auto"
+                style={{ color: "#a89880" }}
+              >
                 Your mobile phone is your neural scanner. Solana is your
                 immutable ledger. Begin tracking local wildlife, level up your
                 Explorer Passport, and mint your discoveries today.
               </p>
+
               <div className="pt-4 flex justify-center">
                 <StartExpeditionButton />
               </div>

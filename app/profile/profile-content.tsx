@@ -60,26 +60,48 @@ export function ProfileContent() {
       <section className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
         {/* Guild Passport Card */}
         <div
-          className="rounded-xl p-4 sm:p-8"
+          className="relative overflow-hidden rounded-2xl p-5 sm:p-8"
           style={{
-            background: "#1c1810",
-            border: "1px solid #3a2e1e",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,169,110,0.06) inset",
+            background:
+              "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 75%)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200, 169, 110, 0.25)",
           }}
         >
-          {/* Top rule */}
+          {/* Top gold hairline */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
+          <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+
           <div
-            className="mb-3 h-[1px] w-full sm:mb-4"
-            style={{ background: "linear-gradient(90deg, transparent, #c8a96e, transparent)" }}
-          />
-          <p className="wax-badge">Explorer Passport</p>
+            className="relative inline-flex min-h-9 sm:min-h-10 items-center justify-center px-6 sm:px-8 py-1 sm:py-1.5 select-none"
+            style={{
+              backgroundImage: "url('/ui/tag_frame.png')",
+              backgroundSize: "100% 100%",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            <span
+              className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              ✦ EXPLORER PASSPORT ✦
+            </span>
+          </div>
+
           <h1
-            className="mt-2 text-3xl font-black tracking-tight sm:mt-4 sm:text-6xl"
-            style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+            className="mt-3 text-3xl font-black tracking-tight sm:mt-4 sm:text-6xl"
+            style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
           >
             Level {player.level.toString()}
           </h1>
-          <p className="mt-1 text-xs sm:mt-2 sm:text-sm" style={{ color: "#8a7a62" }}>
+          <p className="mt-1 text-xs sm:mt-2 sm:text-sm text-[#a89880]">
             WildQuest field explorer · Solana {cluster}
           </p>
           {game.playerProgress && (
@@ -98,27 +120,53 @@ export function ProfileContent() {
             />
             <PassportStat label="Badges" value={player.badgeCount.toString()} />
           </dl>
-          {/* Bottom rule */}
-          <div
-            className="mt-4 h-[1px] w-full sm:mt-6"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.3), transparent)" }}
-          />
         </div>
 
         {/* Wallet card */}
         <div
-          className="rounded-xl p-4 sm:p-8"
-          style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+          className="relative overflow-hidden rounded-2xl p-5 sm:p-8"
+          style={{
+            background: "rgba(18, 16, 11, 0.92)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+          }}
         >
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+          <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+          <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+            ❖
+          </span>
+
+          <div className="flex items-center justify-between">
+            <p
+              className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Connected Wallet
+            </p>
+            <span
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#6aab7a]"
+              style={{
+                background: "rgba(26,56,36,0.6)",
+                border: "1px solid rgba(74,124,89,0.4)",
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#6aab7a] animate-pulse" />
+              {cluster}
+            </span>
+          </div>
           <p
-            className="text-[10px] font-bold uppercase tracking-[0.22em]"
-            style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
-          >
-            Connected Wallet
-          </p>
-          <p
-            className="mt-4 break-all text-sm"
-            style={{ fontFamily: "var(--font-mono)", color: "#8a7a62", fontSize: "0.72rem" }}
+            className="mt-4 break-all rounded-xl p-3 text-sm"
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "#a89880",
+              fontSize: "0.72rem",
+              background: "rgba(14, 12, 8, 0.95)",
+              border: "1px solid rgba(200, 169, 110, 0.2)",
+            }}
           >
             {game.address}
           </p>
@@ -129,19 +177,18 @@ export function ProfileContent() {
             {balance.lamports !== null
               ? lamportsToSolString(balance.lamports)
               : "—"}{" "}
-            <span
-              className="text-sm font-medium"
-              style={{ color: "#8a7a62" }}
-            >
-              SOL
-            </span>
+            <span className="text-sm font-medium text-[#c8a96e]">SOL</span>
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => void copyAddress()}
-              className="min-h-12 rounded-lg text-sm font-bold transition-colors"
-              style={{ border: "1px solid #3a2e1e", color: "#c8a96e", background: "rgba(200,169,110,0.06)" }}
+              className="min-h-12 rounded-xl text-sm font-bold transition-all active:scale-95"
+              style={{
+                border: "1px solid rgba(200, 169, 110, 0.35)",
+                color: "#c8a96e",
+                background: "rgba(200, 169, 110, 0.08)",
+              }}
             >
               {copied ? "Copied ✓" : "Copy address"}
             </button>
@@ -149,8 +196,11 @@ export function ProfileContent() {
               href={getExplorerUrl(`/address/${game.address}`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-12 items-center justify-center rounded-lg text-sm font-bold transition-colors"
-              style={{ border: "1px solid #3a2e1e", color: "#c8a96e", background: "rgba(200,169,110,0.06)" }}
+              className="flex min-h-12 items-center justify-center rounded-xl text-sm font-bold text-[#c8a96e] hover:text-[#f0e8d4] transition-all active:scale-95"
+              style={{
+                border: "1px solid rgba(200, 169, 110, 0.35)",
+                background: "rgba(200, 169, 110, 0.08)",
+              }}
             >
               Explorer ↗
             </a>
@@ -158,8 +208,12 @@ export function ProfileContent() {
           <button
             type="button"
             onClick={() => void disconnect()}
-            className="mt-3 min-h-12 w-full rounded-lg text-sm font-bold"
-            style={{ border: "1px solid rgba(192,57,43,0.35)", color: "#f8c8c4", background: "rgba(192,57,43,0.08)" }}
+            className="mt-3 min-h-12 w-full rounded-xl text-sm font-bold transition-all active:scale-95"
+            style={{
+              border: "1px solid rgba(192, 57, 43, 0.4)",
+              color: "#f8c8c4",
+              background: "rgba(192, 57, 43, 0.1)",
+            }}
           >
             Disconnect
           </button>
@@ -168,14 +222,27 @@ export function ProfileContent() {
 
       {/* Badges */}
       <section
-        className="mt-4 rounded-xl p-6 sm:p-8"
-        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+        className="relative mt-4 overflow-hidden rounded-2xl p-6 sm:p-8"
+        style={{
+          background: "rgba(18, 16, 11, 0.92)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow:
+            "0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+        }}
       >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+
         <div className="flex items-start justify-between gap-4">
           <div>
             <p
-              className="text-[10px] font-bold uppercase tracking-[0.22em]"
-              style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+              className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
               Badges
             </p>
@@ -186,31 +253,56 @@ export function ProfileContent() {
               Expedition Achievements
             </h2>
           </div>
-          <span className="wax-badge">
-            {player.badgeCount.toString()} earned
-          </span>
+          <div
+            className="relative inline-flex min-h-8 items-center justify-center px-5 py-1 select-none"
+            style={{
+              backgroundImage: "url('/ui/tag_frame.png')",
+              backgroundSize: "100% 100%",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            <span
+              className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {player.badgeCount.toString()} EARNED
+            </span>
+          </div>
         </div>
 
         {completion ? (
           <article
-            className="mt-6 flex items-center gap-4 rounded-xl p-5"
-            style={{ background: "rgba(74,124,89,0.1)", border: "1px solid rgba(74,124,89,0.3)" }}
+            className="relative mt-6 overflow-hidden flex items-center gap-4 rounded-xl p-5"
+            style={{
+              background:
+                "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.75) 0%, rgba(14, 12, 8, 0.95) 85%)",
+              border: "1px solid rgba(74, 124, 89, 0.4)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+            }}
           >
             <span
               aria-hidden="true"
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl"
-              style={{ background: "linear-gradient(135deg, #4a7c59, #6aab7a)", color: "#fff" }}
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg"
+              style={{
+                background: "linear-gradient(135deg, #4a7c59, #6aab7a)",
+                color: "#f0e8d4",
+                border: "1px solid rgba(200, 169, 110, 0.4)",
+              }}
             >
               ✦
             </span>
             <div>
               <h3
-                className="font-black"
+                className="font-black text-lg"
                 style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
               >
                 Campus Field Survey
               </h3>
-              <p className="mt-1 text-xs" style={{ color: "#8a7a62", fontFamily: "var(--font-mono)" }}>
+              <p
+                className="mt-1 text-xs text-[#a89880]"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
                 Completed {formatDiscoveryDate(completion.completedAt)} · +
                 {completion.rewardXp.toString()} XP
               </p>
@@ -219,20 +311,25 @@ export function ProfileContent() {
         ) : (
           <div
             className="mt-6 rounded-xl p-5"
-            style={{ background: "#221d14" }}
+            style={{
+              background: "rgba(14, 12, 8, 0.95)",
+              border: "1px solid rgba(200, 169, 110, 0.2)",
+            }}
           >
-            <p className="font-bold" style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}>
+            <p
+              className="font-bold text-base"
+              style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
+            >
               Your first badge is waiting
             </p>
-            <p className="mt-1 text-sm" style={{ color: "#8a7a62" }}>
+            <p className="mt-1 text-sm text-[#a89880]">
               Complete the Campus Field Survey to earn it.
             </p>
             <Link
               href="/quest"
-              className="mt-4 inline-flex min-h-12 items-center font-bold underline-offset-4 hover:underline"
-              style={{ color: "#c8a96e" }}
+              className="mt-4 inline-flex min-h-11 items-center font-bold text-[#c8a96e] underline-offset-4 hover:text-[#f0e8d4] hover:underline"
             >
-              View quest →
+              View quest details →
             </Link>
           </div>
         )}
@@ -240,13 +337,26 @@ export function ProfileContent() {
 
       {/* Battle record */}
       <section
-        className="mt-4 flex flex-col gap-4 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"
-        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+        className="relative mt-4 overflow-hidden flex flex-col gap-4 rounded-2xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"
+        style={{
+          background: "rgba(18, 16, 11, 0.92)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow:
+            "0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+        }}
       >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+
         <div>
           <p
-            className="text-[10px] font-bold uppercase tracking-[0.22em]"
-            style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+            className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]"
+            style={{ fontFamily: "var(--font-display)" }}
           >
             Battle Record
           </p>
@@ -256,16 +366,29 @@ export function ProfileContent() {
           >
             Your Onchain Matches
           </h2>
-          <p className="mt-2 text-sm" style={{ color: "#8a7a62" }}>
+          <p className="mt-2 text-sm text-[#a89880]">
             Rewatch deterministic battles and open every signed transaction
             receipt on Explorer.
           </p>
         </div>
         <Link
           href="/battle#history"
-          className="btn-guild whitespace-nowrap"
+          aria-label="View Match History"
+          className="group relative inline-flex cursor-pointer items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 shrink-0"
+          style={{
+            filter:
+              "drop-shadow(0 10px 24px rgba(0,0,0,0.8)) drop-shadow(0 0 16px rgba(52,211,153,0.25))",
+          }}
         >
-          View Match History
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/ui/view_match.png"
+            alt="View Match History"
+            width={320}
+            height={96}
+            className="h-auto w-56 sm:w-64 select-none object-contain transition-all duration-200 group-hover:brightness-120 group-hover:drop-shadow-[0_0_28px_rgba(52,211,153,0.7)]"
+            draggable={false}
+          />
         </Link>
       </section>
     </main>
@@ -275,18 +398,24 @@ export function ProfileContent() {
 function PassportStat({ label, value }: { label: string; value: string }) {
   return (
     <div
-      className="rounded-xl p-2.5 text-center sm:p-4"
-      style={{ background: "#100e09", border: "1px solid #3a2e1e" }}
+      className="relative overflow-hidden rounded-xl p-3 text-center sm:p-4"
+      style={{
+        background: "rgba(14, 12, 8, 0.95)",
+        border: "1px solid rgba(200, 169, 110, 0.35)",
+        boxShadow:
+          "0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+      }}
     >
+      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.5)] to-transparent pointer-events-none" />
       <dt
-        className="text-[9px] uppercase tracking-wider"
-        style={{ color: "#8a7a62", fontFamily: "var(--font-display)", fontSize: "0.62rem" }}
+        className="text-[9px] uppercase tracking-wider text-[#a89880]"
+        style={{ fontFamily: "var(--font-display)", fontSize: "0.65rem" }}
       >
         {label}
       </dt>
       <dd
-        className="mt-1 text-xl font-black tabular-nums sm:text-2xl"
-        style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+        className="mt-1 text-xl font-black tabular-nums sm:text-2xl text-[#c8a96e] drop-shadow-[0_2px_8px_rgba(200,169,110,0.2)]"
+        style={{ fontFamily: "var(--font-display)" }}
       >
         {value}
       </dd>
@@ -308,22 +437,33 @@ function ProfileMessage({
   return (
     <main className="mx-auto max-w-2xl px-5 py-20 text-center">
       <section
-        className="rounded-xl p-8"
-        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+        className="relative overflow-hidden rounded-2xl p-8"
+        style={{
+          background:
+            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.6) 0%, rgba(18, 16, 11, 0.95) 75%)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
+        }}
       >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+
         <h1
           className="text-3xl font-black"
           style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
         >
           {title}
         </h1>
-        <p className="mt-3 text-sm leading-relaxed" style={{ color: "#8a7a62" }}>
-          {copy}
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-[#a89880]">{copy}</p>
         {action && href && (
           <Link
             href={href}
-            className="btn-guild mt-6 inline-flex"
+            className="btn-guild mt-6 inline-flex min-h-12 px-7 text-xs font-black uppercase tracking-wider"
           >
             {action}
           </Link>

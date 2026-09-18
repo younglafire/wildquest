@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useCluster } from "./cluster-context";
-import { ThemeToggle } from "./theme-toggle";
 import { WalletButton } from "./wallet-button";
 
 const NAVIGATION = [
@@ -36,7 +35,7 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/creatures/logo.png"
+          src="/ui/logo.png"
           alt="WildQuest"
           className="h-11 sm:h-14 md:h-16 lg:h-20 w-auto max-w-[155px] sm:max-w-[210px] md:max-w-[270px] lg:max-w-[340px] object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]"
         />
@@ -64,7 +63,7 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
                   {/* Ornate Plaque Background Image */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/creatures/button_tab.png"
+                    src="/ui/button_tab.png"
                     alt=""
                     aria-hidden="true"
                     className={`pointer-events-none absolute inset-0 h-full w-full object-fill transition-all ${
@@ -99,7 +98,7 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/creatures/button_tab.png"
+                src="/ui/button_tab.png"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_0_12px_rgba(74,222,128,0.75)] brightness-125 saturate-125"
@@ -143,7 +142,6 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
           </Link>
         )}
 
-        <ThemeToggle />
         <WalletButton />
       </nav>
     </header>

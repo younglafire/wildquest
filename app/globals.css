@@ -165,6 +165,142 @@
 }
 
 /* ============================================================
+   CUSTOM GAUNTLET GAME CURSORS (Global Overrides)
+   Unlayered with !important so Tailwind utilities cannot override them
+   ============================================================ */
+
+/* Normal Default State: Pointing Hand Gauntlet */
+html,
+body,
+.cursor-default,
+.cursor-default * {
+  cursor:
+    url("/ui/cursor_pointer.png") 6 6,
+    auto !important;
+}
+
+/* State 1: Hover Hand (Open Palm) when hovering on buttons & interactive elements */
+a,
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+select,
+label,
+summary,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+.cursor-pointer,
+a:hover,
+button:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover,
+select:hover,
+label:hover,
+summary:hover,
+[role="button"]:hover,
+[role="tab"]:hover,
+[role="menuitem"]:hover,
+.cursor-pointer:hover {
+  cursor:
+    url("/ui/cursor_hover.png") 10 5,
+    pointer !important;
+}
+
+/* Ensure all child elements inside buttons/links/clickable targets show the hover hand */
+a *,
+button *,
+input[type="button"] *,
+input[type="submit"] *,
+[role="button"] *,
+[role="tab"] *,
+[role="menuitem"] *,
+.cursor-pointer *,
+a:hover *,
+button:hover *,
+[role="button"]:hover *,
+[role="tab"]:hover *,
+[role="menuitem"]:hover *,
+.cursor-pointer:hover * {
+  cursor:
+    url("/ui/cursor_hover.png") 10 5,
+    pointer !important;
+}
+
+/* State 2: Active Click / Pressed Button (Spark Blast) */
+body:active,
+a:active,
+button:active,
+input[type="button"]:active,
+input[type="submit"]:active,
+[role="button"]:active,
+[role="tab"]:active,
+.cursor-pointer:active,
+a:active *,
+button:active *,
+[role="button"]:active *,
+[role="tab"]:active *,
+.cursor-pointer:active * {
+  cursor:
+    url("/ui/cursor_press.png") 8 8,
+    pointer !important;
+}
+
+/* State 3: Draggable items (Cards) */
+[draggable="true"],
+.cursor-grab,
+[draggable="true"]:hover,
+.cursor-grab:hover,
+[draggable="true"] *,
+.cursor-grab * {
+  cursor:
+    url("/ui/cursor_hover.png") 10 5,
+    grab !important;
+}
+
+[draggable="true"]:active,
+.cursor-grabbing,
+.cursor-grabbing * {
+  cursor:
+    url("/ui/cursor_grab.png") 12 10,
+    grabbing !important;
+}
+
+/* Battle Arena Slot Drag-over Highlight */
+.battle-slot.slot-drag-over {
+  border: 2px solid #34d399 !important;
+  background: rgba(16, 60, 36, 0.65) !important;
+  box-shadow:
+    0 0 24px rgba(52, 211, 153, 0.5),
+    inset 0 0 16px rgba(52, 211, 153, 0.3) !important;
+  transform: scale(1.02);
+}
+
+/* Disabled states - always show not-allowed */
+button:disabled,
+button[disabled],
+button:disabled *,
+button[disabled] *,
+[aria-disabled="true"],
+[aria-disabled="true"] *,
+.cursor-not-allowed,
+.cursor-not-allowed *,
+.disabled\:cursor-not-allowed:disabled,
+.disabled\:cursor-not-allowed:disabled * {
+  cursor: not-allowed !important;
+}
+
+/* Text inputs and textareas keep text selection cursor */
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not(
+    [type="checkbox"]
+  ):not([type="radio"]),
+textarea {
+  cursor: text !important;
+}
+
+/* ============================================================
    UTILITY CLASSES — Forest Guild Codex
    ============================================================ */
 
