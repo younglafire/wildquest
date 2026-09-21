@@ -32,6 +32,8 @@ pub struct Discovery {
 #[derive(InitSpace)]
 pub struct Quest {
     pub quest_id: u64,
+    // Kept as one byte so already-created Devnet Quest accounts remain
+    // deserializable across the incremental quest rollout.
     pub species_count: u8,
     #[max_len(5)]
     pub targets: Vec<u64>,

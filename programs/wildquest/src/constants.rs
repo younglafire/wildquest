@@ -132,10 +132,60 @@ pub const GOLD_XP: u64 = 100;
 pub const MAX_RARITY: u8 = 4;
 
 #[constant]
-pub const DEMO_QUEST_ID: u64 = 1;
+pub const QUEST_OBJECTIVE_CAPTURE_COUNT: u8 = 1;
 
 #[constant]
-pub const DEMO_QUEST_TARGETS: [u64; 5] = [3, 5, 8, 9, 11];
+pub const QUEST_OBJECTIVE_CAPTURE_ANY: u8 = 2;
 
 #[constant]
-pub const DEMO_QUEST_REWARD_XP: u64 = 100;
+pub const QUEST_OBJECTIVE_BATTLE_PARTICIPATION: u8 = 3;
+
+#[constant]
+pub const QUEST_IDS: [u64; 5] = [1, 2, 3, 4, 5];
+
+pub const BUTTERFLY_CATALOGUE_IDS: [u64; 2] = [1031, 1032];
+pub const RARE_CATALOGUE_IDS: [u64; 1] = [1011];
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct QuestDefinition {
+    pub objective: u8,
+    pub required_count: u8,
+    pub targets: &'static [u64],
+    pub reward_xp: u64,
+}
+
+pub fn quest_definition(quest_id: u64) -> Option<QuestDefinition> {
+    match quest_id {
+        1 => Some(QuestDefinition {
+            objective: QUEST_OBJECTIVE_CAPTURE_COUNT,
+            required_count: 1,
+            targets: &[],
+            reward_xp: 25,
+        }),
+        2 => Some(QuestDefinition {
+            objective: QUEST_OBJECTIVE_CAPTURE_COUNT,
+            required_count: 3,
+            targets: &[],
+            reward_xp: 50,
+        }),
+        3 => Some(QuestDefinition {
+            objective: QUEST_OBJECTIVE_CAPTURE_ANY,
+            required_count: 1,
+            targets: &BUTTERFLY_CATALOGUE_IDS,
+            reward_xp: 75,
+        }),
+        4 => Some(QuestDefinition {
+            objective: QUEST_OBJECTIVE_CAPTURE_ANY,
+            required_count: 1,
+            targets: &RARE_CATALOGUE_IDS,
+            reward_xp: 100,
+        }),
+        5 => Some(QuestDefinition {
+            objective: QUEST_OBJECTIVE_BATTLE_PARTICIPATION,
+            required_count: 1,
+            targets: &[],
+            reward_xp: 150,
+        }),
+        _ => None,
+    }
+}

@@ -8,10 +8,16 @@ export function ProgressBar({ value, label }: ProgressBarProps) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3 text-xs">
-        <span className="font-semibold" style={{ color: "#f0e8d4" }}>{label}</span>
+        <span className="font-semibold" style={{ color: "#f0e8d4" }}>
+          {label}
+        </span>
         <span
           className="tabular-nums"
-          style={{ fontFamily: "var(--font-mono)", color: "#8a7a62", fontSize: "0.7rem" }}
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: "#8a7a62",
+            fontSize: "0.7rem",
+          }}
         >
           {percentage}%
         </span>

@@ -1,8 +1,4 @@
-export type CameraGuidance =
-  | "searching"
-  | "add_light"
-  | "hold_still"
-  | "ready";
+export type CameraGuidance = "searching" | "add_light" | "hold_still" | "ready";
 
 const MINIMUM_BRIGHTNESS = 50;
 const MAXIMUM_FRAME_CHANGE = 18;
@@ -31,7 +27,8 @@ export function getCameraGuidance(
     );
     luma[lumaIndex] = value;
     brightnessTotal += value;
-    if (previousLuma) frameChangeTotal += Math.abs(value - previousLuma[lumaIndex]);
+    if (previousLuma)
+      frameChangeTotal += Math.abs(value - previousLuma[lumaIndex]);
   }
 
   const averageBrightness = brightnessTotal / luma.length;

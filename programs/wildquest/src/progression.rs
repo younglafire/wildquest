@@ -24,19 +24,12 @@ pub fn calculate_discovery_progression(
     Ok((next_xp, next_level, next_discovery_count))
 }
 
-pub fn calculate_quest_progression(
-    current_xp: u64,
-    current_badge_count: u64,
-    reward_xp: u64,
-) -> Result<(u64, u64, u64)> {
+pub fn calculate_quest_progression(current_xp: u64, reward_xp: u64) -> Result<(u64, u64)> {
     let next_xp = current_xp
         .checked_add(reward_xp)
         .ok_or(ErrorCode::ProgressionOverflow)?;
-    let next_badge_count = current_badge_count
-        .checked_add(1)
-        .ok_or(ErrorCode::ProgressionOverflow)?;
     let next_level = calculate_level(next_xp)?;
-    Ok((next_xp, next_level, next_badge_count))
+    Ok((next_xp, next_level))
 }
 
 #[cfg(test)]
@@ -55,11 +48,6 @@ mod tests {
 
     #[test]
     fn quest_progression_rejects_xp_overflow() {
-        assert!(calculate_quest_progression(u64::MAX, 0, DEMO_QUEST_REWARD_XP).is_err());
-    }
-
-    #[test]
-    fn quest_progression_rejects_badge_overflow() {
-        assert!(calculate_quest_progression(0, u64::MAX, DEMO_QUEST_REWARD_XP).is_err());
+        assert!(calculate_quest_progression(u64::MAX, 25).is_err());
     }
 }

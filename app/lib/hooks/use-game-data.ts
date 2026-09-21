@@ -20,10 +20,12 @@ import {
 } from "../expedition";
 import {
   calculatePlayerProgress,
-  DEMO_QUEST_ID,
-  getQuestTargets,
-  getUniqueDiscoveryCount,
+  calculateQuestProgress,
+  getActiveQuest,
+  getCompletedQuestCount,
+  QUEST_IDS,
 } from "../game";
+import { fetchMatches, getPlayerMatches } from "../matches";
 import { useSolanaClient } from "../solana-client-context";
 import { useWallet } from "../wallet/context";
 
@@ -64,29 +66,44 @@ export function useGameData() {
     () => fetchOwnedCreatures(client.rpc, address!),
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
-  const quest = useSWR(
-    ["quest", cluster, DEMO_QUEST_ID.toString()],
+  const quests = useSWR(
+    ["quests", cluster],
     async () => {
-      const [questAddress] = await findQuestPda({ questId: DEMO_QUEST_ID });
-      return fetchMaybeQuest(client.rpc, questAddress, {
-        commitment: "confirmed",
-      });
+      const accounts = await Promise.all(
+        QUEST_IDS.map(async (questId) => {
+          const [questAddress] = await findQuestPda({ questId });
+          return fetchMaybeQuest(client.rpc, questAddress, {
+            commitment: "confirmed",
+          });
+        }),
+      );
+      return accounts.filter((account) => account.exists);
     },
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
-  const questCompletion = useSWR(
-    address && quest.data?.exists
-      ? (["quest-completion", cluster, address, quest.data.address] as const)
+  const questCompletions = useSWR(
+    address && quests.data
+      ? (["quest-completions", cluster, address] as const)
       : null,
     async () => {
-      const [completionAddress] = await findQuestCompletionPda({
-        quest: quest.data!.address,
-        payer: address!,
-      });
-      return fetchMaybeQuestCompletion(client.rpc, completionAddress, {
-        commitment: "confirmed",
-      });
+      const accounts = await Promise.all(
+        quests.data!.map(async (quest) => {
+          const [completionAddress] = await findQuestCompletionPda({
+            quest: quest.address,
+            payer: address!,
+          });
+          return fetchMaybeQuestCompletion(client.rpc, completionAddress, {
+            commitment: "confirmed",
+          });
+        }),
+      );
+      return accounts.filter((account) => account.exists);
     },
+    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+  );
+  const matches = useSWR(
+    address ? (["player-matches", cluster, address] as const) : null,
+    async () => getPlayerMatches(await fetchMatches(client.rpc), address!),
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
 
@@ -120,23 +137,42 @@ export function useGameData() {
     catalogue.data && discoveries.data
       ? buildCollectionCards(catalogue.data, discoveries.data, optimistic)
       : [];
-  const questTargets = quest.data?.exists
-    ? getQuestTargets(quest.data.data.targets, cards)
-    : [];
   const playerProgress = player.data?.exists
     ? calculatePlayerProgress(player.data.data.xp)
     : null;
+  const activeQuest =
+    quests.data && questCompletions.data
+      ? getActiveQuest(quests.data, questCompletions.data)
+      : null;
+  const activeQuestProgress =
+    activeQuest && creatures.data && matches.data && address
+      ? calculateQuestProgress(
+          activeQuest,
+          creatures.data,
+          matches.data,
+          address,
+        )
+      : null;
 
   const refresh = useCallback(async () => {
     await Promise.all([
       player.mutate(),
       discoveries.mutate(),
       creatures.mutate(),
-      quest.mutate(),
-      questCompletion.mutate(),
+      quests.mutate(),
+      questCompletions.mutate(),
+      matches.mutate(),
       catalogue.mutate(),
     ]);
-  }, [catalogue, creatures, discoveries, player, quest, questCompletion]);
+  }, [
+    catalogue,
+    creatures,
+    discoveries,
+    matches,
+    player,
+    questCompletions,
+    quests,
+  ]);
 
   return {
     address,
@@ -145,23 +181,21 @@ export function useGameData() {
     player,
     discoveries,
     creatures,
-    quest,
-    questCompletion,
+    quests,
+    questCompletions,
+    matches,
+    activeQuest,
+    activeQuestProgress,
+    completedQuestCount: questCompletions.data
+      ? getCompletedQuestCount(questCompletions.data)
+      : 0,
     cards,
-    questTargets,
     playerProgress,
     pending: pending?.wallet === address ? pending : null,
-    uniqueDiscoveryCount: discoveries.data
-      ? getUniqueDiscoveryCount(discoveries.data)
-      : 0,
     isLoading:
       status === "connected" &&
-      (catalogue.isLoading ||
-        player.isLoading ||
-        discoveries.isLoading ||
-        creatures.isLoading),
-    error:
-      catalogue.error ?? player.error ?? discoveries.error ?? creatures.error,
+      (catalogue.isLoading || player.isLoading || creatures.isLoading),
+    error: catalogue.error ?? player.error ?? creatures.error,
     refresh,
   };
 }

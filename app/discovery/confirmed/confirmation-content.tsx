@@ -55,12 +55,7 @@ export function ConfirmationContent() {
   const isConfirmed =
     transactionStatus.data?.confirmationStatus === "confirmed" ||
     transactionStatus.data?.confirmationStatus === "finalized";
-  const questFound = game.questTargets.filter(
-    (target) => target.complete,
-  ).length;
-  const questRequired = game.quest.data?.exists
-    ? game.quest.data.data.speciesCount
-    : 0;
+  const questProgress = game.activeQuestProgress;
 
   if (failed) {
     return (
@@ -102,11 +97,9 @@ export function ConfirmationContent() {
       {identification && (
         <p className="mt-3 text-base text-muted">
           {identification.common_name}{" "}
-          {isConfirmed ? "joined your collection and awarded" : "will award"}{" "}
-          <strong className="text-foreground">
-            {identification.awarded_xp} XP
-          </strong>
-          .
+          {isConfirmed
+            ? "joined your Collection."
+            : "will join your Collection after confirmation."}
         </p>
       )}
 
@@ -128,9 +121,9 @@ export function ConfirmationContent() {
               />
             </div>
           )}
-          {questRequired > 0 && (
+          {questProgress && (
             <p className="mt-4 text-xs text-muted">
-              Quest progress: {questFound}/{questRequired} targets found
+              Active quest: {questProgress.label}
             </p>
           )}
         </div>

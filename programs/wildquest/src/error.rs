@@ -20,14 +20,16 @@ pub enum ErrorCode {
     QuestIdMismatch,
     #[msg("The quest definition is invalid")]
     InvalidQuestDefinition,
-    #[msg("The number of submitted discoveries does not match the quest target count")]
-    InvalidQuestDiscoveryCount,
-    #[msg("A submitted discovery account is invalid")]
-    InvalidQuestDiscovery,
-    #[msg("A submitted discovery belongs to another player")]
-    QuestDiscoveryPlayerMismatch,
-    #[msg("The player has not discovered every quest target")]
-    QuestTargetsIncomplete,
+    #[msg("The submitted quest evidence count is invalid")]
+    InvalidQuestEvidenceCount,
+    #[msg("A submitted quest evidence account is invalid")]
+    InvalidQuestEvidence,
+    #[msg("A submitted Creature does not belong to this player")]
+    QuestCreatureOwnerMismatch,
+    #[msg("The previous quest must be completed first")]
+    QuestPrerequisiteIncomplete,
+    #[msg("The submitted accounts do not complete this quest objective")]
+    QuestObjectiveIncomplete,
     #[msg("Only the configured game administrator can perform this action")]
     GameAdminMismatch,
     #[msg("The capture authority does not match the configured authority")]

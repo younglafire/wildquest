@@ -12,13 +12,16 @@ import { z } from "zod";
 import {
   fetchMaybeCreature,
   fetchMaybeGameConfig,
+  fetchMaybeQuest,
   fetchMaybeSpeciesConfig,
   findCreaturePda,
   findGameConfigPda,
+  findQuestPda,
   findSpeciesConfigPda,
   getActivateTurnCombatInstruction,
   getCaptureCreatureInstructionAsync,
   getInitializeGameConfigInstructionAsync,
+  getInitializeQuestInstructionAsync,
   getInitializeSpeciesConfigInstructionAsync,
 } from "../app/generated/wildquest";
 
@@ -26,6 +29,24 @@ const DEFAULT_RPC_URL = "https://api.devnet.solana.com";
 const CATALOGUE_IDS = Array.from({ length: 40 }, (_, index) =>
   BigInt(1001 + index),
 );
+const QUEST_IDS = [1n, 2n, 3n, 4n, 5n] as const;
+const QUEST_DEFINITIONS = {
+  "1": { objective: 1, requiredCount: 1, targets: [], rewardXp: 25n },
+  "2": { objective: 1, requiredCount: 3, targets: [], rewardXp: 50n },
+  "3": {
+    objective: 2,
+    requiredCount: 1,
+    targets: [1031n, 1032n],
+    rewardXp: 75n,
+  },
+  "4": {
+    objective: 2,
+    requiredCount: 1,
+    targets: [1011n],
+    rewardXp: 100n,
+  },
+  "5": { objective: 3, requiredCount: 1, targets: [], rewardXp: 150n },
+} as const;
 const MINIMUM_ADMIN_BALANCE = 30_000_000n;
 const MINIMUM_WALLET_BALANCE = 20_000_000n;
 
@@ -132,6 +153,47 @@ async function ensureSpeciesConfigs(
   }
 }
 
+async function ensureQuests(
+  client: ReturnType<typeof createClient>,
+  admin: KeyPairSigner,
+) {
+  for (const questId of QUEST_IDS) {
+    const [questAddress] = await findQuestPda({ questId });
+    const existing = await fetchMaybeQuest(client.rpc, questAddress, {
+      commitment: "confirmed",
+    });
+    if (existing.exists) {
+      const expected =
+        QUEST_DEFINITIONS[questId.toString() as keyof typeof QUEST_DEFINITIONS];
+      const matchesDefinition =
+        existing.data.speciesCount === expected.requiredCount &&
+        existing.data.rewardXp === expected.rewardXp &&
+        existing.data.targets.length === expected.targets.length &&
+        existing.data.targets.every(
+          (target, index) => target === expected.targets[index],
+        );
+      if (!matchesDefinition) {
+        const instruction = await getInitializeQuestInstructionAsync({
+          payer: admin,
+          questId,
+        });
+        const result = await client.sendTransaction([instruction]);
+        console.info(`Updated Quest ${questId}: ${result.context.signature}`);
+        continue;
+      }
+      console.info(`Quest ${questId} already exists: ${questAddress}`);
+      continue;
+    }
+
+    const instruction = await getInitializeQuestInstructionAsync({
+      payer: admin,
+      questId,
+    });
+    const result = await client.sendTransaction([instruction]);
+    console.info(`Created Quest ${questId}: ${result.context.signature}`);
+  }
+}
+
 async function activateTurnCombat(
   client: ReturnType<typeof createClient>,
   admin: KeyPairSigner,
@@ -207,11 +269,12 @@ async function main() {
     captureAuthority,
   );
   await ensureSpeciesConfigs(adminClient, admin);
+  await ensureQuests(adminClient, admin);
   if (gameConfig.needsActivation) {
     await activateTurnCombat(adminClient, admin, gameConfig.address);
   }
   if (configsOnly) {
-    console.info("Battle configuration setup complete.");
+    console.info("Battle and quest configuration setup complete.");
     return;
   }
   const walletA = await loadSigner(
