@@ -3,7 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ["onnxruntime-node", "sharp", "ws"],
   outputFileTracingIncludes: {
-    "/api/identify": ["./models/Xenova/resnet-50/**/*"],
+    "/api/identify": [
+      "./models/Xenova/resnet-50/**/*",
+      // onnxruntime-node selects its native binding dynamically. Next.js cannot
+      // trace the companion shared libraries that Vercel's Linux runtime needs.
+      "./node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**/*",
+    ],
+  },
+  outputFileTracingExcludes: {
+    // Local development may read this ignored file, but a private signer must
+    // never be copied into a production function bundle.
+    "/api/identify": ["./.wildquest-keys/**/*"],
   },
   turbopack: {
     root: __dirname,

@@ -83,6 +83,25 @@ describe("expedition client contract", () => {
     await expect(identifyImage(image, wallet)).rejects.toThrow();
   });
 
+  it("reports a service error when the platform returns HTML", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("<!DOCTYPE html><title>500</title>", {
+        status: 500,
+        headers: { "content-type": "text/html" },
+      }),
+    );
+    const image = new File([new Uint8Array([1])], "bee.jpg", {
+      type: "image/jpeg",
+    });
+
+    await expect(identifyImage(image, wallet)).rejects.toMatchObject({
+      name: "IdentifyRequestError",
+      code: "INVALID_API_RESPONSE",
+      message:
+        "The identification service is temporarily unavailable. Please try again.",
+    });
+  });
+
   it("persists only validated result metadata in the current tab", () => {
     const pending = createPendingIdentification(
       wallet,

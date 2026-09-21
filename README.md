@@ -294,7 +294,9 @@ the source of capture progress and awards new XP through completed quests.
 
 Microsoft ResNet-50 runs through Transformers.js and quantized ONNX weights.
 Remote model loading is disabled. The Next.js function bundles the local model,
-`onnxruntime-node`, and Sharp.
+`onnxruntime-node`, and Sharp. The Next.js output trace explicitly includes the
+Linux x64 ONNX Runtime shared libraries used by Vercel functions because the
+package selects its native binding at runtime.
 
 The endpoint rejects confidence below `0.70`. It accepts 40 exact ImageNet
 classes defined in `app/lib/vision/mapping.ts`. The roster includes familiar

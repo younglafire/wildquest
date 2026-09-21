@@ -73,7 +73,15 @@ export async function identifyImage(
     method: "POST",
     body: formData,
   });
-  const body: unknown = await response.json();
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new IdentifyRequestError(
+      "INVALID_API_RESPONSE",
+      "The identification service is temporarily unavailable. Please try again.",
+    );
+  }
 
   if (!response.ok) {
     const parsedError = identifyErrorSchema.safeParse(body);

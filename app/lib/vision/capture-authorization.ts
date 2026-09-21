@@ -40,7 +40,10 @@ function getCaptureAuthority() {
         process.env.WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH ??
         ".wildquest-keys/capture-authority.json";
       const serialized = JSON.parse(
-        await readFile(path.resolve(process.cwd(), keypairPath), "utf8"),
+        await readFile(
+          path.resolve(/* turbopackIgnore: true */ process.cwd(), keypairPath),
+          "utf8",
+        ),
       ) as number[];
       return createKeyPairSignerFromBytes(Uint8Array.from(serialized));
     })().catch((error: unknown) => {
