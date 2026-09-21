@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { getInitializePlayerInstructionAsync } from "../generated/wildquest";
-import { formatDiscoveryDate } from "../lib/game";
+import { formatDiscoveryDate, getQuestCopy } from "../lib/game";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useWallet } from "../lib/wallet/context";
@@ -167,9 +167,15 @@ export function HomeContent() {
   }
 
   const player = game.player.data.data;
-  const questCompleteCount = game.questTargets.filter(
-    (target) => target.complete,
-  ).length;
+  const capturedCount = game.creatures.data?.length ?? 0;
+  const uniqueSpeciesCount = new Set(
+    (game.creatures.data ?? []).map((creature) =>
+      creature.data.catalogueId.toString(),
+    ),
+  ).size;
+  const activeQuestCopy = game.activeQuest
+    ? getQuestCopy(game.activeQuest.data.questId)
+    : null;
   const latest = game.cards
     .filter((card) => card.latestTimestamp !== null)
     .sort((left, right) => {
@@ -258,7 +264,7 @@ export function HomeContent() {
                 <span
                   style={{ fontFamily: "var(--font-mono)", color: "#c8a96e" }}
                 >
-                  {game.uniqueDiscoveryCount}
+                  {uniqueSpeciesCount}
                 </span>{" "}
                 unique species
               </p>
@@ -296,9 +302,9 @@ export function HomeContent() {
 
         {/* Stat tiles */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <Stat value={player.discoveryCount.toString()} label="Captures" />
-          <Stat value={game.uniqueDiscoveryCount.toString()} label="Species" />
-          <Stat value={player.badgeCount.toString()} label="Badges" />
+          <Stat value={capturedCount.toString()} label="Captures" />
+          <Stat value={uniqueSpeciesCount.toString()} label="Species" />
+          <Stat value={game.completedQuestCount.toString()} label="Quests" />
         </div>
       </section>
 
@@ -383,10 +389,10 @@ export function HomeContent() {
                 className="mt-2 text-2xl font-black"
                 style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
               >
-                Campus Field Survey
+                {activeQuestCopy?.title ?? "Questline complete"}
               </h2>
             </div>
-            {game.quest.data?.exists && (
+            {game.activeQuest && (
               <div
                 className="relative inline-flex min-h-8 items-center justify-center px-5 py-1 select-none"
                 style={{
@@ -400,13 +406,13 @@ export function HomeContent() {
                   className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  +{game.quest.data.data.rewardXp.toString()} XP
+                  +{game.activeQuest.data.rewardXp.toString()} XP
                 </span>
               </div>
             )}
           </div>
 
-          {game.quest.error || !game.quest.data?.exists ? (
+          {game.quests.error ? (
             <p
               className="mt-5 rounded-xl p-4 text-sm"
               style={{
@@ -415,16 +421,21 @@ export function HomeContent() {
                 border: "1px solid rgba(200, 169, 110, 0.2)",
               }}
             >
-              This quest is not available on the connected Devnet program yet.
+              Quest progress could not be loaded from Devnet.
+            </p>
+          ) : !game.activeQuest ? (
+            <p className="mt-5 text-sm text-[#a89880]">
+              You completed every available quest. More expeditions are coming.
+            </p>
+          ) : !game.activeQuestProgress ? (
+            <p className="mt-5 text-sm text-[#a89880]">
+              Loading your current quest progress…
             </p>
           ) : (
             <div className="mt-6">
               <ProgressBar
-                value={Math.round(
-                  (questCompleteCount / game.quest.data.data.speciesCount) *
-                    100,
-                )}
-                label={`${questCompleteCount} / ${game.quest.data.data.speciesCount} targets found`}
+                value={game.activeQuestProgress.percentage}
+                label={game.activeQuestProgress.label}
               />
             </div>
           )}

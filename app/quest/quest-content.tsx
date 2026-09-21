@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { SpeciesArt } from "../components/species-art";
+import { useCluster } from "../components/cluster-context";
 import { ProgressBar } from "../components/progress-bar";
-import { formatDiscoveryDate } from "../lib/game";
+import { formatDiscoveryDate, getQuestCopy } from "../lib/game";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { buildQuestCompletionInstruction } from "../lib/quest-transaction";
 import { useWallet } from "../lib/wallet/context";
-import { useCluster } from "../components/cluster-context";
 
 export function QuestContent() {
   const game = useGameData();
@@ -19,29 +18,46 @@ export function QuestContent() {
   const [claimError, setClaimError] = useState<string | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
 
-  const quest = game.quest.data?.exists ? game.quest.data : null;
-  const completion = game.questCompletion.data?.exists
-    ? game.questCompletion.data
+  const quest = game.activeQuest;
+  const progress = game.activeQuestProgress;
+  const copy = quest ? getQuestCopy(quest.data.questId) : null;
+  const previousQuest =
+    quest && quest.data.questId > 1n
+      ? game.quests.data?.find(
+          (candidate) => candidate.data.questId === quest.data.questId - 1n,
+        )
+      : null;
+  const previousCompletion = previousQuest
+    ? (game.questCompletions.data?.find(
+        (completion) => completion.data.quest === previousQuest.address,
+      ) ?? null)
     : null;
-  const foundCount = game.questTargets.filter(
-    (target) => target.complete,
-  ).length;
-  const requiredCount = quest?.data.speciesCount ?? 0;
   const canClaim =
+    Boolean(signer) &&
     Boolean(game.player.data?.exists) &&
     Boolean(quest) &&
-    !completion &&
-    requiredCount > 0 &&
-    foundCount === requiredCount;
+    Boolean(progress?.complete) &&
+    Boolean(game.creatures.data) &&
+    Boolean(game.matches.data);
 
   const claimQuest = async () => {
-    if (!signer || !quest || !game.discoveries.data || !canClaim) return;
+    if (
+      !signer ||
+      !quest ||
+      !game.creatures.data ||
+      !game.matches.data ||
+      !canClaim
+    )
+      return;
+
     setClaimError(null);
     try {
       const instruction = await buildQuestCompletionInstruction(
         signer,
         quest,
-        game.discoveries.data,
+        previousCompletion,
+        game.creatures.data,
+        game.matches.data,
       );
       const transactionSignature = await send({ instructions: [instruction] });
       setSignature(transactionSignature);
@@ -56,34 +72,40 @@ export function QuestContent() {
   };
 
   if (
-    game.quest.isLoading ||
     game.isLoading ||
-    (quest && game.questCompletion.isLoading)
+    game.quests.isLoading ||
+    game.questCompletions.isLoading ||
+    game.matches.isLoading
   ) {
     return (
       <QuestMessage
-        title="Loading quest"
-        copy="Consulting the Codex from Devnet…"
+        title="Loading quests"
+        copy="Reading your expedition progress from Devnet…"
       />
     );
   }
 
-  if (game.error) {
+  if (
+    game.error ||
+    game.quests.error ||
+    game.questCompletions.error ||
+    game.matches.error
+  ) {
     return (
       <QuestMessage
         title="Quest progress unavailable"
-        copy="WildQuest could not read your Player, Discovery, or catalogue data. No reward transaction was submitted."
+        copy="WildQuest could not read your confirmed quest evidence from Devnet."
         action="Try again"
         onAction={() => void game.refresh()}
       />
     );
   }
 
-  if (game.quest.error || !quest) {
+  if (!game.quests.data?.length) {
     return (
       <QuestMessage
-        title="Quest unavailable"
-        copy="The Campus Field Survey has not been initialized on the connected Devnet program yet. The quest administrator must deploy WQ-33 and initialize Quest 1."
+        title="Quests unavailable"
+        copy="The five quest accounts have not been initialized on the connected Devnet program."
         action="Try again"
         onAction={() => void game.refresh()}
       />
@@ -94,307 +116,128 @@ export function QuestContent() {
     return (
       <QuestMessage
         title="Create your Passport first"
-        copy="Your Passport is required before WildQuest can award quest XP and a badge."
+        copy="Your Passport receives the XP earned from completed quests."
         href="/home"
         action="Create Passport"
       />
     );
   }
 
+  const allComplete = !quest;
+
   return (
-    <main className="mx-auto max-w-5xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
-      <section
-        className="relative overflow-hidden rounded-2xl"
-        style={{
-          background:
-            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 75%)",
-          border: "1px solid rgba(200, 169, 110, 0.35)",
-          boxShadow:
-            "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200, 169, 110, 0.25)",
-        }}
-      >
-        {/* Top gold hairline */}
-        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
-        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
-          ❖
-        </span>
-        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
-          ❖
-        </span>
-
-        {/* Quest header banner */}
-        <div className="p-5 sm:p-9 border-b border-[rgba(200,169,110,0.2)]">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-            <div>
-              <div
-                className="relative inline-flex min-h-9 sm:min-h-10 items-center justify-center px-6 sm:px-8 py-1 sm:py-1.5 select-none"
-                style={{
-                  backgroundImage: "url('/ui/tag_frame.png')",
-                  backgroundSize: "100% 100%",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                }}
-              >
-                <span
-                  className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  ✦ QUEST 01 · VHU / HCMC ✦
-                </span>
-              </div>
-              <h1
-                className="mt-3 text-2xl font-black tracking-tight sm:mt-4 sm:text-5xl"
-                style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
-              >
-                Campus Field Survey
-              </h1>
-              <p className="mt-2 max-w-2xl text-xs leading-relaxed sm:mt-3 sm:text-sm text-[#a89880]">
-                Find the five target animals in any order. Every recorded
-                Discovery account counts once toward this quest.
-              </p>
-            </div>
-            <div
-              className="relative inline-flex min-h-11 items-center justify-center px-7 py-2 select-none self-start"
-              style={{
-                backgroundImage: "url('/ui/tag_frame.png')",
-                backgroundSize: "100% 100%",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }}
-            >
-              <span
-                className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                +{quest.data.rewardXp.toString()} XP · 1 BADGE
-              </span>
-            </div>
+    <main className="mx-auto max-w-4xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
+      <section className="rounded-2xl border border-[rgba(200,169,110,0.35)] bg-[rgba(18,16,11,0.95)] p-5 shadow-2xl sm:p-8">
+        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6aab7a]">
+          {allComplete ? "Expedition complete" : copy?.eyebrow}
+        </p>
+        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-[#f0e8d4] sm:text-5xl">
+              {allComplete ? "All quests completed" : copy?.title}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#a89880]">
+              {allComplete
+                ? "You earned every XP reward in the current questline."
+                : copy?.description}
+            </p>
           </div>
-          <div className="mt-6 max-w-xl sm:mt-8">
-            <ProgressBar
-              value={
-                requiredCount > 0
-                  ? Math.round((foundCount / requiredCount) * 100)
-                  : 0
-              }
-              label={`${foundCount} / ${requiredCount} targets found`}
-            />
-          </div>
-        </div>
-
-        {/* Target list */}
-        <div
-          className="grid gap-2.5 p-4 sm:p-6"
-          style={{ background: "rgba(12, 10, 8, 0.4)" }}
-        >
-          {game.questTargets.map((target) => (
-            <article
-              key={String(target.species.id)}
-              className="grid grid-cols-[5rem_1fr] items-center gap-4 rounded-xl p-3 sm:grid-cols-[6rem_1fr_auto]"
-              style={{
-                background: "rgba(14, 12, 8, 0.95)",
-                border: target.complete
-                  ? "1px solid rgba(74,124,89,0.45)"
-                  : "1px solid rgba(200,169,110,0.25)",
-                borderLeft: target.complete
-                  ? "3px solid #6aab7a"
-                  : "3px solid rgba(200,169,110,0.3)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
-              }}
-            >
-              <div
-                className="relative aspect-square overflow-hidden rounded-xl flex items-center justify-center p-2"
-                style={{
-                  background:
-                    "radial-gradient(circle at center, rgba(30, 45, 35, 0.8), rgba(12, 10, 8, 0.95))",
-                  border: "1px solid rgba(200, 169, 110, 0.25)",
-                }}
-              >
-                <SpeciesArt
-                  src={target.species.imageUrl ?? target.species.iconUrl}
-                  alt={target.species.name}
-                  className={target.complete ? "" : "grayscale opacity-50"}
-                />
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2
-                    className="font-black text-base sm:text-lg"
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      color: "#f0e8d4",
-                    }}
-                  >
-                    {target.species.name}
-                  </h2>
-                  {target.complete ? (
-                    <div
-                      className="relative inline-flex min-h-7 items-center justify-center px-4 py-0.5 select-none"
-                      style={{
-                        backgroundImage: "url('/ui/tag_frame.png')",
-                        backgroundSize: "100% 100%",
-                        backgroundPosition: "center",
-                        backgroundRepeat: "no-repeat",
-                      }}
-                    >
-                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6aab7a] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                        ✦ Found
-                      </span>
-                    </div>
-                  ) : (
-                    <span
-                      className="rounded-full px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#8a7a62]"
-                      style={{
-                        background: "rgba(18, 16, 11, 0.8)",
-                        border: "1px solid rgba(200, 169, 110, 0.2)",
-                      }}
-                    >
-                      Missing
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-xs text-[#a89880]">
-                  <span className="text-[#c8a96e] font-semibold">
-                    {target.species.rarity}
-                  </span>
-                  {target.bestGrade ? ` · Best ${target.bestGrade}` : ""}
-                </p>
-              </div>
-              <Link
-                href={
-                  target.complete
-                    ? `/collection/${target.species.speciesId}`
-                    : "/capture"
-                }
-                className="col-span-2 flex min-h-11 items-center justify-center rounded-xl px-5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 sm:col-span-1"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  border: "1px solid rgba(200, 169, 110, 0.35)",
-                  color: target.complete ? "#f0e8d4" : "#c8a96e",
-                  background: target.complete
-                    ? "linear-gradient(135deg, rgba(74,124,89,0.3), rgba(26,56,36,0.3))"
-                    : "rgba(200,169,110,0.08)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-                }}
-              >
-                {target.complete ? "View species →" : "Find target ✦"}
-              </Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Completion state or claim panel */}
-      {completion ? (
-        <section
-          className="relative mt-4 overflow-hidden rounded-2xl p-6 sm:p-8 animate-seal-stamp"
-          style={{
-            background:
-              "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.95) 0%, rgba(18, 16, 11, 0.98) 75%)",
-            border: "1px solid rgba(74, 124, 89, 0.5)",
-            boxShadow:
-              "0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(74, 124, 89, 0.4)",
-          }}
-        >
-          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(74,124,89,0.8)] to-transparent pointer-events-none" />
-          <span className="absolute top-2.5 left-2.5 text-[10px] text-[#6aab7a]/50 select-none pointer-events-none">
-            ❖
-          </span>
-          <span className="absolute top-2.5 right-2.5 text-[10px] text-[#6aab7a]/50 select-none pointer-events-none">
-            ❖
-          </span>
-
-          <div
-            className="relative inline-flex min-h-9 items-center justify-center px-6 py-1 select-none"
-            style={{
-              backgroundImage: "url('/ui/tag_frame.png')",
-              backgroundSize: "100% 100%",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-            }}
-          >
-            <span
-              className="text-[9px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              ✦ QUEST COMPLETED ✦
+          {quest && (
+            <span className="rounded-full border border-[rgba(200,169,110,0.35)] px-4 py-2 text-xs font-black text-[#c8a96e]">
+              +{quest.data.rewardXp.toString()} XP
             </span>
-          </div>
+          )}
+        </div>
 
-          <h2
-            className="mt-3 text-2xl font-black text-[#f0e8d4] sm:text-3xl"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Field Survey Badge Earned ✦
-          </h2>
-          <p
-            className="mt-2 text-sm text-[#a89880]"
-            style={{ fontFamily: "var(--font-mono)" }}
-          >
-            Claimed {formatDiscoveryDate(completion.data.completedAt)} · +
-            {completion.data.rewardXp.toString()} XP
-          </p>
-        </section>
-      ) : (
-        <section
-          className="sticky bottom-24 mt-4 overflow-hidden rounded-2xl p-5 shadow-2xl backdrop-blur-md md:bottom-5"
-          style={{
-            background: "rgba(14, 12, 8, 0.95)",
-            border: "1px solid rgba(200, 169, 110, 0.4)",
-            boxShadow: "0 16px 48px rgba(0,0,0,0.85)",
-          }}
-        >
-          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2
-                className="font-black text-lg sm:text-xl"
-                style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
-              >
-                {canClaim
-                  ? "✦ Your reward is ready to claim"
-                  : `${requiredCount - foundCount} targets remaining`}
-              </h2>
-              <p className="mt-1 text-xs text-[#a89880]">
-                The wallet signs one Devnet transaction when you claim.
-              </p>
-            </div>
+        {progress && (
+          <div className="mt-7">
+            <ProgressBar value={progress.percentage} label={progress.label} />
+          </div>
+        )}
+
+        {!allComplete && copy && (
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={copy.href}
+              className="btn-guild inline-flex min-h-12 items-center justify-center px-7 text-xs font-black uppercase tracking-wider"
+            >
+              {copy.action}
+            </Link>
             <button
               type="button"
               disabled={!canClaim || isSending}
               onClick={() => void claimQuest()}
-              className="btn-guild whitespace-nowrap min-h-12 px-7 text-xs font-black uppercase tracking-wider transition-all duration-200 active:scale-95 disabled:opacity-40"
+              className="min-h-12 rounded-xl border border-[rgba(200,169,110,0.4)] px-7 text-xs font-black uppercase tracking-wider text-[#c8a96e] disabled:opacity-40"
             >
               {isSending
-                ? "Claiming reward…"
-                : `✦ Claim ${quest.data.rewardXp.toString()} XP + badge`}
+                ? "Claiming…"
+                : progress?.complete
+                  ? `Claim ${quest?.data.rewardXp.toString()} XP`
+                  : "Complete the objective first"}
             </button>
           </div>
-          {claimError && (
-            <p
-              role="alert"
-              className="mt-4 rounded-xl p-3 text-sm"
-              style={{
-                background: "rgba(192,57,43,0.15)",
-                color: "#f8c8c4",
-                border: "1px solid rgba(192,57,43,0.3)",
-              }}
-            >
-              {claimError}
-            </p>
-          )}
-          {signature && (
-            <a
-              href={getExplorerUrl(`/tx/${signature}`)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex text-xs font-bold text-[#c8a96e] underline hover:text-[#f0e8d4]"
-            >
-              View confirmed transaction on Explorer ↗
-            </a>
-          )}
-        </section>
-      )}
+        )}
+
+        {claimError && (
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-red-800 bg-red-950/40 p-3 text-sm text-red-200"
+          >
+            {claimError}
+          </p>
+        )}
+        {signature && (
+          <a
+            href={getExplorerUrl(`/tx/${signature}`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex text-sm font-bold text-[#c8a96e] underline"
+          >
+            View confirmed reward transaction ↗
+          </a>
+        )}
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-[rgba(200,169,110,0.25)] bg-[rgba(18,16,11,0.9)] p-5 sm:p-8">
+        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]">
+          Questline
+        </p>
+        <div className="mt-4 space-y-3">
+          {game.quests.data.map((candidate) => {
+            const candidateCopy = getQuestCopy(candidate.data.questId);
+            const completion = game.questCompletions.data?.find(
+              (item) => item.data.quest === candidate.address,
+            );
+            const isActive = candidate.address === quest?.address;
+            return (
+              <article
+                key={candidate.address}
+                className="rounded-xl border border-[rgba(200,169,110,0.2)] bg-black/20 p-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black text-[#f0e8d4]">
+                      {candidateCopy.title}
+                    </p>
+                    <p className="mt-1 text-xs text-[#8a7a62]">
+                      {candidateCopy.description}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#6aab7a]">
+                    {completion ? "Completed" : isActive ? "Active" : "Locked"}
+                  </span>
+                </div>
+                {completion && (
+                  <p className="mt-2 text-[10px] text-[#8a7a62]">
+                    {formatDiscoveryDate(completion.data.completedAt)} · +
+                    {completion.data.rewardXp.toString()} XP
+                  </p>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </main>
   );
 }
@@ -414,34 +257,13 @@ function QuestMessage({
 }) {
   return (
     <main className="mx-auto max-w-2xl px-5 py-20 text-center">
-      <section
-        className="relative overflow-hidden rounded-2xl p-8"
-        style={{
-          background:
-            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.6) 0%, rgba(18, 16, 11, 0.95) 75%)",
-          border: "1px solid rgba(200, 169, 110, 0.35)",
-          boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
-        }}
-      >
-        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
-        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
-          ❖
-        </span>
-        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
-          ❖
-        </span>
-
-        <h1
-          className="text-3xl font-black"
-          style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
-        >
-          {title}
-        </h1>
+      <section className="rounded-2xl border border-[rgba(200,169,110,0.35)] bg-[rgba(18,16,11,0.95)] p-8">
+        <h1 className="text-3xl font-black text-[#f0e8d4]">{title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-[#a89880]">{copy}</p>
         {action && href ? (
           <Link
             href={href}
-            className="btn-guild mt-6 inline-flex min-h-12 px-7 text-xs font-black uppercase tracking-wider"
+            className="btn-guild mt-6 inline-flex min-h-12 items-center px-7 text-xs font-black uppercase tracking-wider"
           >
             {action}
           </Link>

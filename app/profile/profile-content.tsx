@@ -37,16 +37,20 @@ export function ProfileContent() {
     return (
       <ProfileMessage
         title="Passport not created"
-        copy="Create your Explorer Passport before collecting XP, levels, and badges."
+        copy="Create your Explorer Passport before collecting XP, levels, and quest rewards."
         action="Create Passport"
         href="/home"
       />
     );
 
   const player = game.player.data.data;
-  const completion = game.questCompletion.data?.exists
-    ? game.questCompletion.data.data
-    : null;
+  const completion = game.questCompletions.data?.at(-1)?.data ?? null;
+  const capturedCount = game.creatures.data?.length ?? 0;
+  const speciesCount = new Set(
+    (game.creatures.data ?? []).map((creature) =>
+      creature.data.catalogueId.toString(),
+    ),
+  ).size;
   const copyAddress = async () => {
     if (!game.address) return;
     await navigator.clipboard.writeText(game.address);
@@ -114,11 +118,8 @@ export function ProfileContent() {
           )}
           <dl className="mt-5 grid grid-cols-3 gap-2 sm:mt-8 sm:gap-3">
             <PassportStat label="Total XP" value={player.xp.toString()} />
-            <PassportStat
-              label="Captures"
-              value={player.discoveryCount.toString()}
-            />
-            <PassportStat label="Badges" value={player.badgeCount.toString()} />
+            <PassportStat label="Captures" value={capturedCount.toString()} />
+            <PassportStat label="Species" value={speciesCount.toString()} />
           </dl>
         </div>
 
@@ -220,7 +221,7 @@ export function ProfileContent() {
         </div>
       </section>
 
-      {/* Badges */}
+      {/* Quest progress */}
       <section
         className="relative mt-4 overflow-hidden rounded-2xl p-6 sm:p-8"
         style={{
@@ -244,13 +245,13 @@ export function ProfileContent() {
               className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Badges
+              Quest Progress
             </p>
             <h2
               className="mt-2 text-2xl font-black"
               style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
             >
-              Expedition Achievements
+              Expedition Rewards
             </h2>
           </div>
           <div
@@ -266,7 +267,7 @@ export function ProfileContent() {
               className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              {player.badgeCount.toString()} EARNED
+              {game.completedQuestCount.toString()} COMPLETE
             </span>
           </div>
         </div>
@@ -297,7 +298,7 @@ export function ProfileContent() {
                 className="font-black text-lg"
                 style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
               >
-                Campus Field Survey
+                Latest quest reward
               </h3>
               <p
                 className="mt-1 text-xs text-[#a89880]"
@@ -320,10 +321,10 @@ export function ProfileContent() {
               className="font-bold text-base"
               style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
             >
-              Your first badge is waiting
+              Your first quest is waiting
             </p>
             <p className="mt-1 text-sm text-[#a89880]">
-              Complete the Campus Field Survey to earn it.
+              Complete your first capture to unlock the opening XP reward.
             </p>
             <Link
               href="/quest"
