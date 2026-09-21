@@ -43,34 +43,23 @@ export function StartExpeditionButton() {
       <button
         type="button"
         onClick={start}
-        className="group relative inline-flex min-h-14 items-center justify-center overflow-hidden rounded-xl px-8 py-4 text-base font-black tracking-wide shadow-[0_12px_35px_-10px_rgba(200,169,110,0.4)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-10px_rgba(200,169,110,0.6)] active:translate-y-0.5"
+        aria-label="Start Expedition"
+        className="group relative inline-flex items-center justify-center transition-all duration-200 hover:-translate-y-1 hover:scale-105 active:translate-y-0.5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
         style={{
-          background:
-            "linear-gradient(135deg, #c8a96e 0%, #a07d48 50%, #c8a96e 100%)",
-          color: "#100e09",
-          border: "1px solid rgba(200,169,110,0.6)",
-          fontFamily: "var(--font-display)",
+          filter:
+            "drop-shadow(0 10px 25px rgba(0,0,0,0.7)) drop-shadow(0 0 16px rgba(200,169,110,0.25))",
         }}
       >
-        {/* Gold shimmer sweep */}
-        <span
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/ui/button_start_expedition.png"
+          alt=""
           aria-hidden="true"
-        >
-          <span className="animate-gold-shimmer absolute inset-0 block w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-        </span>
-        <span className="relative z-10 flex items-center gap-2.5 font-black uppercase tracking-widest">
-          <span className="text-lg drop-shadow" aria-hidden="true">
-            ✦
-          </span>
-          <span>Start Expedition</span>
-          <span
-            className="text-xs transition-transform duration-200 group-hover:translate-x-1"
-            aria-hidden="true"
-          >
-            →
-          </span>
-        </span>
+          width={320}
+          height={104}
+          className="h-auto w-64 sm:w-72 md:w-80 select-none object-contain transition-all duration-200 group-hover:brightness-110 group-hover:drop-shadow-[0_0_24px_rgba(52,211,153,0.55)]"
+          draggable={false}
+        />
       </button>
       <WalletChooser
         open={chooserOpen}

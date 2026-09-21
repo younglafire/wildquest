@@ -316,15 +316,15 @@ export function CreatureHologramStage({
       // (Drawn underneath the master template so the ornate gold borders,
       //  ivy leaves and gemstones frame the photo with zero gaps)
       // =========================================================================
-      const artX = 82;
+      const artX = 137;
       const artY = 150;
-      const artW = 860;
-      const artH = 620;
+      const artW = 750;
+      const artH = 715;
 
       if (imageElem) {
         ctx.save();
         ctx.beginPath();
-        ctx.rect(artX, artY, artW, artH);
+        ctx.roundRect(artX, artY, artW, artH, 20);
         ctx.clip();
 
         const imgW = imageElem.naturalWidth || imageElem.width || 1;
@@ -382,43 +382,41 @@ export function CreatureHologramStage({
 
       // =========================================================================
       // 4. TOP HEADER: RARITY & CREATURE NAME
-      // (Resting in the header bar with dark backing panel for high contrast)
+      // (Resting nestled right under the top crest)
       // =========================================================================
-      ctx.fillStyle = "rgba(8, 6, 4, 0.92)";
+      ctx.fillStyle = "rgba(8, 7, 5, 0.88)";
       ctx.beginPath();
-      ctx.roundRect(212, 88, 600, 86, 10);
+      ctx.roundRect(182, 215, 660, 84, 14);
       ctx.fill();
       ctx.strokeStyle = "#c8a96e";
       ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.fillStyle = "#fbbf24";
-      ctx.font = "900 23px monospace";
+      ctx.font = "900 20px monospace";
       ctx.textAlign = "center";
       ctx.fillText(
         `[ ${rarity.toUpperCase()} · ${role ? role.toUpperCase() : "CREATURE"} ]`,
         512,
-        118,
+        244,
       );
 
       // Main Creature Name (Bold, Prominent, Gold-glow)
       const nameStr = speciesName.toUpperCase();
-      ctx.font =
-        nameStr.length > 18 ? "900 38px sans-serif" : "900 44px sans-serif";
+      const nameSize = nameStr.length > 20 ? 30 : nameStr.length > 15 ? 34 : 38;
+      ctx.font = `900 ${nameSize}px sans-serif`;
       ctx.fillStyle = "#ffffff";
       ctx.shadowColor = "#f59e0b";
       ctx.shadowBlur = 8;
-      ctx.fillText(nameStr, 512, 156);
+      ctx.fillText(nameStr, 512, 283);
       ctx.shadowBlur = 0; // reset shadow
 
       // =========================================================================
-      // 5. LOWER PANEL: 4 CARD BATTLE STATS
-      // (Mounted seamlessly onto the slate stone panel texture at y = 880)
+      // 5. LOWER PANEL: 4 CARD BATTLE STATS (Inside lower frame tablet)
       // =========================================================================
-      const statY = 880;
-      const statH = 126;
-      const statGap = 14;
-      const statW = Math.floor((artW - statGap * 3) / 4); // ~204px each
+      const statY = 996;
+      const statH = 86;
+      const statW = 182;
 
       const statItems = [
         {
@@ -426,147 +424,120 @@ export function CreatureHologramStage({
           value: displayStats.hp,
           color: "#4ade80",
           border: "#22c55e",
-          bg: "rgba(34, 197, 94, 0.16)",
+          bg: "rgba(12, 20, 14, 0.9)",
+          x: 115,
         },
         {
           label: "ATK",
           value: displayStats.attack,
           color: "#f87171",
           border: "#ef4444",
-          bg: "rgba(239, 68, 68, 0.16)",
+          bg: "rgba(24, 12, 12, 0.9)",
+          x: 319,
         },
         {
           label: "DEF",
           value: displayStats.defense,
           color: "#60a5fa",
           border: "#3b82f6",
-          bg: "rgba(59, 130, 246, 0.16)",
+          bg: "rgba(12, 18, 26, 0.9)",
+          x: 523,
         },
         {
           label: "MANA",
           value: displayStats.maxMana,
           color: "#facc15",
           border: "#eab308",
-          bg: "rgba(234, 179, 8, 0.16)",
+          bg: "rgba(24, 20, 10, 0.9)",
+          x: 727,
         },
       ];
 
-      statItems.forEach((stat, idx) => {
-        const x = artX + idx * (statW + statGap);
-
-        // Dark matte badge background
-        ctx.fillStyle = "#0c0f0d";
-        ctx.beginPath();
-        ctx.roundRect(x, statY, statW, statH, 14);
-        ctx.fill();
-
-        // Inner tint
+      statItems.forEach((stat) => {
         ctx.fillStyle = stat.bg;
         ctx.beginPath();
-        ctx.roundRect(x, statY, statW, statH, 14);
+        ctx.roundRect(stat.x, statY, statW, statH, 12);
         ctx.fill();
 
-        // Colored border
         ctx.strokeStyle = stat.border;
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Stat Label
         ctx.fillStyle = stat.color;
-        ctx.font = "900 24px monospace";
+        ctx.font = "900 20px monospace";
         ctx.textAlign = "center";
-        ctx.fillText(stat.label, x + statW / 2, statY + 36);
+        ctx.fillText(stat.label, stat.x + statW / 2, statY + 30);
 
-        // Stat Value (Huge, Ultra High-Contrast White)
         ctx.fillStyle = "#ffffff";
-        ctx.font = "900 62px sans-serif";
+        ctx.font = "900 42px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(String(stat.value), x + statW / 2, statY + 104);
+        ctx.fillText(String(stat.value), stat.x + statW / 2, statY + 72);
       });
 
       // =========================================================================
       // 6. LOWER PANEL: ABILITY, ACTION COSTS & SUMMARY
       // =========================================================================
-      const loreY = 1022;
-      const loreH = 300;
       const ability = creatureAbility(stats?.abilityId ?? 1);
       const abilityCost = stats?.abilityCost ?? 3;
       const strikeCost = stats?.strikeCost ?? 2;
       const guardCost = stats?.guardCost ?? 1;
       const rechargeGain = stats?.rechargeGain ?? 3;
 
-      // Clean matte slate backing plate
-      ctx.fillStyle = "rgba(6, 5, 4, 0.78)";
-      ctx.beginPath();
-      ctx.roundRect(artX, loreY, artW, loreH, 14);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(200, 169, 110, 0.35)";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
       ctx.fillStyle = "#f3ba63";
-      ctx.font = "900 22px monospace";
+      ctx.font = "900 19px monospace";
       ctx.textAlign = "left";
-      ctx.fillText("ABILITY", artX + 28, loreY + 42);
+      ctx.fillText("ABILITY", 120, 1120);
 
       ctx.fillStyle = "#ffffff";
-      ctx.font = `900 ${ability.name.length > 16 ? 33 : 38}px system-ui, -apple-system, sans-serif`;
+      ctx.font = `900 ${ability.name.length > 18 ? 26 : 32}px system-ui, -apple-system, sans-serif`;
       ctx.fillText(
         `${ability.name.toUpperCase()} · ${abilityCost} MANA`,
-        artX + 28,
-        loreY + 84,
+        120,
+        1154,
       );
 
       const chips = [
         {
           label: `STRIKE ${strikeCost}`,
-          x: artX + 28,
+          x: 115,
           border: "#ef4444",
           text: "#fecaca",
-          bg: "#15100a",
+          bg: "rgba(20, 10, 8, 0.85)",
         },
         {
           label: `GUARD ${guardCost}`,
-          x: artX + 306,
+          x: 385,
           border: "#3b82f6",
           text: "#bfdbfe",
-          bg: "#0b0f14",
+          bg: "rgba(8, 14, 24, 0.85)",
         },
         {
           label: `RECHARGE +${rechargeGain}`,
-          x: artX + 584,
+          x: 655,
           border: "#22c55e",
           text: "#bbf7d0",
-          bg: "#0c120d",
+          bg: "rgba(8, 20, 12, 0.85)",
         },
       ];
       chips.forEach((chip) => {
         ctx.fillStyle = chip.bg;
         ctx.beginPath();
-        ctx.roundRect(chip.x, loreY + 112, 248, 56, 12);
+        ctx.roundRect(chip.x, 1176, 254, 50, 10);
         ctx.fill();
         ctx.strokeStyle = chip.border;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.8;
         ctx.stroke();
         ctx.fillStyle = chip.text;
-        ctx.font = "900 22px monospace";
+        ctx.font = "900 20px monospace";
         ctx.textAlign = "center";
-        ctx.fillText(chip.label, chip.x + 124, loreY + 147);
+        ctx.fillText(chip.label, chip.x + 127, 1208);
       });
 
       const summaryText = summary || ability.summary;
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "800 26px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = "#f7f0de";
+      ctx.font = "700 24px system-ui, -apple-system, sans-serif";
       ctx.textAlign = "left";
-      wrapCanvasText(
-        ctx,
-        summaryText,
-        artX + 28,
-        loreY + 218,
-        artW - 56,
-        34,
-        2,
-      );
+      wrapCanvasText(ctx, summaryText, 120, 1264, 780, 34, 2);
 
       // Solana Onchain Verified Watermark
       const authStr =
@@ -574,9 +545,9 @@ export function CreatureHologramStage({
           ? `✦ SPECIES #${catalogueId} · SOLANA DEVNET ONCHAIN ✦`
           : "✦ WILDQUEST ONCHAIN SPECIMEN ✦";
       ctx.fillStyle = "#f3ba63";
-      ctx.font = "900 22px monospace";
+      ctx.font = "900 20px monospace";
       ctx.textAlign = "center";
-      ctx.fillText(authStr, 512, loreY + 266);
+      ctx.fillText(authStr, 512, 1354);
     };
 
     const renderFrontCard = () => {
@@ -606,7 +577,7 @@ export function CreatureHologramStage({
       img.src = imageUrl;
     }
 
-    // Load Rarity-themed Card Base Template (/creatures/common.png, rare.png, legend.png, etc.)
+    // Load Rarity-themed Card Base Template (/cards/frames/common.png, rare.png, legend.png, etc.)
     const frameImage = new Image();
     frameImage.onload = () => {
       frameImg = frameImage;
@@ -614,16 +585,16 @@ export function CreatureHologramStage({
     };
     frameImage.onerror = () => {
       // Fallback to common.png if specific rarity template is missing
-      if (!frameImage.src.endsWith("/creatures/common.png")) {
-        frameImage.src = "/creatures/common.png";
+      if (!frameImage.src.endsWith("/cards/frames/common.png")) {
+        frameImage.src = "/cards/frames/common.png";
       }
     };
     const getRarityTemplateSrc = (r: string) => {
       const lower = (r || "common").toLowerCase();
       if (lower === "legendary" || lower === "legend") {
-        return "/creatures/legend.png";
+        return "/cards/frames/legend.png";
       }
-      return `/creatures/${lower}.png`;
+      return `/cards/frames/${lower}.png`;
     };
     frameImage.src = getRarityTemplateSrc(rarity);
 
@@ -683,13 +654,13 @@ export function CreatureHologramStage({
     backTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     backTexture.needsUpdate = true;
 
-    // Load custom card back image (/creatures/background_wildcard.png)
+    // Load custom card back image (/cards/back/background_wildcard.png)
     const cardBackImage = new Image();
     cardBackImage.onload = () => {
       renderCardBack(cardBackImage);
       backTexture.needsUpdate = true;
     };
-    cardBackImage.src = "/creatures/background_wildcard.png";
+    cardBackImage.src = "/cards/back/background_wildcard.png";
 
     // Card geometry: Rounded slab with gold bevel sides (2:3 aspect ratio matching frame)
     const cardWidth = 1.84;

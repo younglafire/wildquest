@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { MatchStatus } from "../generated/wildquest";
+import { findGameConfigPda, MatchStatus } from "../generated/wildquest";
 import useSWR from "swr";
 import { CreatureModelCard } from "../components/creature-model-card";
 import { useCluster } from "../components/cluster-context";
@@ -138,11 +138,12 @@ export function CollectionContent() {
     if (!signer || !game.address) return;
     setError(null);
     try {
+      const [gameConfig] = await findGameConfigPda();
       await send({
         instructions: [
           buildUpgradeCreatureBalanceInstruction(
             signer,
-            game.address,
+            gameConfig,
             config,
             creature,
           ),
@@ -202,44 +203,51 @@ export function CollectionContent() {
     <main className="mx-auto max-w-6xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-5">
         <div>
-          <p
-            className="text-[10px] font-bold uppercase tracking-[0.26em]"
-            style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+          <div
+            className="relative inline-flex min-h-9 sm:min-h-10 items-center justify-center px-6 sm:px-8 py-1 sm:py-1.5 select-none"
+            style={{
+              backgroundImage: "url('/ui/tag_frame.png')",
+              backgroundSize: "100% 100%",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
           >
-            Battle Roster
-          </p>
+            <span
+              className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              ✦ BATTLE ROSTER ✦
+            </span>
+          </div>
           <h1
-            className="mt-1 text-3xl font-black tracking-tight sm:mt-2 sm:text-5xl"
+            className="mt-2 text-3xl font-black tracking-tight sm:mt-3 sm:text-5xl"
             style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
           >
             Collection
           </h1>
-          <p
-            className="mt-2 max-w-xl text-xs leading-relaxed sm:mt-3 sm:text-sm"
-            style={{ color: "#8a7a62" }}
-          >
+          <p className="mt-2 max-w-xl text-xs leading-relaxed sm:mt-3 sm:text-sm text-[#a89880]">
             Your onchain Creature cards for deterministic 3v3 arena battle.
           </p>
         </div>
         <div
-          className="flex items-center justify-between rounded-xl px-4 py-2.5 sm:block sm:px-5 sm:py-3"
-          style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+          className="relative overflow-hidden flex items-center justify-between rounded-2xl px-5 py-3 sm:block sm:px-6 sm:py-3.5"
+          style={{
+            background: "rgba(18, 16, 11, 0.95)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 12px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+          }}
         >
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
           <p
-            className="text-xs"
-            style={{
-              color: "#8a7a62",
-              fontFamily: "var(--font-display)",
-              fontSize: "0.65rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-            }}
+            className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c8a96e]"
+            style={{ fontFamily: "var(--font-display)" }}
           >
             Creatures Owned
           </p>
           <p
-            className="text-xl font-black tabular-nums sm:text-2xl"
-            style={{ fontFamily: "var(--font-display)", color: "#c8a96e" }}
+            className="text-2xl font-black tabular-nums sm:text-3xl text-[#f0e8d4] drop-shadow-[0_2px_8px_rgba(200,169,110,0.2)] sm:mt-0.5"
+            style={{ fontFamily: "var(--font-display)" }}
           >
             {ownedByCatalogueId.size} / {battleCatalogue.data?.length ?? "–"}
           </p>
@@ -248,9 +256,15 @@ export function CollectionContent() {
 
       <section
         aria-label="Collection filters"
-        className="mt-4 rounded-xl p-3 sm:mt-6 sm:p-4"
-        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+        className="relative mt-4 overflow-hidden rounded-2xl p-3 sm:mt-6 sm:p-5"
+        style={{
+          background: "rgba(18, 16, 11, 0.92)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow:
+            "0 12px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+        }}
       >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
         <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
           {FILTERS.map((option) => (
             <button
@@ -258,18 +272,22 @@ export function CollectionContent() {
               type="button"
               aria-pressed={filter === option}
               onClick={() => setFilter(option)}
-              className="min-h-10 shrink-0 rounded-lg px-4 text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95"
+              className="min-h-10 shrink-0 rounded-xl px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-200 active:scale-95"
               style={{
                 fontFamily: "var(--font-display)",
                 background:
                   filter === option
                     ? "linear-gradient(135deg, #c8a96e, #a07d48)"
-                    : "rgba(58,46,30,0.5)",
-                color: filter === option ? "#100e09" : "#8a7a62",
+                    : "rgba(14, 12, 8, 0.9)",
+                color: filter === option ? "#100e09" : "#a89880",
                 border:
                   filter === option
                     ? "1px solid #c8a96e"
-                    : "1px solid transparent",
+                    : "1px solid rgba(200, 169, 110, 0.25)",
+                boxShadow:
+                  filter === option
+                    ? "0 4px 16px rgba(200,169,110,0.3)"
+                    : "none",
               }}
             >
               {option}
@@ -280,10 +298,10 @@ export function CollectionContent() {
           <label
             className="text-xs"
             style={{
-              color: "#8a7a62",
+              color: "#c8a96e",
               fontFamily: "var(--font-display)",
-              fontSize: "0.65rem",
-              letterSpacing: "0.1em",
+              fontSize: "0.68rem",
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
             }}
           >
@@ -293,10 +311,10 @@ export function CollectionContent() {
               onChange={(event) =>
                 setRarity(event.target.value as Rarity | "All")
               }
-              className="mt-1 block min-h-10 w-full rounded-lg px-3 text-xs sm:text-sm"
+              className="mt-1 block min-h-10 w-full rounded-xl px-3 text-xs sm:text-sm font-semibold transition-colors"
               style={{
-                background: "#100e09",
-                border: "1px solid #3a2e1e",
+                background: "rgba(14, 12, 8, 0.95)",
+                border: "1px solid rgba(200, 169, 110, 0.35)",
                 color: "#f0e8d4",
               }}
             >
@@ -309,10 +327,10 @@ export function CollectionContent() {
           <label
             className="text-xs"
             style={{
-              color: "#8a7a62",
+              color: "#c8a96e",
               fontFamily: "var(--font-display)",
-              fontSize: "0.65rem",
-              letterSpacing: "0.1em",
+              fontSize: "0.68rem",
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
             }}
           >
@@ -322,10 +340,10 @@ export function CollectionContent() {
               onChange={(event) =>
                 setSort(event.target.value as (typeof SORTS)[number])
               }
-              className="mt-1 block min-h-10 w-full rounded-lg px-3 text-xs sm:text-sm"
+              className="mt-1 block min-h-10 w-full rounded-xl px-3 text-xs sm:text-sm font-semibold transition-colors"
               style={{
-                background: "#100e09",
-                border: "1px solid #3a2e1e",
+                background: "rgba(14, 12, 8, 0.95)",
+                border: "1px solid rgba(200, 169, 110, 0.35)",
                 color: "#f0e8d4",
               }}
             >
@@ -340,9 +358,9 @@ export function CollectionContent() {
       {error && (
         <p
           role="alert"
-          className="mt-6 rounded-lg p-4 text-sm"
+          className="mt-6 rounded-xl p-4 text-sm"
           style={{
-            background: "rgba(192,57,43,0.12)",
+            background: "rgba(192,57,43,0.15)",
             color: "#f8c8c4",
             border: "1px solid rgba(192,57,43,0.3)",
           }}
@@ -351,33 +369,33 @@ export function CollectionContent() {
         </p>
       )}
       {loading ? (
-        <p className="mt-10 text-sm" style={{ color: "#8a7a62" }}>
-          Consulting the Codex…
-        </p>
+        <p className="mt-10 text-sm text-[#a89880]">Consulting the Codex…</p>
       ) : loadError ? (
         <section
-          className="mt-10 rounded-xl p-5"
+          className="mt-10 rounded-2xl p-6"
           style={{
-            background: "rgba(192,57,43,0.1)",
-            border: "1px solid rgba(192,57,43,0.25)",
+            background: "rgba(192,57,43,0.12)",
+            border: "1px solid rgba(192,57,43,0.3)",
           }}
         >
-          <p className="text-sm" style={{ color: "#f8c8c4" }}>
+          <p className="text-sm text-[#f8c8c4]">
             Your Creature cards could not be loaded.
           </p>
           <button
             type="button"
             onClick={() => void game.refresh()}
-            className="mt-3 text-sm font-bold underline"
-            style={{ color: "#c8a96e" }}
+            className="mt-3 text-sm font-bold text-[#c8a96e] underline hover:text-[#f0e8d4]"
           >
             Try again
           </button>
         </section>
       ) : cards.length === 0 ? (
         <p
-          className="mt-10 rounded-xl p-6 text-sm"
-          style={{ background: "#1c1810", color: "#8a7a62" }}
+          className="mt-10 rounded-2xl p-6 text-sm text-[#a89880]"
+          style={{
+            background: "rgba(18, 16, 11, 0.92)",
+            border: "1px solid rgba(200, 169, 110, 0.25)",
+          }}
         >
           No Creature cards match these filters.
         </p>
@@ -424,15 +442,16 @@ export function CollectionContent() {
                     type="button"
                     disabled={isSending}
                     onClick={() => void upgradeCreature(owned, config)}
-                    className="mt-2 min-h-10 w-full rounded-lg px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px]"
+                    className="mt-2 min-h-10 w-full rounded-xl px-2 text-[10px] font-black uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px] transition-all active:scale-95"
                     style={{
-                      border: "1px solid rgba(200,169,110,0.55)",
+                      border: "1px solid rgba(200,169,110,0.6)",
                       color: "#100e09",
                       background: "linear-gradient(135deg, #d8bd82, #a9834d)",
                       fontFamily: "var(--font-display)",
+                      boxShadow: "0 4px 12px rgba(200,169,110,0.25)",
                     }}
                   >
-                    {isSending ? "Waiting for wallet…" : "Upgrade for battle"}
+                    {isSending ? "Waiting for wallet…" : "✦ Upgrade for battle"}
                   </button>
                 ) : owned ? (
                   <button
@@ -441,11 +460,11 @@ export function CollectionContent() {
                     onClick={() => {
                       setReleaseCandidate(owned);
                     }}
-                    className="mt-2 min-h-10 w-full rounded-lg px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px]"
+                    className="mt-2 min-h-10 w-full rounded-xl px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px] transition-all active:scale-95"
                     style={{
                       border: "1px solid rgba(192,57,43,0.4)",
                       color: "#f8c8c4",
-                      background: "rgba(192,57,43,0.08)",
+                      background: "rgba(192,57,43,0.12)",
                       fontFamily: "var(--font-display)",
                     }}
                   >
@@ -455,25 +474,25 @@ export function CollectionContent() {
                   <div className="mt-2 grid grid-cols-2 gap-1.5">
                     <Link
                       href="/capture"
-                      className="flex min-h-10 items-center justify-center rounded-lg px-1 text-[10px] font-bold uppercase tracking-wide transition-colors sm:text-[11px]"
+                      className="flex min-h-10 items-center justify-center rounded-xl px-1 text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 sm:text-[11px]"
                       style={{
-                        border: "1px solid #3a2e1e",
+                        border: "1px solid rgba(200, 169, 110, 0.35)",
                         color: "#c8a96e",
                         fontFamily: "var(--font-display)",
-                        background: "rgba(200,169,110,0.06)",
+                        background: "rgba(200,169,110,0.08)",
                       }}
                     >
-                      Capture
+                      Capture ✦
                     </Link>
                     <button
                       type="button"
                       disabled={isGenerating || generatingId !== null}
                       onClick={() => void generateAnimal(String(species.id))}
-                      className="min-h-10 rounded-lg px-1 text-[10px] font-bold uppercase tracking-wide disabled:opacity-50 sm:text-[11px]"
+                      className="min-h-10 rounded-xl px-1 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 sm:text-[11px] transition-all active:scale-95"
                       style={{
                         border: "1px solid rgba(200,169,110,0.3)",
                         color: "#c8a96e",
-                        background: "rgba(200,169,110,0.08)",
+                        background: "rgba(200,169,110,0.06)",
                         fontFamily: "var(--font-display)",
                       }}
                     >
@@ -494,13 +513,14 @@ export function CollectionContent() {
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="release-title"
-          className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-xl p-5 shadow-2xl"
+          className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md overflow-hidden rounded-2xl p-6 shadow-2xl"
           style={{
-            background: "#1c1810",
-            border: "1px solid #3a2e1e",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+            background: "rgba(18, 16, 11, 0.98)",
+            border: "1px solid rgba(200, 169, 110, 0.4)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.9)",
           }}
         >
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
           <h2
             id="release-title"
             className="text-xl font-black"
@@ -508,18 +528,17 @@ export function CollectionContent() {
           >
             Release this Creature?
           </h2>
-          <p className="mt-2 text-sm" style={{ color: "#8a7a62" }}>
+          <p className="mt-2 text-sm text-[#a89880]">
             The card will leave your onchain roster. You can capture this exact
             species again later with a new photo.
           </p>
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setReleaseCandidate(null)}
-              className="min-h-12 rounded-lg text-sm font-bold"
+              className="min-h-12 rounded-xl text-sm font-bold text-[#a89880] hover:text-[#f0e8d4] transition-colors"
               style={{
-                border: "1px solid #3a2e1e",
-                color: "#f0e8d4",
+                border: "1px solid rgba(200, 169, 110, 0.3)",
                 background: "transparent",
               }}
             >
@@ -529,8 +548,12 @@ export function CollectionContent() {
               type="button"
               disabled={isSending}
               onClick={() => void releaseCreature()}
-              className="min-h-12 rounded-lg px-4 text-sm font-bold disabled:opacity-50"
-              style={{ background: "#c0392b", color: "#fff" }}
+              className="min-h-12 rounded-xl px-4 text-sm font-bold disabled:opacity-50 transition-all active:scale-95"
+              style={{
+                background: "#c0392b",
+                color: "#fff",
+                border: "1px solid rgba(192,57,43,0.5)",
+              }}
             >
               {isSending ? "Waiting for wallet…" : "Release on Solana"}
             </button>

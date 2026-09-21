@@ -72,13 +72,29 @@ export function GameSystemsGrid() {
       className="mt-28 space-y-8"
     >
       <div className="flex flex-col items-center text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">
-          <span>⚙️ EXPEDITION ENGINE</span>
+        <div className="relative inline-flex min-h-8 sm:min-h-9 items-center justify-center px-6 py-1.5 select-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/ui/tag_frame.png"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+            draggable={false}
+          />
+          <span
+            className="relative z-10 text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-[#f0e8d4] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            ⚙️ Expedition Engine
+          </span>
         </div>
-        <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+        <h2
+          className="mt-3 text-3xl font-black tracking-tight sm:text-4xl text-[#f0e8d4] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
           Six Core Gameplay Systems
         </h2>
-        <p className="mt-2 max-w-lg text-sm text-muted">
+        <p className="mt-2 max-w-lg text-sm text-[#a89880]">
           From optical viewfinder to cryptographic Solana confirmation,
           WildQuest operates as a cohesive, truthful Web3 gaming loop.
         </p>
@@ -89,38 +105,80 @@ export function GameSystemsGrid() {
           <article
             key={system.code}
             onMouseEnter={playTactileClick}
-            className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border bg-card/80 p-7 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${system.accent}`}
+            className="group relative flex h-[540px] sm:h-[580px] w-full flex-col justify-between select-none transition-all duration-300 hover:-translate-y-2 hover:drop-shadow-[0_16px_36px_rgba(52,211,153,0.35)]"
+            style={{
+              backgroundImage: "url('/ui/system_card_frame.png')",
+              backgroundSize: "100% 100%",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              filter: "drop-shadow(0 10px 28px rgba(0,0,0,0.85))",
+            }}
           >
-            {/* Top Bar: Icon + System Code */}
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cream text-3xl shadow-inner transition-transform duration-300 group-hover:scale-110 dark:bg-black/40">
-                  {system.icon}
-                </span>
-                <span
-                  className={`rounded-full px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider ${system.badgeColor}`}
+            {/* Inner Content strictly bounded inside dark stone tablet */}
+            <div className="relative z-10 flex h-full flex-col justify-between px-[15%] pt-[14%] pb-[12%]">
+              <div>
+                {/* Top Bar: Celtic Icon Socket + Tag Frame Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/ui/icon_socket.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                      draggable={false}
+                    />
+                    <span className="relative z-10 text-2xl sm:text-3xl drop-shadow">
+                      {system.icon}
+                    </span>
+                  </div>
+
+                  {/* Ornate Tag Frame for Badge */}
+                  <div className="relative inline-flex min-h-7 sm:min-h-8 items-center justify-center px-4 py-1 sm:px-5 select-none shrink-0 transition-transform duration-200 group-hover:scale-105">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/ui/tag_frame.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] brightness-95 transition-all group-hover:brightness-110"
+                      draggable={false}
+                    />
+                    <span className="relative z-10 font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#f0e8d4] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                      {system.badge}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="mt-5 font-mono text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-emerald-400 drop-shadow">
+                  {system.code}
+                </p>
+                <h3
+                  className="mt-1.5 text-xl sm:text-2xl font-black tracking-tight text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {system.badge}
-                </span>
+                  {system.title}
+                </h3>
+                <p className="mt-3 text-sm sm:text-[15px] font-medium leading-relaxed text-[#dfd4c0]">
+                  {system.description}
+                </p>
               </div>
 
-              <p className="mt-5 font-mono text-[11px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-                {system.code}
-              </p>
-              <h3 className="mt-1 text-xl font-black tracking-tight text-foreground">
-                {system.title}
-              </h3>
-              <p className="mt-2.5 text-sm leading-relaxed text-muted">
-                {system.description}
-              </p>
-            </div>
-
-            {/* Bottom Status Ticker */}
-            <div className="mt-6 flex items-center justify-between border-t border-border pt-3 text-[11px] font-mono text-muted">
-              <span>STATUS: READY</span>
-              <span className="font-bold text-foreground transition-transform duration-200 group-hover:translate-x-1">
-                SYSTEM VERIFIED ➔
-              </span>
+              {/* Bottom Status Bar */}
+              <div className="mt-4 pt-1">
+                <div className="mb-2 flex items-center justify-between px-1 font-mono text-xs text-[#a89880]">
+                  <span>STATUS: READY</span>
+                  <span className="text-emerald-400 font-bold">0xDEVNET</span>
+                </div>
+                <div className="relative flex h-9 sm:h-10 w-full items-center justify-center transition-transform duration-200 group-hover:scale-[1.02]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/ui/status_verified_bar.png"
+                    alt="System Verified"
+                    className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(52,211,153,0.35)] transition-all group-hover:drop-shadow-[0_4px_16px_rgba(52,211,153,0.65)]"
+                    draggable={false}
+                  />
+                </div>
+              </div>
             </div>
           </article>
         ))}

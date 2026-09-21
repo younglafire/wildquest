@@ -10,6 +10,7 @@ import {
 import {
   buildReleaseCreatureInstruction,
   buildUpgradeCreatureBalanceInstruction,
+  buildUpgradeCreatureBalanceInstructionAsync,
   getCreatureFilters,
   getOwnedCreatureFilters,
 } from "./creatures";
@@ -120,5 +121,67 @@ describe("owned Creature account queries", () => {
       speciesConfig.address,
       creature.address,
     ]);
+
+    expect(() =>
+      buildUpgradeCreatureBalanceInstruction(
+        createNoopSigner(owner),
+        owner,
+        speciesConfig,
+        creature,
+      ),
+    ).toThrow("Expected gameConfig PDA address");
+  });
+
+  it("builds an async balance upgrade that automatically resolves the game config PDA", async () => {
+    const owner = address("11111111111111111111111111111111");
+    const creature = {
+      address: address("SysvarRent111111111111111111111111111111111"),
+      executable: false,
+      lamports: lamports(1n),
+      programAddress: WILDQUEST_PROGRAM_ADDRESS,
+      space: BigInt(getCreatureSize()),
+      data: {
+        discriminator: new Uint8Array(8),
+        owner,
+        catalogueId: 1001n,
+        proofHash: new Uint8Array(32),
+        capturedAt: 1n,
+        balanceVersion: 1,
+        bump: 1,
+      },
+    } satisfies Account<Creature>;
+    const speciesConfig = {
+      address: address("SysvarS1otHashes111111111111111111111111111"),
+      executable: false,
+      lamports: lamports(1n),
+      programAddress: WILDQUEST_PROGRAM_ADDRESS,
+      space: BigInt(getSpeciesConfigSize()),
+      data: {
+        discriminator: new Uint8Array(8),
+        catalogueId: 1001n,
+        modelClassId: 151,
+        hp: 78,
+        attack: 58,
+        defense: 30,
+        maxMana: 7,
+        strikeCost: 2,
+        guardCost: 1,
+        rechargeGain: 4,
+        abilityId: 1,
+        abilityCost: 3,
+        balanceVersion: 2,
+        active: true,
+        bump: 1,
+      },
+    } satisfies Account<SpeciesConfig>;
+
+    const instruction = await buildUpgradeCreatureBalanceInstructionAsync(
+      createNoopSigner(owner),
+      speciesConfig,
+      creature,
+    );
+    expect(instruction.accounts?.[0]?.address).toBe(owner);
+    expect(instruction.accounts?.[2]?.address).toBe(speciesConfig.address);
+    expect(instruction.accounts?.[3]?.address).toBe(creature.address);
   });
 });

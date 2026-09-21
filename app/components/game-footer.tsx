@@ -13,7 +13,7 @@ export function GameFooter() {
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/creatures/logo.png"
+                src="/ui/logo.png"
                 alt="WildQuest"
                 className="h-9 sm:h-11 w-auto object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]"
               />

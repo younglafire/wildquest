@@ -326,57 +326,84 @@ export function Creature3DStage() {
         />
 
         {/* Floating Specimen Telemetry Pill in Top Right Corner */}
-        <div className="pointer-events-none absolute top-2 right-2 sm:right-4 z-10 flex items-center gap-2.5 rounded-full bg-black/60 px-3.5 py-1.5 font-mono text-[11px] backdrop-blur border border-emerald-500/30 shadow-lg">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <p className="font-bold text-white">
-            Canis lupus (Dog · German Shepherd)
+        <div
+          className="pointer-events-none absolute top-2 right-2 sm:right-4 z-10 flex items-center gap-2.5 rounded-xl px-3.5 py-1.5 font-mono text-[11px] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.8)] select-none"
+          style={{
+            background: "rgba(18, 16, 11, 0.9)",
+            border: "1px solid rgba(200, 169, 110, 0.35)",
+            boxShadow:
+              "0 4px 20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(200, 169, 110, 0.2)",
+          }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
+          <p className="font-bold text-[#f0e8d4]">
+            Canis lupus{" "}
+            <span className="text-[#8a7a62] font-normal">
+              (Dog · German Shepherd)
+            </span>
           </p>
-          <span className="text-muted">·</span>
-          <span className="text-emerald-400 font-bold">98.4% MATCH</span>
+          <span className="text-[#c8a96e]/40">·</span>
+          <span className="text-emerald-400 font-bold tracking-wide">
+            98.4% MATCH
+          </span>
         </div>
       </div>
 
-      {/* 3D Control Strip (Sleek floating glass pills) */}
-      <div className="mt-1 flex w-full flex-wrap items-center justify-center gap-3 px-1 text-xs">
+      {/* 3D Control Strip (Fantasy RPG Tactical Bar) */}
+      <div className="mt-2 flex w-full flex-wrap items-center justify-center gap-3 px-1 text-xs">
         {/* Camera Angle Presets */}
-        <div className="flex items-center gap-1.5 rounded-2xl border border-border bg-card/85 p-1 backdrop-blur shadow-sm font-mono text-[11px]">
-          <span className="px-2 text-muted font-bold">ANGLE:</span>
+        <div
+          className="flex items-center gap-1 rounded-xl p-1 font-mono text-[11px] shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md"
+          style={{
+            background: "rgba(18, 16, 11, 0.9)",
+            border: "1px solid rgba(200, 169, 110, 0.3)",
+          }}
+        >
+          <span className="px-2 font-bold text-[#8a7a62]">ANGLE:</span>
           <button
             type="button"
             onClick={() => setViewAngle(Math.PI / 4.5)}
-            className="rounded-xl px-2.5 py-1 font-bold text-muted hover:bg-cream hover:text-foreground dark:hover:bg-black/40 transition"
+            className="rounded-lg px-2.5 py-1 font-bold text-[#c8a96e]/80 transition hover:bg-[#c8a96e]/15 hover:text-[#f0e8d4] active:scale-95"
           >
             3/4 VIEW
           </button>
           <button
             type="button"
             onClick={() => setViewAngle(0)}
-            className="rounded-xl px-2.5 py-1 font-bold text-muted hover:bg-cream hover:text-foreground dark:hover:bg-black/40 transition"
+            className="rounded-lg px-2.5 py-1 font-bold text-[#c8a96e]/80 transition hover:bg-[#c8a96e]/15 hover:text-[#f0e8d4] active:scale-95"
           >
             FRONT
           </button>
           <button
             type="button"
             onClick={() => setViewAngle(Math.PI / 2)}
-            className="rounded-xl px-2.5 py-1 font-bold text-muted hover:bg-cream hover:text-foreground dark:hover:bg-black/40 transition"
+            className="rounded-lg px-2.5 py-1 font-bold text-[#c8a96e]/80 transition hover:bg-[#c8a96e]/15 hover:text-[#f0e8d4] active:scale-95"
           >
             PROFILE
           </button>
         </div>
 
         {/* Action Buttons: Wireframe, Auto-Rotate & Pulse Scan */}
-        <div className="flex items-center gap-1.5 font-mono text-[11px]">
+        <div className="flex items-center gap-2 font-mono text-[11px]">
           <button
             type="button"
             onClick={() => {
               setWireframeMode(!wireframeMode);
               playTactileClick();
             }}
-            className={`rounded-xl border px-3 py-1.5 font-bold transition-all ${
-              wireframeMode
-                ? "border-emerald-400 bg-emerald-500/20 text-emerald-300"
-                : "border-border bg-card/80 text-muted hover:border-emerald-500 hover:text-foreground"
-            }`}
+            className="rounded-xl px-3 py-1.5 font-bold transition-all shadow-[0_4px_16px_rgba(0,0,0,0.6)] active:scale-95"
+            style={{
+              background: wireframeMode
+                ? "rgba(16, 185, 129, 0.22)"
+                : "rgba(18, 16, 11, 0.9)",
+              border: wireframeMode
+                ? "1px solid rgba(52, 211, 153, 0.75)"
+                : "1px solid rgba(200, 169, 110, 0.3)",
+              color: wireframeMode ? "#6ee7b7" : "#c8a96e",
+              boxShadow: wireframeMode
+                ? "0 0 12px rgba(16, 185, 129, 0.35)"
+                : "0 4px 16px rgba(0,0,0,0.6)",
+            }}
           >
             {wireframeMode ? "⚡ X-RAY ON" : "🔬 AI X-RAY"}
           </button>
@@ -387,11 +414,19 @@ export function Creature3DStage() {
               setAutoRotate(!autoRotate);
               playTactileClick();
             }}
-            className={`rounded-xl border px-3 py-1.5 font-bold transition-all ${
-              autoRotate
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                : "border-border bg-card/80 text-muted hover:border-foreground/30"
-            }`}
+            className="rounded-xl px-3 py-1.5 font-bold transition-all shadow-[0_4px_16px_rgba(0,0,0,0.6)] active:scale-95"
+            style={{
+              background: autoRotate
+                ? "rgba(200, 169, 110, 0.18)"
+                : "rgba(18, 16, 11, 0.9)",
+              border: autoRotate
+                ? "1px solid rgba(200, 169, 110, 0.65)"
+                : "1px solid rgba(200, 169, 110, 0.3)",
+              color: autoRotate ? "#f0e8d4" : "#8a7a62",
+              boxShadow: autoRotate
+                ? "0 0 12px rgba(200, 169, 110, 0.25)"
+                : "0 4px 16px rgba(0,0,0,0.6)",
+            }}
           >
             {autoRotate ? "🔄 ORBIT" : "⏸️ HOLD"}
           </button>
@@ -399,14 +434,21 @@ export function Creature3DStage() {
           <button
             type="button"
             onClick={triggerPulseScan}
-            className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-400 transition hover:bg-emerald-500 hover:text-white"
+            className="rounded-xl px-3 py-1.5 font-bold transition-all shadow-[0_4px_16px_rgba(0,0,0,0.6)] active:scale-95 hover:brightness-110"
+            style={{
+              background:
+                "radial-gradient(100% 100% at 50% 0%, rgba(34, 197, 94, 0.35) 0%, rgba(18, 16, 11, 0.9) 100%)",
+              border: "1px solid rgba(74, 222, 128, 0.65)",
+              color: "#4ade80",
+              boxShadow: "0 0 14px rgba(74, 222, 128, 0.35)",
+            }}
           >
             ✨ SCAN
           </button>
         </div>
       </div>
 
-      <p className="mt-2 text-[10px] font-mono text-muted text-center">
+      <p className="mt-2.5 text-[10.5px] font-mono text-[#8a7a62] text-center tracking-wider">
         SUPPORTED SPECIES: CANIS LUPUS (DOG) · CLICK & DRAG TO ROTATE 360°
       </p>
     </div>

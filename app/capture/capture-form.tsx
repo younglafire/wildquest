@@ -253,17 +253,57 @@ export function CaptureForm({
 
   if (device === "desktop") {
     return (
-      <section className="mx-auto w-full max-w-2xl rounded-3xl border border-[#3a2e1e] bg-[#1c1810] p-8 text-center shadow-2xl">
-        <p className="wax-badge wax-badge-forest">Mobile field tool</p>
+      <section
+        className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-2xl p-8 sm:p-12 text-center"
+        style={{
+          background:
+            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 75%)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow:
+            "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200, 169, 110, 0.25)",
+        }}
+      >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
+        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute bottom-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute bottom-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+
+        <div
+          className="relative inline-flex min-h-9 sm:min-h-10 items-center justify-center px-6 sm:px-8 py-1 sm:py-1.5 select-none"
+          style={{
+            backgroundImage: "url('/ui/tag_frame.png')",
+            backgroundSize: "100% 100%",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <span
+            className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            ✦ MOBILE FIELD TOOL ✦
+          </span>
+        </div>
+
         <h1
-          className="mt-4 text-3xl font-black tracking-tight text-[#f0e8d4]"
+          className="mt-4 text-3xl font-black tracking-tight text-[#f0e8d4] sm:text-4xl"
           style={{ fontFamily: "var(--font-display)" }}
         >
           Hunt with your phone
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[#8a7a62]">
-          Open WildQuest on a phone to use the live rear-camera scanner. Your
-          collection, quests, and battles remain available here.
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[#a89880]">
+          Open WildQuest on a mobile browser to use the live rear-camera
+          scanner. Your collection, quests, and battles remain fully available
+          here.
         </p>
       </section>
     );
@@ -310,12 +350,15 @@ export function CaptureForm({
       <header className="absolute inset-x-0 top-0 z-10 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <div className="mx-auto flex max-w-lg items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d7c18e]">
+            <p
+              className="text-[10px] font-black uppercase tracking-[0.3em] text-[#c8a96e]"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               WildQuest field scanner
             </p>
             <h1
               id="capture-heading"
-              className="mt-1 text-xl font-black tracking-tight"
+              className="mt-1 text-xl font-black tracking-tight text-[#f0e8d4]"
               style={{ fontFamily: "var(--font-display)" }}
             >
               {isIdentifying
@@ -326,7 +369,7 @@ export function CaptureForm({
           <button
             type="button"
             onClick={closeScanner}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/35 text-xl backdrop-blur-md"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(200,169,110,0.4)] bg-[rgba(18,16,11,0.7)] text-xl text-[#f0e8d4] backdrop-blur-md transition-all active:scale-95"
             aria-label="Close scanner"
           >
             ×
@@ -346,10 +389,13 @@ export function CaptureForm({
             <span className="capture-scan-beam" />
           )}
           {isIdentifying && (
-            <div className="absolute inset-0 grid place-items-center rounded-[2rem] bg-black/25 backdrop-blur-[2px]">
+            <div className="absolute inset-0 grid place-items-center rounded-[2rem] bg-black/40 backdrop-blur-[2px]">
               <div className="text-center">
-                <span className="mx-auto block h-12 w-12 animate-spin rounded-full border-2 border-[#d7c18e]/30 border-t-[#f3d98c]" />
-                <p className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-[#f3d98c]">
+                <span className="mx-auto block h-12 w-12 animate-spin rounded-full border-2 border-[rgba(200,169,110,0.3)] border-t-[#c8a96e]" />
+                <p
+                  className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-[#c8a96e]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
                   Identifying animal
                 </p>
               </div>
@@ -363,30 +409,38 @@ export function CaptureForm({
           {identificationError ? (
             <p
               role="alert"
-              className="mb-4 rounded-2xl border border-amber-200/30 bg-[#21170b]/90 px-4 py-3 text-sm font-semibold leading-relaxed text-amber-50 backdrop-blur-md"
+              className="mb-4 rounded-2xl border border-amber-500/30 bg-[#21170b]/90 px-4 py-3 text-sm font-semibold leading-relaxed text-amber-100 backdrop-blur-md"
             >
               {identificationError}
             </p>
           ) : cameraError ? (
             <p
               role="alert"
-              className="mb-4 rounded-2xl border border-red-300/25 bg-red-950/70 px-4 py-3 text-sm text-red-100 backdrop-blur-md"
+              className="mb-4 rounded-2xl border border-red-500/30 bg-red-950/80 px-4 py-3 text-sm text-red-100 backdrop-blur-md"
             >
               {cameraError}
             </p>
           ) : (
-            <p
-              aria-live="polite"
-              className="mb-4 text-sm font-bold drop-shadow-lg"
+            <div
+              className="mb-4 inline-flex items-center justify-center rounded-full px-5 py-2 backdrop-blur-md"
+              style={{
+                background: "rgba(18, 16, 11, 0.85)",
+                border: "1px solid rgba(200, 169, 110, 0.3)",
+              }}
             >
-              {isIdentifying
-                ? "Keep WildQuest open while the scan finishes"
-                : cameraStatus === "starting"
-                  ? "Opening the rear camera..."
-                  : cameraStatus === "ready"
-                    ? CAMERA_GUIDANCE_COPY[guidance]
-                    : "Fill the frame with the animal and keep the phone level"}
-            </p>
+              <p
+                aria-live="polite"
+                className="text-xs font-bold text-[#f0e8d4] drop-shadow-md sm:text-sm"
+              >
+                {isIdentifying
+                  ? "Keep WildQuest open while the scan finishes"
+                  : cameraStatus === "starting"
+                    ? "Opening the rear camera..."
+                    : cameraStatus === "ready"
+                      ? CAMERA_GUIDANCE_COPY[guidance]
+                      : "Fill the frame with the animal and keep the phone level"}
+              </p>
+            </div>
           )}
 
           {state.status === "ready" ? (
@@ -394,7 +448,7 @@ export function CaptureForm({
               <button
                 type="button"
                 onClick={resetCapture}
-                className="min-h-12 rounded-full border border-white/25 bg-black/55 px-6 text-xs font-black uppercase tracking-[0.18em] backdrop-blur-md"
+                className="min-h-12 rounded-full border border-[rgba(200,169,110,0.4)] bg-[rgba(18,16,11,0.85)] px-7 text-xs font-black uppercase tracking-[0.18em] text-[#f0e8d4] backdrop-blur-md transition-all active:scale-95"
               >
                 {identificationError
                   ? "Scan another animal"
@@ -407,19 +461,20 @@ export function CaptureForm({
                 type="button"
                 disabled={cameraStatus !== "ready" || isCapturingFrame}
                 onClick={captureFrame}
-                className="capture-shutter grid h-[4.75rem] w-[4.75rem] place-items-center rounded-full border-[3px] border-white/90 disabled:opacity-40"
+                className="capture-shutter grid h-[4.75rem] w-[4.75rem] place-items-center rounded-full border-[3px] border-[#c8a96e] disabled:opacity-40 transition-all active:scale-95"
                 aria-label="Scan this animal"
               >
-                <span className="h-[3.65rem] w-[3.65rem] rounded-full bg-[#f3d98c] shadow-[0_0_28px_rgba(243,217,140,0.45)]" />
+                <span className="h-[3.65rem] w-[3.65rem] rounded-full bg-[#f0e8d4] shadow-[0_0_28px_rgba(200,169,110,0.6)]" />
               </button>
             </div>
           ) : (
             <button
               type="button"
+              aria-label="Open camera"
               onClick={() => void startCamera()}
-              className="btn-guild min-h-14 w-full"
+              className="btn-guild min-h-14 w-full text-xs font-black uppercase tracking-wider"
             >
-              Open camera
+              ✦ Open camera
             </button>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   address as parseAddress,
   unwrapOption,
@@ -13,6 +13,7 @@ import useSWR from "swr";
 import {
   fetchAllCreature,
   fetchMaybeMatch,
+  findGameConfigPda,
   findMatchAccountPda,
   MatchStatus,
 } from "../generated/wildquest";
@@ -210,6 +211,12 @@ export function BattleContent() {
       );
     }
   };
+  const slotRefs = useRef<(HTMLDivElement | null)[]>([null, null, null]);
+  const dragPreviewRef = useRef<HTMLDivElement | null>(null);
+  const [dragPreviewCard, setDragPreviewCard] = useState<BattleCreature | null>(
+    null,
+  );
+
   const place = (index: number, creatureAddress: string) => {
     if (
       creatureAddress &&
@@ -225,9 +232,111 @@ export function BattleContent() {
     );
     setArmed(null);
   };
-  const handleDrop = (event: DragEvent, index: number) => {
-    event.preventDefault();
-    place(index, event.dataTransfer.getData("text/plain"));
+
+  const handleCardPointerDown = (
+    e: React.PointerEvent<HTMLDivElement>,
+    card: BattleCreature,
+    creatureAddress: string,
+    isDraggable: boolean,
+  ) => {
+    if (!isDraggable) return;
+    if (e.button !== 0) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let isDragging = false;
+    let hoveredSlotIndex: number | null = null;
+    const targetEl = e.currentTarget;
+
+    try {
+      targetEl.setPointerCapture(e.pointerId);
+    } catch {
+      // Safe fallback if pointer capture fails
+    }
+
+    const getSlotAtPoint = (x: number, y: number) => {
+      for (let i = 0; i < 3; i++) {
+        const el = slotRefs.current[i];
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (
+            x >= rect.left &&
+            x <= rect.right &&
+            y >= rect.top &&
+            y <= rect.bottom
+          ) {
+            return i;
+          }
+        }
+      }
+      return null;
+    };
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const dist = Math.hypot(
+        moveEvent.clientX - startX,
+        moveEvent.clientY - startY,
+      );
+      if (!isDragging && dist > 8) {
+        isDragging = true;
+        setDragPreviewCard(card);
+      }
+
+      if (isDragging && dragPreviewRef.current) {
+        dragPreviewRef.current.style.display = "block";
+        dragPreviewRef.current.style.transform = `translate3d(${moveEvent.clientX}px, ${moveEvent.clientY}px, 0) translate(-50%, -50%) rotate(4deg) scale(0.9)`;
+
+        const currentSlot = getSlotAtPoint(
+          moveEvent.clientX,
+          moveEvent.clientY,
+        );
+        if (currentSlot !== hoveredSlotIndex) {
+          if (hoveredSlotIndex !== null && slotRefs.current[hoveredSlotIndex]) {
+            slotRefs.current[hoveredSlotIndex]?.classList.remove(
+              "slot-drag-over",
+            );
+          }
+          hoveredSlotIndex = currentSlot;
+          if (hoveredSlotIndex !== null && slotRefs.current[hoveredSlotIndex]) {
+            slotRefs.current[hoveredSlotIndex]?.classList.add("slot-drag-over");
+          }
+        }
+      }
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      targetEl.removeEventListener("pointermove", onPointerMove);
+      targetEl.removeEventListener("pointerup", onPointerUp);
+      targetEl.removeEventListener("pointercancel", onPointerUp);
+
+      try {
+        targetEl.releasePointerCapture(upEvent.pointerId);
+      } catch {
+        // Safe fallback
+      }
+
+      if (dragPreviewRef.current) {
+        dragPreviewRef.current.style.display = "none";
+      }
+
+      if (hoveredSlotIndex !== null && slotRefs.current[hoveredSlotIndex]) {
+        slotRefs.current[hoveredSlotIndex]?.classList.remove("slot-drag-over");
+      }
+
+      if (isDragging) {
+        if (hoveredSlotIndex !== null) {
+          place(hoveredSlotIndex, creatureAddress);
+        }
+        setDragPreviewCard(null);
+      } else {
+        // Simple tap or click
+        setArmed((curr) => (curr === creatureAddress ? null : creatureAddress));
+      }
+    };
+
+    targetEl.addEventListener("pointermove", onPointerMove);
+    targetEl.addEventListener("pointerup", onPointerUp);
+    targetEl.addEventListener("pointercancel", onPointerUp);
   };
 
   const createMatch = () =>
@@ -279,11 +388,12 @@ export function BattleContent() {
   ) =>
     run(async () => {
       if (!signer) throw new Error("Connect your wallet first.");
+      const [gameConfig] = await findGameConfigPda();
       const signature = await send({
         instructions: [
           buildUpgradeCreatureBalanceInstruction(
             signer,
-            game.address!,
+            gameConfig,
             config,
             creature,
           ),
@@ -326,37 +436,60 @@ export function BattleContent() {
   return (
     <main className="mx-auto max-w-6xl px-3.5 pb-24 pt-4 sm:px-6 sm:pt-14">
       <section
-        className="rounded-xl p-4 sm:p-8"
+        className="relative overflow-hidden rounded-2xl p-5 sm:p-8"
         style={{
-          background: "#1c1810",
-          border: "1px solid #3a2e1e",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+          background:
+            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.85) 0%, rgba(18, 16, 11, 0.98) 75%)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow:
+            "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200, 169, 110, 0.25)",
         }}
       >
-        <p
-          className="text-[10px] font-bold uppercase tracking-[0.24em]"
-          style={{ color: "#6aab7a", fontFamily: "var(--font-display)" }}
+        {/* Top gold hairline */}
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.8)] to-transparent pointer-events-none" />
+        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+
+        <div
+          className="relative inline-flex min-h-9 sm:min-h-10 items-center justify-center px-6 sm:px-8 py-1 sm:py-1.5 select-none"
+          style={{
+            backgroundImage: "url('/ui/tag_frame.png')",
+            backgroundSize: "100% 100%",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
         >
-          Deterministic Arena · Devnet
-        </p>
+          <span
+            className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            ⚔️ SOLANA DEVNET ARENA ⚔️
+          </span>
+        </div>
+
         <h1
-          className="mt-2 text-2xl font-black tracking-tight sm:mt-3 sm:text-5xl"
+          className="mt-3 text-2xl font-black tracking-tight sm:mt-4 sm:text-5xl"
           style={{ fontFamily: "var(--font-display)", color: "#f0e8d4" }}
         >
           Build your team
         </h1>
-        <p
-          className="mt-2 max-w-2xl text-xs leading-relaxed sm:mt-3 sm:text-sm"
-          style={{ color: "#8a7a62" }}
-        >
+        <p className="mt-2 max-w-2xl text-xs leading-relaxed sm:mt-3 sm:text-sm text-[#a89880]">
           Choose three different Creatures in order. Tap a card then a slot.
           Every match stakes 0.01 SOL.
         </p>
 
         {creatures.length < 3 ? (
           <div
-            className="mt-5 rounded-xl p-4 sm:mt-7 sm:p-5"
-            style={{ background: "#221d14", border: "1px solid #3a2e1e" }}
+            className="relative mt-5 overflow-hidden rounded-xl p-5 sm:mt-7 sm:p-6"
+            style={{
+              background: "rgba(14, 12, 8, 0.95)",
+              border: "1px solid rgba(200, 169, 110, 0.3)",
+              boxShadow: "inset 0 2px 12px rgba(0,0,0,0.6)",
+            }}
           >
             <h2
               className="font-black text-sm sm:text-base"
@@ -364,95 +497,130 @@ export function BattleContent() {
             >
               You need three Creatures
             </h2>
-            <p
-              className="mt-1.5 text-xs sm:text-sm"
-              style={{ color: "#8a7a62" }}
-            >
+            <p className="mt-1.5 text-xs sm:text-sm text-[#a89880]">
               You currently own {creatures.length}. Capture more exact supported
               species first.
             </p>
             <Link
               href="/capture"
-              className="btn-guild mt-4 w-full sm:w-auto inline-flex"
+              aria-label="Hunt & Capture"
+              className="group relative mt-4 inline-flex cursor-pointer items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              style={{
+                filter:
+                  "drop-shadow(0 10px 24px rgba(0,0,0,0.8)) drop-shadow(0 0 16px rgba(52,211,153,0.25))",
+              }}
             >
-              ✦ Hunt & Capture
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/ui/hunt_capture.png"
+                alt="Hunt & Capture"
+                width={260}
+                height={78}
+                className="h-auto w-52 sm:w-60 select-none object-contain transition-all duration-200 group-hover:brightness-120 group-hover:drop-shadow-[0_0_28px_rgba(52,211,153,0.7)]"
+                draggable={false}
+              />
             </Link>
           </div>
         ) : battleCreatures.isLoading ? (
-          <p className="mt-5 text-sm sm:mt-7" style={{ color: "#8a7a62" }}>
+          <p className="mt-5 text-sm sm:mt-7 text-[#a89880]">
             Loading verified onchain stats…
           </p>
         ) : battleCreatures.error ? (
           <p
             role="alert"
-            className="mt-5 text-sm sm:mt-7"
-            style={{ color: "#f8c8c4" }}
+            className="mt-5 rounded-xl p-4 text-sm sm:mt-7"
+            style={{
+              background: "rgba(192,57,43,0.15)",
+              color: "#f8c8c4",
+              border: "1px solid rgba(192,57,43,0.3)",
+            }}
           >
             Creature stats could not be loaded.
           </p>
         ) : (
           <>
             {/* 3 Team Slots side-by-side on mobile and desktop */}
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-7 sm:gap-3">
+            <div className="mt-5 grid grid-cols-3 gap-2 sm:mt-7 sm:gap-3">
               {slots.map((slot, index) => {
                 const card = cardsByAddress.get(slot);
                 return (
-                  <button
+                  <div
                     key={index}
-                    type="button"
+                    ref={(el) => {
+                      slotRefs.current[index] = el;
+                    }}
+                    role="button"
+                    tabIndex={0}
                     aria-label={
                       card
                         ? `Remove ${card.species?.name ?? "Creature"} from slot ${index + 1}`
                         : `Place selected Creature in slot ${index + 1}`
                     }
-                    onClick={() =>
-                      card ? place(index, "") : armed && place(index, armed)
-                    }
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => handleDrop(event, index)}
-                    className="min-h-32 rounded-xl text-left transition-all sm:min-h-44 active:scale-95"
+                    onClick={() => {
+                      if (card) {
+                        place(index, "");
+                      } else if (armed) {
+                        place(index, armed);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        if (card) {
+                          place(index, "");
+                        } else if (armed) {
+                          place(index, armed);
+                        }
+                      }
+                    }}
+                    className="battle-slot group relative min-h-32 cursor-pointer select-none rounded-2xl text-left transition-all duration-200 sm:min-h-44 active:scale-95"
                     style={{
                       border: card
                         ? "none"
-                        : "2px dashed rgba(200,169,110,0.25)",
-                      background: card ? "transparent" : "#221d14",
+                        : "2px dashed rgba(200, 169, 110, 0.35)",
+                      background: card
+                        ? "transparent"
+                        : "rgba(14, 12, 8, 0.95)",
+                      boxShadow: card
+                        ? "none"
+                        : "inset 0 4px 16px rgba(0,0,0,0.6)",
                     }}
                   >
                     {card ? (
-                      <CreatureModelCard
-                        creature={card}
-                        compact
-                        slotIndex={index + 1}
-                      />
+                      <div className="pointer-events-none h-full w-full">
+                        <CreatureModelCard
+                          creature={card}
+                          compact
+                          slotIndex={index + 1}
+                        />
+                      </div>
                     ) : (
-                      <div className="flex min-h-28 flex-col items-center justify-center p-1 sm:min-h-40">
-                        <span
-                          className="text-2xl font-light sm:text-4xl"
-                          style={{ color: "rgba(200,169,110,0.35)" }}
-                        >
+                      <div className="pointer-events-none flex min-h-28 flex-col items-center justify-center p-1 sm:min-h-40">
+                        <span className="text-2xl font-light text-[#c8a96e]/60 transition-colors group-hover:text-[#c8a96e] sm:text-4xl">
                           +
                         </span>
                         <span
-                          className="mt-1 text-[8px] font-bold uppercase tracking-wider sm:text-[10px]"
+                          className="mt-1 text-[8px] font-bold uppercase tracking-wider text-[#c8a96e] sm:text-[10px]"
                           style={{
-                            color: "#8a7a62",
                             fontFamily: "var(--font-display)",
                           }}
                         >
-                          Slot {index + 1}
+                          {`Slot ${index + 1}`}
                         </span>
                       </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
             <p
-              className="mt-5 text-[10px] font-bold uppercase tracking-wider sm:mt-6"
-              style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+              className="mt-5 text-[10px] font-bold uppercase tracking-wider sm:mt-6 text-[#c8a96e]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
               Your Creature Cards{" "}
-              {armed ? "(Tap a slot above to place)" : "(Tap to select)"}
+              {armed
+                ? "(Tap a slot above to place)"
+                : "(Drag or tap to place in slot)"}
             </p>
             <div className="mt-2.5 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {(battleCreatures.data ?? []).map((card) => {
@@ -463,25 +631,38 @@ export function BattleContent() {
                 const needsUpgrade =
                   !creature || !hasCurrentBattleBalance(creature, card);
                 const used = slots.includes(creatureAddress);
+                const isDraggable = !used && !needsUpgrade;
                 return (
                   <div key={creatureAddress} className="flex flex-col gap-1.5">
-                    <button
-                      type="button"
-                      draggable={!used && !needsUpgrade}
-                      disabled={used || needsUpgrade}
+                    <div
+                      role="button"
+                      tabIndex={isDraggable ? 0 : -1}
                       aria-pressed={armed === creatureAddress}
-                      onDragStart={(event) =>
-                        event.dataTransfer.setData(
-                          "text/plain",
+                      aria-disabled={!isDraggable}
+                      onPointerDown={(event) =>
+                        handleCardPointerDown(
+                          event,
+                          card,
                           creatureAddress,
+                          isDraggable,
                         )
                       }
-                      onClick={() =>
-                        setArmed((value) =>
-                          value === creatureAddress ? null : creatureAddress,
-                        )
-                      }
-                      className="rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-emerald-500 active:scale-95 disabled:cursor-not-allowed"
+                      onKeyDown={(event) => {
+                        if (
+                          (event.key === "Enter" || event.key === " ") &&
+                          isDraggable
+                        ) {
+                          event.preventDefault();
+                          setArmed((value) =>
+                            value === creatureAddress ? null : creatureAddress,
+                          );
+                        }
+                      }}
+                      className={`touch-none rounded-2xl text-left select-none focus-visible:ring-2 focus-visible:ring-emerald-500 active:scale-95 transition-all ${
+                        isDraggable
+                          ? "cursor-grab active:cursor-grabbing hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(52,211,153,0.25)]"
+                          : "cursor-not-allowed opacity-50"
+                      }`}
                     >
                       <CreatureModelCard
                         creature={card}
@@ -492,7 +673,7 @@ export function BattleContent() {
                           needsUpgrade ? "UPGRADE" : used ? "IN TEAM" : null
                         }
                       />
-                    </button>
+                    </div>
                     {needsUpgrade && creature ? (
                       <button
                         type="button"
@@ -500,16 +681,26 @@ export function BattleContent() {
                         onClick={() =>
                           void upgradeCreature(creature, card.config)
                         }
-                        className="min-h-9 rounded-lg px-2 text-[9px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45"
+                        aria-label={
+                          isSending
+                            ? "Waiting for upgrade…"
+                            : "Upgrade Creature for battle"
+                        }
+                        className="group relative mt-1 flex cursor-pointer items-center justify-center transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-45"
                         style={{
-                          border: "1px solid rgba(200,169,110,0.55)",
-                          color: "#100e09",
-                          background:
-                            "linear-gradient(135deg, #c8a96e, #a07d48)",
-                          fontFamily: "var(--font-display)",
+                          filter:
+                            "drop-shadow(0 4px 12px rgba(0,0,0,0.6)) drop-shadow(0 0 8px rgba(200,169,110,0.3))",
                         }}
                       >
-                        {isSending ? "Waiting…" : "Upgrade"}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/ui/upgrade.png"
+                          alt="Upgrade"
+                          width={180}
+                          height={54}
+                          className="h-auto w-full select-none object-contain transition-all duration-200 group-hover:brightness-125 group-hover:drop-shadow-[0_0_14px_rgba(200,169,110,0.65)]"
+                          draggable={false}
+                        />
                       </button>
                     ) : null}
                   </div>
@@ -522,9 +713,9 @@ export function BattleContent() {
         {error && (
           <p
             role="alert"
-            className="mt-4 rounded-lg p-3 text-xs sm:mt-5 sm:p-4 sm:text-sm"
+            className="mt-4 rounded-xl p-3 text-xs sm:mt-5 sm:p-4 sm:text-sm"
             style={{
-              background: "rgba(192,57,43,0.12)",
+              background: "rgba(192,57,43,0.15)",
               color: "#f8c8c4",
               border: "1px solid rgba(192,57,43,0.3)",
             }}
@@ -533,23 +724,54 @@ export function BattleContent() {
           </p>
         )}
         {creatures.length >= 3 && (
-          <button
-            type="button"
-            onClick={() => void createMatch()}
-            disabled={selected.length !== 3 || selectedOutdated || isSending}
-            className="btn-guild mt-5 w-full sm:mt-6"
-          >
-            {isSending
-              ? "Waiting for wallet…"
-              : "✦ Create match · stake 0.01 SOL"}
-          </button>
+          <div className="mt-7 flex flex-col items-center justify-center">
+            <button
+              type="button"
+              onClick={() => void createMatch()}
+              disabled={selected.length !== 3 || selectedOutdated || isSending}
+              aria-label={
+                isSending
+                  ? "Waiting for wallet…"
+                  : "Open Arena Match · Stake 0.01 SOL"
+              }
+              className="group relative inline-flex cursor-pointer items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-45"
+              style={{
+                filter:
+                  "drop-shadow(0 14px 32px rgba(0,0,0,0.9)) drop-shadow(0 0 24px rgba(52,211,153,0.35))",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/ui/open_arena_match.png"
+                alt="Open Arena Match"
+                width={360}
+                height={108}
+                className="h-auto w-72 sm:w-80 md:w-96 select-none object-contain transition-all duration-200 group-hover:brightness-120 group-hover:drop-shadow-[0_0_32px_rgba(52,211,153,0.7)]"
+                draggable={false}
+              />
+              {isSending && (
+                <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/65 backdrop-blur-xs text-xs font-black uppercase tracking-widest text-[#f0e8d4]">
+                  Waiting for wallet…
+                </span>
+              )}
+            </button>
+            <p className="mt-2.5 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-[#c8a96e]/80">
+              Stake 0.01 SOL on Solana Devnet
+            </p>
+          </div>
         )}
       </section>
 
       {lastMatchAddress && (
         <section ref={arenaRef} className="scroll-mt-24">
           {activeMatch.isLoading || !resultMatch ? (
-            <p className="mt-6 rounded-2xl bg-card p-5 text-sm text-muted">
+            <p
+              className="mt-6 rounded-2xl p-5 text-sm text-[#a89880]"
+              style={{
+                background: "rgba(18, 16, 11, 0.9)",
+                border: "1px solid rgba(200, 169, 110, 0.3)",
+              }}
+            >
               Opening the shared battlefield…
             </p>
           ) : (
@@ -568,21 +790,34 @@ export function BattleContent() {
           href={`https://explorer.solana.com/tx/${lastSignature}?cluster=${cluster}`}
           target="_blank"
           rel="noreferrer"
-          className="mt-3 inline-flex min-h-12 items-center text-sm font-bold underline"
+          className="mt-3 inline-flex min-h-12 items-center text-sm font-bold text-[#c8a96e] underline hover:text-[#f0e8d4]"
         >
-          View latest transaction on Explorer
+          View latest transaction on Explorer ↗
         </a>
       )}
 
       <section
-        className="mt-4 rounded-xl p-6 sm:p-8"
-        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+        className="relative mt-4 overflow-hidden rounded-2xl p-6 sm:p-8"
+        style={{
+          background: "rgba(18, 16, 11, 0.92)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow:
+            "0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+        }}
       >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+
         <div className="flex items-end justify-between gap-4">
           <div>
             <p
-              className="text-[10px] font-bold uppercase tracking-[0.22em]"
-              style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+              className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
               Match Lobby
             </p>
@@ -596,21 +831,19 @@ export function BattleContent() {
           <button
             type="button"
             onClick={() => void matches.mutate()}
-            className="min-h-10 rounded-lg px-4 text-[11px] font-bold uppercase tracking-wide"
+            className="min-h-10 rounded-lg px-4 text-[11px] font-bold uppercase tracking-wider transition-colors"
             style={{
-              border: "1px solid #3a2e1e",
+              border: "1px solid rgba(200, 169, 110, 0.35)",
               color: "#c8a96e",
               fontFamily: "var(--font-display)",
-              background: "rgba(200,169,110,0.06)",
+              background: "rgba(200, 169, 110, 0.08)",
             }}
           >
             Refresh
           </button>
         </div>
         {matches.isLoading ? (
-          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>
-            Loading matches…
-          </p>
+          <p className="mt-6 text-sm text-[#a89880]">Loading matches…</p>
         ) : matches.error ? (
           <p className="mt-6 text-sm" style={{ color: "#f8c8c4" }}>
             The Devnet match lobby is unavailable.
@@ -618,7 +851,11 @@ export function BattleContent() {
         ) : relevantMatches.length === 0 ? (
           <p
             className="mt-6 rounded-xl p-5 text-sm"
-            style={{ background: "#221d14", color: "#8a7a62" }}
+            style={{
+              background: "rgba(14, 12, 8, 0.95)",
+              color: "#8a7a62",
+              border: "1px solid rgba(200, 169, 110, 0.2)",
+            }}
           >
             No open challenge or unclaimed win yet.
           </p>
@@ -632,25 +869,38 @@ export function BattleContent() {
                   key={match.address}
                   className="flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
                   style={{
-                    background: "#221d14",
+                    background: "rgba(14, 12, 8, 0.95)",
                     border: mine
-                      ? "1px solid rgba(200,169,110,0.3)"
-                      : "1px solid #3a2e1e",
+                      ? "1px solid rgba(200,169,110,0.4)"
+                      : "1px solid rgba(200,169,110,0.2)",
                     borderLeft: mine
                       ? "3px solid #c8a96e"
-                      : "3px solid #3a2e1e",
+                      : "3px solid rgba(200,169,110,0.4)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                   }}
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="wax-badge wax-badge-forest">
-                        {STATUS_LABEL[match.data.status]}
-                      </span>
+                      <div
+                        className="relative inline-flex min-h-7 items-center justify-center px-4 py-0.5 select-none"
+                        style={{
+                          backgroundImage: "url('/ui/tag_frame.png')",
+                          backgroundSize: "100% 100%",
+                          backgroundPosition: "center",
+                          backgroundRepeat: "no-repeat",
+                        }}
+                      >
+                        <span
+                          className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] text-[#f0e8d4] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] whitespace-nowrap"
+                          style={{ fontFamily: "var(--font-display)" }}
+                        >
+                          {STATUS_LABEL[match.data.status]}
+                        </span>
+                      </div>
                       {mine && (
                         <span
-                          className="text-[10px] font-bold uppercase tracking-wide"
+                          className="text-[10px] font-bold uppercase tracking-wide text-[#c8a96e]"
                           style={{
-                            color: "#c8a96e",
                             fontFamily: "var(--font-display)",
                           }}
                         >
@@ -679,7 +929,7 @@ export function BattleContent() {
                   {claimable ? (
                     <Link
                       href={`/match/${match.address}`}
-                      className="btn-guild"
+                      className="btn-guild min-h-11 px-5 text-xs font-black uppercase tracking-wider"
                     >
                       Watch result
                     </Link>
@@ -687,7 +937,7 @@ export function BattleContent() {
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/match/${match.address}`}
-                        className="btn-guild"
+                        className="btn-guild min-h-11 px-5 text-xs font-black uppercase tracking-wider"
                       >
                         Open battlefield
                       </Link>
@@ -695,10 +945,9 @@ export function BattleContent() {
                         type="button"
                         onClick={() => void cancelMatch(match)}
                         disabled={isSending}
-                        className="min-h-12 rounded-lg px-5 text-sm font-bold disabled:opacity-50"
+                        className="min-h-11 rounded-lg px-4 text-xs font-bold text-[#a89880] hover:text-[#f0e8d4] disabled:opacity-50"
                         style={{
-                          border: "1px solid #3a2e1e",
-                          color: "#8a7a62",
+                          border: "1px solid rgba(200, 169, 110, 0.25)",
                           background: "transparent",
                         }}
                       >
@@ -710,7 +959,7 @@ export function BattleContent() {
                       type="button"
                       onClick={() => void joinMatch(match)}
                       disabled={isSending || selected.length !== 3}
-                      className="btn-guild"
+                      className="btn-guild min-h-11 px-5 text-xs font-black uppercase tracking-wider"
                     >
                       Join · stake 0.01 SOL
                     </button>
@@ -724,12 +973,25 @@ export function BattleContent() {
 
       <section
         id="history"
-        className="mt-4 scroll-mt-24 rounded-xl p-6 sm:p-8"
-        style={{ background: "#1c1810", border: "1px solid #3a2e1e" }}
+        className="relative mt-4 scroll-mt-24 overflow-hidden rounded-2xl p-6 sm:p-8"
+        style={{
+          background: "rgba(18, 16, 11, 0.92)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow:
+            "0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200, 169, 110, 0.15)",
+        }}
       >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <span className="absolute top-2.5 left-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+        <span className="absolute top-2.5 right-2.5 text-[10px] text-[#c8a96e]/40 select-none pointer-events-none">
+          ❖
+        </span>
+
         <p
-          className="text-[10px] font-bold uppercase tracking-[0.22em]"
-          style={{ color: "#8a7a62", fontFamily: "var(--font-display)" }}
+          className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]"
+          style={{ fontFamily: "var(--font-display)" }}
         >
           Onchain History
         </p>
@@ -739,18 +1001,20 @@ export function BattleContent() {
         >
           Your matches
         </h2>
-        <p className="mt-2 text-sm" style={{ color: "#8a7a62" }}>
+        <p className="mt-2 text-sm text-[#a89880]">
           Every row links to the Match account, deterministic replay, and its
           signed transaction receipts.
         </p>
         {matches.isLoading ? (
-          <p className="mt-6 text-sm" style={{ color: "#8a7a62" }}>
-            Loading history…
-          </p>
+          <p className="mt-6 text-sm text-[#a89880]">Loading history…</p>
         ) : playerHistory.length === 0 ? (
           <p
             className="mt-6 rounded-xl p-5 text-sm"
-            style={{ background: "#221d14", color: "#8a7a62" }}
+            style={{
+              background: "rgba(14, 12, 8, 0.95)",
+              color: "#8a7a62",
+              border: "1px solid rgba(200, 169, 110, 0.2)",
+            }}
           >
             Your wallet has not opened or joined a match yet.
           </p>
@@ -771,13 +1035,14 @@ export function BattleContent() {
                 <Link
                   key={match.address}
                   href={`/match/${match.address}`}
-                  className="rounded-xl p-5 transition-all"
+                  className="rounded-xl p-5 transition-all hover:scale-[1.01]"
                   style={{
-                    background: "#221d14",
-                    border: "1px solid #3a2e1e",
+                    background: "rgba(14, 12, 8, 0.95)",
+                    border: "1px solid rgba(200, 169, 110, 0.3)",
                     borderLeft: isWin
                       ? "3px solid #c8a96e"
-                      : "3px solid #3a2e1e",
+                      : "3px solid rgba(200, 169, 110, 0.35)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                   }}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -793,8 +1058,9 @@ export function BattleContent() {
                     <span
                       className="rounded-full px-3 py-1 text-[10px] font-bold"
                       style={{
-                        background: "#100e09",
-                        color: "#8a7a62",
+                        background: "rgba(18, 16, 11, 0.9)",
+                        color: "#c8a96e",
+                        border: "1px solid rgba(200, 169, 110, 0.2)",
                         fontFamily: "var(--font-display)",
                       }}
                     >
@@ -828,6 +1094,22 @@ export function BattleContent() {
           </div>
         )}
       </section>
+
+      {/* Floating Card Drag Preview */}
+      <div
+        ref={dragPreviewRef}
+        className="pointer-events-none fixed top-0 left-0 z-50 hidden select-none"
+        style={{
+          width: "135px",
+          filter:
+            "drop-shadow(0 20px 36px rgba(0,0,0,0.9)) drop-shadow(0 0 24px rgba(52,211,153,0.6))",
+          willChange: "transform",
+        }}
+      >
+        {dragPreviewCard && (
+          <CreatureModelCard creature={dragPreviewCard} compact />
+        )}
+      </div>
     </main>
   );
 }
@@ -879,12 +1161,24 @@ export function MatchResult({
   );
   if (!opponent && match.data.status === MatchStatus.Cancelled)
     return (
-      <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center sm:p-10">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
+      <section
+        className="relative mt-6 overflow-hidden rounded-2xl p-6 text-center sm:p-10"
+        style={{
+          background: "rgba(18, 16, 11, 0.95)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow: "0 16px 40px rgba(0,0,0,0.7)",
+        }}
+      >
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a89880]">
           Match cancelled
         </p>
-        <h2 className="mt-3 text-3xl font-black">Stake refunded</h2>
-        <p className="mx-auto mt-3 max-w-md text-sm text-muted">
+        <h2
+          className="mt-3 text-3xl font-black text-[#f0e8d4]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Stake refunded
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-[#8a7a62]">
           No opponent joined this challenge. The creator recovered the opening
           stake.
         </p>
@@ -892,23 +1186,46 @@ export function MatchResult({
     );
   if (!opponent)
     return (
-      <section className="mt-6 rounded-3xl border border-emerald-500/30 bg-card p-6 text-center sm:p-10">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
-          Shared battlefield
+      <section
+        className="relative mt-6 overflow-hidden rounded-2xl p-6 text-center sm:p-10"
+        style={{
+          background:
+            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.75) 0%, rgba(18, 16, 11, 0.98) 75%)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+          boxShadow: "0 16px 40px rgba(0,0,0,0.7)",
+        }}
+      >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <p
+          className="text-xs font-bold uppercase tracking-[0.22em] text-[#6aab7a]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          ✦ Shared battlefield ✦
         </p>
-        <h2 className="mt-3 text-3xl font-black">Waiting for an opponent</h2>
-        <p className="mx-auto mt-3 max-w-md text-sm text-muted">
+        <h2
+          className="mt-3 text-3xl font-black text-[#f0e8d4]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Waiting for an opponent
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-[#a89880]">
           Keep this battlefield open. It starts for both players as soon as the
           joining transaction is confirmed.
         </p>
-        <p className="mt-5 break-all font-mono text-[10px] text-muted">
+        <p className="mt-5 break-all font-mono text-[10px] text-[#8a7a62]">
           {match.address}
         </p>
       </section>
     );
   if (details.isLoading)
     return (
-      <p className="mt-6 rounded-2xl bg-card p-5 text-sm text-muted">
+      <p
+        className="mt-6 rounded-2xl p-5 text-sm text-[#a89880]"
+        style={{
+          background: "rgba(18, 16, 11, 0.9)",
+          border: "1px solid rgba(200, 169, 110, 0.3)",
+        }}
+      >
         Preparing deterministic replay…
       </p>
     );
@@ -916,7 +1233,12 @@ export function MatchResult({
     return (
       <p
         role="alert"
-        className="mt-6 rounded-2xl bg-destructive/10 p-5 text-sm text-destructive"
+        className="mt-6 rounded-2xl p-5 text-sm"
+        style={{
+          background: "rgba(192,57,43,0.15)",
+          color: "#f8c8c4",
+          border: "1px solid rgba(192,57,43,0.3)",
+        }}
       >
         Battle replay data is unavailable.
       </p>

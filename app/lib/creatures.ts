@@ -10,6 +10,7 @@ import {
 } from "@solana/kit";
 import {
   decodeCreature,
+  findGameConfigPda,
   getCreatureDiscriminatorBytes,
   getCreatureSize,
   getReleaseCreatureInstruction,
@@ -113,10 +114,32 @@ export function buildUpgradeCreatureBalanceInstruction(
   if (creature.data.catalogueId !== speciesConfig.data.catalogueId) {
     throw new Error("Creature and SpeciesConfig catalogue IDs do not match.");
   }
+  if (gameConfig === signer.address) {
+    throw new Error(
+      "Expected gameConfig PDA address, but received player wallet address.",
+    );
+  }
   return getUpgradeCreatureBalanceInstruction({
     owner: signer,
     gameConfig,
     speciesConfig: speciesConfig.address,
     creature: creature.address,
   });
+}
+
+export async function buildUpgradeCreatureBalanceInstructionAsync(
+  signer: TransactionSigner,
+  speciesConfig: Account<SpeciesConfig>,
+  creature: OwnedCreature,
+  gameConfig?: Address,
+): Promise<Instruction> {
+  const [resolvedGameConfig] = gameConfig
+    ? [gameConfig]
+    : await findGameConfigPda();
+  return buildUpgradeCreatureBalanceInstruction(
+    signer,
+    resolvedGameConfig,
+    speciesConfig,
+    creature,
+  );
 }
