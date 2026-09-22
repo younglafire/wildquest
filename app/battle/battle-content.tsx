@@ -146,20 +146,22 @@ export function BattleContent() {
   }, [activeMatch.data, lastMatchAddress]);
 
   useEffect(() => {
+    if (!signer || !lastMatchAddress || activeMatch.isLoading) return;
+    // Clear stale matches that no longer exist, use unsupported rules v1, or are already settled
     if (
-      !signer ||
-      !lastMatchAddress ||
-      activeMatch.isLoading ||
-      activeMatch.data !== null
-    )
-      return;
-    queueMicrotask(() => {
-      sessionStorage.removeItem(
-        `wildquest:last-match:${cluster}:${signer.address}`,
-      );
-      setLastMatchAddress(null);
-      router.replace("/battle", { scroll: false });
-    });
+      activeMatch.data === null ||
+      (activeMatch.data &&
+        (activeMatch.data.data.rulesVersion !== 2 ||
+          activeMatch.data.data.status === MatchStatus.Settled))
+    ) {
+      queueMicrotask(() => {
+        sessionStorage.removeItem(
+          `wildquest:last-match:${cluster}:${signer.address}`,
+        );
+        setLastMatchAddress(null);
+        router.replace("/battle", { scroll: false });
+      });
+    }
   }, [
     activeMatch.data,
     activeMatch.isLoading,
@@ -422,6 +424,8 @@ export function BattleContent() {
     });
 
   const relevantMatches = (matches.data ?? []).filter((match) => {
+    // Exclude legacy v1 matches incompatible with current onchain program
+    if (match.data.rulesVersion !== 2) return false;
     if (match.data.status === MatchStatus.Open) return true;
     const opponent = unwrapOption(match.data.opponent);
     return (
@@ -764,6 +768,23 @@ export function BattleContent() {
 
       {lastMatchAddress && (
         <section ref={arenaRef} className="scroll-mt-24">
+          <div className="flex justify-end mb-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (signer) {
+                  sessionStorage.removeItem(
+                    `wildquest:last-match:${cluster}:${signer.address}`,
+                  );
+                }
+                setLastMatchAddress(null);
+                router.replace("/battle", { scroll: false });
+              }}
+              className="text-xs font-semibold text-[#8a7a62] hover:text-[#c8a96e] transition-colors"
+            >
+              ✕ Close match preview
+            </button>
+          </div>
           {activeMatch.isLoading || !resultMatch ? (
             <p
               className="mt-6 rounded-2xl p-5 text-sm text-[#a89880]"
@@ -1159,6 +1180,69 @@ export function MatchResult({
       return { creator, opponent: opponentCards };
     },
   );
+  if (match.data.rulesVersion !== 2)
+    return (
+      <section
+        className="relative mt-6 overflow-hidden rounded-2xl p-6 text-center sm:p-8"
+        style={{
+          background: "rgba(18, 16, 11, 0.95)",
+          border: "1px solid rgba(200, 169, 110, 0.35)",
+        }}
+      >
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a89880]">
+          Legacy match
+        </p>
+        <h2 className="mt-2 text-xl font-black text-[#f0e8d4]">
+          Unsupported match version
+        </h2>
+        <p className="mt-2 text-xs text-[#8a7a62]">
+          This match was recorded under older rules and cannot be replayed.
+        </p>
+      </section>
+    );
+  if (match.data.rulesVersion === 2 && match.data.status === MatchStatus.Active)
+    return (
+      <section
+        className="relative mt-6 overflow-hidden rounded-2xl p-6 text-center shadow-2xl sm:p-10"
+        style={{
+          background:
+            "radial-gradient(120% 120% at 50% 0%, rgba(20, 45, 30, 0.95) 0%, rgba(16, 14, 9, 0.98) 75%)",
+          border: "1px solid rgba(106, 171, 122, 0.45)",
+          boxShadow: "0 16px 40px rgba(0,0,0,0.7)",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+        <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
+          <span className="absolute inset-0 rounded-full border border-emerald-500/40 animate-ping opacity-40" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/60 bg-[#120f0a] shadow-[0_0_20px_rgba(52,211,153,0.3)]">
+            <span className="text-xl">⚔️</span>
+          </div>
+        </div>
+        <p
+          className="mt-4 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-400"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          ✦ Opponent Joined · Battle is Active! ✦
+        </p>
+        <h2
+          className="mt-2 text-2xl font-black text-[#f0e8d4] sm:text-3xl"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          The clash has begun!
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[#a89880] sm:text-sm">
+          Opponent has entered the arena. Enter the 3D Card Arena now to choose
+          your moves in 5-second simultaneous turns!
+        </p>
+        <Link
+          href={`/match/${match.address}`}
+          className="btn-guild mx-auto mt-5 inline-flex items-center gap-2 px-7 py-3 text-xs font-black uppercase tracking-wider"
+        >
+          <span>✦ Enter 3D Card Arena ✦</span>
+          <span>→</span>
+        </Link>
+      </section>
+    );
   if (!opponent && match.data.status === MatchStatus.Cancelled)
     return (
       <section
@@ -1187,34 +1271,50 @@ export function MatchResult({
   if (!opponent)
     return (
       <section
-        className="relative mt-6 overflow-hidden rounded-2xl p-6 text-center sm:p-10"
+        className="relative mt-6 overflow-hidden rounded-2xl p-6 text-center shadow-2xl sm:p-10"
         style={{
           background:
-            "radial-gradient(120% 120% at 50% 0%, rgba(26, 56, 36, 0.75) 0%, rgba(18, 16, 11, 0.98) 75%)",
+            "radial-gradient(120% 120% at 50% 0%, rgba(35, 28, 18, 0.95) 0%, rgba(16, 14, 9, 0.98) 75%)",
           border: "1px solid rgba(200, 169, 110, 0.35)",
           boxShadow: "0 16px 40px rgba(0,0,0,0.7)",
         }}
       >
-        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent pointer-events-none" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.6)] to-transparent" />
+
+        {/* Animated radar rings in center */}
+        <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+          <span className="absolute inset-0 rounded-full border border-[#c8a96e]/30 animate-ping opacity-30" />
+          <span className="absolute inset-2 rounded-full border border-emerald-500/30 animate-pulse" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#c8a96e]/50 bg-[#1c1810] shadow-[0_0_15px_rgba(200,169,110,0.25)]">
+            <span className="text-xl">⚔</span>
+          </div>
+        </div>
+
         <p
-          className="text-xs font-bold uppercase tracking-[0.22em] text-[#6aab7a]"
+          className="mt-4 text-[10px] font-bold uppercase tracking-[0.24em] text-[#6aab7a]"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          ✦ Shared battlefield ✦
+          ✦ Shared Battlefield · Awaiting Challenger ✦
         </p>
         <h2
-          className="mt-3 text-3xl font-black text-[#f0e8d4]"
+          className="mt-2 text-2xl font-black text-[#f0e8d4] sm:text-3xl"
           style={{ fontFamily: "var(--font-display)" }}
         >
           Waiting for an opponent
         </h2>
-        <p className="mx-auto mt-3 max-w-md text-sm text-[#a89880]">
-          Keep this battlefield open. It starts for both players as soon as the
-          joining transaction is confirmed.
+        <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[#a89880] sm:text-sm">
+          Keep this battlefield open. The simultaneous turn battle starts for
+          both players automatically as soon as the joining transaction is
+          confirmed.
         </p>
-        <p className="mt-5 break-all font-mono text-[10px] text-[#8a7a62]">
-          {match.address}
-        </p>
+        <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-[rgba(200,169,110,0.2)] bg-[#120f0a] px-3.5 py-2">
+          <span className="text-[10px] font-bold uppercase text-[#8a7a62]">
+            Match PDA:
+          </span>
+          <p className="break-all font-mono text-[11px] font-bold text-[#c8a96e]">
+            {match.address}
+          </p>
+        </div>
       </section>
     );
   if (details.isLoading)
