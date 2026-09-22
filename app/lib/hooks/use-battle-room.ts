@@ -41,9 +41,11 @@ export function useBattleRoom(input: {
     let stopped = false;
     let retryable = true;
     let reconnectTimer: number | null = null;
+    let currentSocket: WebSocket | null = null;
 
     const connect = () => {
       const socket = new WebSocket(url);
+      currentSocket = socket;
       socketRef.current = socket;
       socket.onopen = () => setError(null);
       socket.onmessage = (event) => {
@@ -114,8 +116,8 @@ export function useBattleRoom(input: {
     return () => {
       stopped = true;
       if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
-      socketRef.current?.close();
-      socketRef.current = null;
+      currentSocket?.close();
+      if (socketRef.current === currentSocket) socketRef.current = null;
     };
   }, [input.isParticipant, input.matchAddress, input.wallet?.account.address]);
 
