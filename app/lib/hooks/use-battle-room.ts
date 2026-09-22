@@ -69,6 +69,7 @@ export function useBattleRoom(input: {
           void wallet
             .signMessage(new TextEncoder().encode(value))
             .then((signature) => {
+              if (socket.readyState !== WebSocket.OPEN) return;
               let binary = "";
               for (const byte of signature) binary += String.fromCharCode(byte);
               socket.send(

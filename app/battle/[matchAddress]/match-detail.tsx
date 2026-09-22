@@ -38,7 +38,7 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
     }
   }, [matchAddress]);
   const client = useSolanaClient();
-  const game = useGameData();
+  const game = useGameData({ live: false });
   const { signer, wallet } = useWallet();
   const { cluster } = useCluster();
   const { send, isSending } = useSendTransaction();
@@ -72,6 +72,8 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
         .send(),
     { revalidateOnFocus: true },
   );
+  const { mutate: mutateMatch } = match;
+  const { mutate: mutateReceipts } = receipts;
   const opponentAddress = match.data
     ? unwrapOption(match.data.data.opponent)
     : null;
@@ -111,7 +113,7 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
           .subscribe({ abortSignal: abortController.signal });
         for await (const notification of notifications) {
           void notification;
-          await Promise.all([match.mutate(), receipts.mutate()]);
+          await Promise.all([mutateMatch(), mutateReceipts()]);
         }
       } catch {
         // Confirmed polling keeps the match current if the WebSocket disconnects.
@@ -119,7 +121,7 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
     };
     void subscribe();
     return () => abortController.abort();
-  }, [client, match, parsedAddress, receipts]);
+  }, [client, mutateMatch, mutateReceipts, parsedAddress]);
 
   const claim = async (matchAccount: GameMatch) => {
     if (!signer) return;

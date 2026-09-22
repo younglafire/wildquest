@@ -32,7 +32,8 @@ import { useWallet } from "../wallet/context";
 const REFRESH_INTERVAL_MS = 30_000;
 const subscribeToHydration = () => () => undefined;
 
-export function useGameData() {
+export function useGameData(options: { live?: boolean } = {}) {
+  const live = options.live ?? true;
   const client = useSolanaClient();
   const { cluster } = useCluster();
   const { wallet, status } = useWallet();
@@ -54,17 +55,27 @@ export function useGameData() {
         commitment: "confirmed",
       });
     },
-    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+    {
+      refreshInterval: live ? REFRESH_INTERVAL_MS : 0,
+      revalidateOnFocus: live,
+    },
   );
+  const { mutate: mutatePlayer } = player;
   const discoveries = useSWR(
     address ? (["player-discoveries", cluster, address] as const) : null,
     () => fetchPlayerDiscoveries(client.rpc, address!),
-    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+    {
+      refreshInterval: live ? REFRESH_INTERVAL_MS : 0,
+      revalidateOnFocus: live,
+    },
   );
   const creatures = useSWR(
     address ? (["owned-creatures", cluster, address] as const) : null,
     () => fetchOwnedCreatures(client.rpc, address!),
-    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+    {
+      refreshInterval: live ? REFRESH_INTERVAL_MS : 0,
+      revalidateOnFocus: live,
+    },
   );
   const quests = useSWR(
     ["quests", cluster],
@@ -79,7 +90,10 @@ export function useGameData() {
       );
       return accounts.filter((account) => account.exists);
     },
-    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+    {
+      refreshInterval: live ? REFRESH_INTERVAL_MS : 0,
+      revalidateOnFocus: live,
+    },
   );
   const questCompletions = useSWR(
     address && quests.data
@@ -99,16 +113,22 @@ export function useGameData() {
       );
       return accounts.filter((account) => account.exists);
     },
-    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+    {
+      refreshInterval: live ? REFRESH_INTERVAL_MS : 0,
+      revalidateOnFocus: live,
+    },
   );
   const matches = useSWR(
     address ? (["player-matches", cluster, address] as const) : null,
     async () => getPlayerMatches(await fetchMatches(client.rpc), address!),
-    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+    {
+      refreshInterval: live ? REFRESH_INTERVAL_MS : 0,
+      revalidateOnFocus: live,
+    },
   );
 
   useEffect(() => {
-    if (!address) return;
+    if (!live || !address) return;
     const abortController = new AbortController();
 
     const subscribe = async () => {
@@ -119,7 +139,7 @@ export function useGameData() {
           .subscribe({ abortSignal: abortController.signal });
         for await (const notification of notifications) {
           void notification;
-          await player.mutate();
+          await mutatePlayer();
         }
       } catch {
         // Focus revalidation and polling keep the account current if WebSockets fail.
@@ -128,7 +148,7 @@ export function useGameData() {
 
     void subscribe();
     return () => abortController.abort();
-  }, [address, client, player]);
+  }, [address, client, live, mutatePlayer]);
 
   const confirmed = hydrated ? loadConfirmedDiscovery() : null;
   const pending = !hydrated || !address ? null : loadPendingIdentification();
