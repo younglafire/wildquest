@@ -23,13 +23,21 @@ export function useBattleRoom(input: {
   >("connecting");
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const walletRef = useRef(input.wallet);
+  const isParticipantRef = useRef(input.isParticipant);
+
+  useEffect(() => {
+    walletRef.current = input.wallet;
+    isParticipantRef.current = input.isParticipant;
+  }, [input.isParticipant, input.wallet]);
 
   useEffect(() => {
     const baseUrl =
       process.env.NEXT_PUBLIC_BATTLE_SERVER_URL ?? DEFAULT_BATTLE_SERVER_URL;
     const url = new URL(baseUrl);
     url.searchParams.set("match", input.matchAddress);
-    const sessionKey = `wildquest:battle-session:${input.matchAddress}:${input.wallet?.account.address ?? "spectator"}`;
+    const walletAddress = input.wallet?.account.address;
+    const sessionKey = `wildquest:battle-session:${input.matchAddress}:${walletAddress ?? "spectator"}`;
     let stopped = false;
     let retryable = true;
     let reconnectTimer: number | null = null;
@@ -41,7 +49,8 @@ export function useBattleRoom(input: {
       socket.onmessage = (event) => {
         const message = JSON.parse(String(event.data)) as BattleServerMessage;
         if (message.type === "challenge") {
-          if (!input.isParticipant || !input.wallet?.signMessage) {
+          const wallet = walletRef.current;
+          if (!isParticipantRef.current || !wallet?.signMessage) {
             socket.send(JSON.stringify({ type: "watch" }));
             setStatus("watching");
             return;
@@ -51,13 +60,13 @@ export function useBattleRoom(input: {
             socket.send(JSON.stringify({ type: "resume", token }));
             return;
           }
-          const wallet = input.wallet.account.address;
+          const walletAddress = wallet.account.address;
           const value = battleAuthenticationMessage(
             input.matchAddress,
-            wallet,
+            walletAddress,
             message.nonce,
           );
-          void input.wallet
+          void wallet
             .signMessage(new TextEncoder().encode(value))
             .then((signature) => {
               let binary = "";
@@ -65,7 +74,7 @@ export function useBattleRoom(input: {
               socket.send(
                 JSON.stringify({
                   type: "authenticate",
-                  wallet,
+                  wallet: walletAddress,
                   signature: btoa(binary),
                 }),
               );
@@ -107,7 +116,7 @@ export function useBattleRoom(input: {
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [input.isParticipant, input.matchAddress, input.wallet]);
+  }, [input.isParticipant, input.matchAddress, input.wallet?.account.address]);
 
   const choose = useCallback(
     (action: BattleAction) => {
