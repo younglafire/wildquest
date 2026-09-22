@@ -112,6 +112,16 @@ intended program ID because that command rebuilds the IDL and replaces the
 generated client.
 
 Fill `.env.local` with the RPC and Supabase values for your own environment.
+Use paired HTTPS and WSS endpoints from a dedicated Devnet RPC provider for a
+deployed app. The public `api.devnet.solana.com` service is suitable for light
+development traffic but can rate-limit transaction planning and live account
+subscriptions. Set `NEXT_PUBLIC_RPC_URL` and `NEXT_PUBLIC_RPC_WS_URL` in the
+hosting environment, then redeploy because Next.js includes these public values
+in the browser bundle.
+Set `BATTLE_SERVER_RPC_URL` on the battle server to a private endpoint from the
+same provider. This keeps the resolver's RPC credential out of the browser
+bundle and prevents browser traffic from using the server's quota.
+
 Creature authorization additionally requires a dedicated Devnet capture
 authority encoded as `CAPTURE_AUTHORITY_SECRET_KEY_BASE64`. Never reuse the
 program deployment authority for this server role. The checked-in

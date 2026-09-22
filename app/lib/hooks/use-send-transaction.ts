@@ -7,6 +7,7 @@ import { createClient } from "@solana/kit-client-rpc";
 import { useWallet } from "../wallet/context";
 import { useCluster } from "../../components/cluster-context";
 import { getClusterUrl, getClusterWsConfig } from "../solana-client";
+import { normalizeTransactionError } from "../transaction-error";
 
 export function useSendTransaction() {
   const { signer } = useWallet();
@@ -35,6 +36,8 @@ export function useSendTransaction() {
         const result = await txClient.sendTransaction([...instructions]);
         mutate((key: unknown) => Array.isArray(key) && key[0] === "balance");
         return result.context.signature;
+      } catch (thrownObject) {
+        throw normalizeTransactionError(thrownObject);
       } finally {
         setIsSending(false);
       }

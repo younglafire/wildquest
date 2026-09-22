@@ -116,7 +116,9 @@ function send(socket: WebSocket, message: BattleServerMessage) {
 
 async function main() {
   const rpcUrl =
-    process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.devnet.solana.com";
+    process.env.BATTLE_SERVER_RPC_URL ??
+    process.env.NEXT_PUBLIC_RPC_URL ??
+    "https://api.devnet.solana.com";
   const resolver = await loadResolver();
   const client = createClient({ url: devnet(rpcUrl), payer: resolver });
   const rooms = new Map<Address, Promise<RoomSession>>();

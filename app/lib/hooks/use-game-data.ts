@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import useSWR from "swr";
 import {
+  fetchAllMaybeQuest,
+  fetchAllMaybeQuestCompletion,
   fetchMaybePlayer,
-  fetchMaybeQuest,
-  fetchMaybeQuestCompletion,
   findPlayerPda,
   findQuestCompletionPda,
   findQuestPda,
@@ -80,14 +80,12 @@ export function useGameData(options: { live?: boolean } = {}) {
   const quests = useSWR(
     ["quests", cluster],
     async () => {
-      const accounts = await Promise.all(
-        QUEST_IDS.map(async (questId) => {
-          const [questAddress] = await findQuestPda({ questId });
-          return fetchMaybeQuest(client.rpc, questAddress, {
-            commitment: "confirmed",
-          });
-        }),
+      const addresses = await Promise.all(
+        QUEST_IDS.map(async (questId) => (await findQuestPda({ questId }))[0]),
       );
+      const accounts = await fetchAllMaybeQuest(client.rpc, addresses, {
+        commitment: "confirmed",
+      });
       return accounts.filter((account) => account.exists);
     },
     {
@@ -100,16 +98,22 @@ export function useGameData(options: { live?: boolean } = {}) {
       ? (["quest-completions", cluster, address] as const)
       : null,
     async () => {
-      const accounts = await Promise.all(
+      const addresses = await Promise.all(
         quests.data!.map(async (quest) => {
-          const [completionAddress] = await findQuestCompletionPda({
-            quest: quest.address,
-            payer: address!,
-          });
-          return fetchMaybeQuestCompletion(client.rpc, completionAddress, {
-            commitment: "confirmed",
-          });
+          return (
+            await findQuestCompletionPda({
+              quest: quest.address,
+              payer: address!,
+            })
+          )[0];
         }),
+      );
+      const accounts = await fetchAllMaybeQuestCompletion(
+        client.rpc,
+        addresses,
+        {
+          commitment: "confirmed",
+        },
       );
       return accounts.filter((account) => account.exists);
     },
