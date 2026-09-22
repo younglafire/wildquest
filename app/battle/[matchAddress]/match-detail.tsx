@@ -200,49 +200,77 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-6 sm:pt-14">
+    <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
+      {/* Navigation & Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/battle"
-          className="min-h-12 py-3 text-sm font-bold underline"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[rgba(200,169,110,0.3)] bg-[#1c1810] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#c8a96e] shadow-md transition-all hover:border-[#c8a96e] hover:bg-[#252016]"
         >
-          ← Battle lobby
+          <span>←</span>
+          <span>Battle lobby</span>
         </Link>
         <button
           type="button"
           onClick={() => void copyUrl()}
-          className="min-h-12 rounded-xl border border-border px-5 text-sm font-bold"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[rgba(200,169,110,0.4)] bg-[#221d14] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#c8a96e] shadow-md transition-all hover:border-[#c8a96e] hover:bg-[#2a2218] active:scale-95"
         >
-          {copied ? "Match link copied" : "Copy match link"}
+          <span>{copied ? "✓" : "📋"}</span>
+          <span>{copied ? "Match link copied" : "Copy match link"}</span>
         </button>
       </div>
 
-      <section className="mt-4 rounded-3xl border border-border bg-card p-6 sm:p-8">
+      {/* Match Account Header Card */}
+      <section className="relative mt-4 overflow-hidden rounded-2xl border border-[rgba(200,169,110,0.35)] bg-[rgba(18,16,11,0.95)] p-6 shadow-2xl backdrop-blur-sm sm:p-8">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.5)] to-transparent" />
+
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
-              Match #{match.data.data.matchId.toString()}
-            </p>
-            <h1 className="mt-2 text-3xl font-black sm:text-4xl">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6aab7a]">
+                Match #{match.data.data.matchId.toString()}
+              </p>
+            </div>
+            <h1 className="mt-2 text-3xl font-black text-[#f0e8d4] sm:text-4xl [font-family:var(--font-display)]">
               {playerResult ?? STATUS_LABEL[match.data.data.status]}
             </h1>
-            <p className="mt-2 text-sm text-muted">
-              {STATUS_LABEL[match.data.data.status]} ·{" "}
-              {Number(match.data.data.stakeLamports) / 1_000_000_000} SOL each
-            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(200,169,110,0.35)] bg-[#120f0a] px-3 py-1 text-xs font-black text-[#c8a96e]">
+                <span>⚔️</span>
+                <span>{STATUS_LABEL[match.data.data.status]}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#120f0a] px-3 py-1 text-xs font-mono font-bold text-[#f0e8d4]">
+                <span>✦</span>
+                <span>
+                  {Number(match.data.data.stakeLamports) / 1_000_000_000} SOL
+                  each
+                </span>
+              </span>
+            </div>
           </div>
           <a
             href={`https://explorer.solana.com/address/${match.data.address}?cluster=${cluster}`}
             target="_blank"
             rel="noreferrer"
-            className="min-h-12 rounded-xl border border-border px-5 py-3 text-sm font-bold"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[rgba(200,169,110,0.35)] bg-[#1c1810] px-4 py-2.5 text-xs font-black uppercase tracking-wider text-[#c8a96e] shadow-sm transition-all hover:border-[#c8a96e] hover:bg-[#252016]"
           >
-            Match account ↗
+            <span>Match account</span>
+            <span>↗</span>
           </a>
         </div>
         <dl className="mt-6 grid gap-3 sm:grid-cols-2">
-          <WalletRow label="Creator" value={match.data.data.creator} />
-          <WalletRow label="Opponent" value={opponent ?? "Waiting…"} />
+          <WalletRow
+            label="Creator"
+            value={match.data.data.creator}
+            isConnected={signer?.address === match.data.data.creator}
+          />
+          <WalletRow
+            label="Opponent"
+            value={opponent ?? "Waiting…"}
+            isConnected={signer?.address === opponent}
+            isWaiting={!opponent}
+          />
         </dl>
       </section>
 
@@ -299,23 +327,27 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
       {error && (
         <p
           role="alert"
-          className="mt-5 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
+          className="mt-5 rounded-xl border border-red-950/60 bg-destructive/10 p-4 text-sm text-destructive"
         >
           {error}
         </p>
       )}
 
-      <section className="mt-6 rounded-3xl border border-border bg-card p-6 sm:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">
-          Signed receipts
+      {/* Match Transactions / Signed Receipts Card */}
+      <section className="relative mt-6 overflow-hidden rounded-2xl border border-[rgba(200,169,110,0.35)] bg-[rgba(18,16,11,0.95)] p-6 shadow-2xl backdrop-blur-sm sm:p-8">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.5)] to-transparent" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c8a96e]">
+          Signed Receipts · Onchain Evidence
         </p>
-        <h2 className="mt-2 text-2xl font-black">Match transactions</h2>
-        <p className="mt-2 text-sm text-muted">
+        <h2 className="mt-2 text-2xl font-black text-[#f0e8d4] [font-family:var(--font-display)]">
+          Match transactions
+        </h2>
+        <p className="mt-1 text-sm text-[#a89880]">
           These confirmed signatures touched this Match account. They cover its
           opening, join or settlement, and winner claim when one was required.
         </p>
         {receipts.isLoading ? (
-          <p className="mt-5 text-sm text-muted">Loading receipts…</p>
+          <p className="mt-5 text-sm text-[#8a7a62]">Loading receipts…</p>
         ) : receipts.error ? (
           <p className="mt-5 text-sm text-destructive">
             Transaction receipts are temporarily unavailable.
@@ -328,19 +360,28 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
                   href={`https://explorer.solana.com/tx/${receipt.signature}?cluster=${cluster}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex min-h-14 items-center justify-between gap-4 rounded-xl border border-border px-4 py-3 hover:border-emerald-500"
+                  className="flex min-h-14 items-center justify-between gap-4 rounded-xl border border-[rgba(200,169,110,0.2)] bg-[#14110b] px-4 py-3 shadow-sm transition-all hover:border-[#c8a96e] hover:bg-[#1a150e]"
                 >
                   <span className="min-w-0">
-                    <span className="block text-sm font-bold">
-                      {receipt.err
-                        ? "Failed transaction"
-                        : "Confirmed transaction"}
+                    <span className="flex items-center gap-1.5 text-sm font-bold text-[#f0e8d4]">
+                      <span
+                        className={
+                          receipt.err ? "text-destructive" : "text-emerald-400"
+                        }
+                      >
+                        {receipt.err ? "✕" : "✓"}
+                      </span>
+                      <span>
+                        {receipt.err
+                          ? "Failed transaction"
+                          : "Confirmed transaction"}
+                      </span>
                     </span>
-                    <span className="block truncate font-mono text-[10px] text-muted">
+                    <span className="block truncate font-mono text-[10px] text-[#8a7a62]">
                       {receipt.signature}
                     </span>
                   </span>
-                  <span className="shrink-0 text-xs text-muted">
+                  <span className="shrink-0 font-mono text-xs text-[#8a7a62]">
                     {receipt.blockTime
                       ? new Date(
                           Number(receipt.blockTime) * 1_000,
@@ -352,7 +393,7 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
             ))}
           </ol>
         ) : (
-          <p className="mt-5 text-sm text-muted">
+          <p className="mt-5 text-sm text-[#8a7a62]">
             No transaction receipt is available from this RPC node yet.
           </p>
         )}
@@ -376,14 +417,15 @@ function TurnBattleResult({
   const canClaim =
     match.data.status === MatchStatus.Claimable && winner === wallet;
   return (
-    <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center sm:p-10">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-600">
+    <section className="relative mt-6 overflow-hidden rounded-2xl border border-[rgba(200,169,110,0.35)] bg-[rgba(18,16,11,0.95)] p-6 text-center shadow-2xl sm:p-10">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.5)] to-transparent" />
+      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6aab7a]">
         {match.data.turnCount} turns completed
       </p>
-      <h2 className="mt-3 text-3xl font-black">
+      <h2 className="mt-2 text-3xl font-black text-[#f0e8d4] [font-family:var(--font-display)]">
         {winner ? (winner === wallet ? "Victory" : "Battle complete") : "Draw"}
       </h2>
-      <p className="mx-auto mt-3 max-w-lg text-sm text-muted">
+      <p className="mx-auto mt-2 max-w-lg text-sm text-[#a89880]">
         The authoritative server committed the battle result hash onchain. The
         full action log is not trusted as payout authority.
       </p>
@@ -392,16 +434,16 @@ function TurnBattleResult({
           type="button"
           onClick={onClaim}
           disabled={isSending}
-          className="mt-5 min-h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground disabled:opacity-50"
+          className="btn-guild mt-5 inline-flex min-h-12 items-center justify-center px-8 text-xs font-black uppercase tracking-wider text-[#100e09] disabled:opacity-50"
         >
           {isSending ? "Waiting for wallet…" : "Claim 0.02 SOL pot"}
         </button>
       ) : match.data.status === MatchStatus.Claimable ? (
-        <p className="mt-5 text-sm text-muted">
+        <p className="mt-5 text-sm font-bold text-[#c8a96e]">
           The recorded winner can claim this pot.
         </p>
       ) : (
-        <p className="mt-5 text-sm text-muted">Settlement is complete.</p>
+        <p className="mt-5 text-sm text-[#8a7a62]">Settlement is complete.</p>
       )}
     </section>
   );
@@ -410,14 +452,33 @@ function TurnBattleResult({
 function WalletRow({
   label,
   value,
+  isConnected,
+  isWaiting,
 }: {
   label: string;
   value: string | Address;
+  isConnected?: boolean;
+  isWaiting?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-cream p-4">
-      <dt className="text-xs font-bold text-muted">{label}</dt>
-      <dd className="mt-1 truncate font-mono text-xs">{value}</dd>
+    <div className="rounded-xl border border-[rgba(200,169,110,0.2)] bg-[#14110b] p-4 shadow-inner">
+      <div className="flex items-center justify-between">
+        <dt className="text-[10px] font-bold uppercase tracking-wider text-[#8a7a62]">
+          {label}
+        </dt>
+        <span
+          className={`inline-block h-2 w-2 rounded-full ${
+            isWaiting
+              ? "bg-amber-400 animate-pulse shadow-[0_0_6px_rgba(251,191,36,0.6)]"
+              : isConnected
+                ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+                : "bg-[#c8a96e]/60"
+          }`}
+        />
+      </div>
+      <dd className="mt-1.5 truncate font-mono text-xs font-bold text-[#f0e8d4]">
+        {value}
+      </dd>
     </div>
   );
 }
@@ -425,12 +486,15 @@ function WalletRow({
 function MatchMessage({ title, copy }: { title: string; copy: string }) {
   return (
     <main className="mx-auto max-w-2xl px-5 py-20 text-center">
-      <section className="rounded-3xl border border-border bg-card p-8">
-        <h1 className="text-3xl font-black">{title}</h1>
-        <p className="mt-3 text-sm text-muted">{copy}</p>
+      <section className="relative overflow-hidden rounded-2xl border border-[rgba(200,169,110,0.35)] bg-[rgba(18,16,11,0.95)] p-8 shadow-2xl">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.5)] to-transparent" />
+        <h1 className="text-3xl font-black text-[#f0e8d4] [font-family:var(--font-display)]">
+          {title}
+        </h1>
+        <p className="mt-3 text-sm text-[#a89880]">{copy}</p>
         <Link
           href="/battle"
-          className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+          className="btn-guild mt-6 inline-flex min-h-12 items-center justify-center px-6 text-xs font-black uppercase tracking-wider"
         >
           Return to battle lobby
         </Link>
