@@ -66,38 +66,9 @@ export default function Home() {
                 prove your finds with on-device AI vision.
               </p>
 
-              {/* Feature Tags — Ornate fantasy ribbon plaques */}
-              <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3.5 pt-1">
-                {[
-                  "🐾 8 Species",
-                  "⚡ ResNet-50 Vision",
-                  "🛡️ Anti-Cheat pHash",
-                  "🏆 Onchain Quests",
-                ].map((tag) => (
-                  <div
-                    key={tag}
-                    className="group relative inline-flex min-h-9 sm:min-h-11 items-center justify-center px-7 py-2 sm:px-9 sm:py-2.5 transition-transform duration-150 hover:scale-105 select-none"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/ui/tag_frame.png"
-                      alt=""
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] brightness-95 transition-all group-hover:brightness-110"
-                      draggable={false}
-                    />
-                    <span
-                      className="relative z-10 text-xs sm:text-sm font-black tracking-wide text-[#f0e8d4] drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
-                      style={{ fontFamily: "var(--font-display)" }}
-                    >
-                      {tag}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* Centerpiece Visual: Frameless 3D Bio-Scanner & Cards */}
+            {/* Centerpiece Visual: Expedition Cards */}
             <div className="w-full">
               <HeroInteractiveDisplay />
             </div>
@@ -123,7 +94,7 @@ export default function Home() {
           {/* Section: Continuous Supported Species Marquee */}
           <SpeciesMarquee />
 
-          {/* Section: 6 Core Gameplay Systems Grid */}
+          {/* Section: Core Gameplay Systems Grid */}
           <GameSystemsGrid />
 
           {/* Section: Active Bounty Quest Highlight */}

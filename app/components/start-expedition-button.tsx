@@ -57,7 +57,7 @@ export function StartExpeditionButton() {
           aria-hidden="true"
           width={320}
           height={104}
-          className="h-auto w-64 sm:w-72 md:w-80 select-none object-contain transition-all duration-200 group-hover:brightness-110 group-hover:drop-shadow-[0_0_24px_rgba(52,211,153,0.55)]"
+          className="h-auto w-[min(92vw,380px)] max-w-full select-none object-contain transition-all duration-200 group-hover:brightness-110 group-hover:drop-shadow-[0_0_24px_rgba(52,211,153,0.55)]"
           draggable={false}
         />
       </button>

@@ -81,13 +81,6 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
   const rarity = species?.rarity ?? "Common";
   const role = species?.battleRole ?? "Creature";
   const imageSrc = species?.imageUrl ?? species?.iconUrl ?? null;
-  const catalogueId =
-    config?.catalogueId != null
-      ? String(config.catalogueId)
-      : species?.id != null
-        ? String(species.id)
-        : null;
-
   const hp = config?.hp ?? 100;
   const attack = config?.attack ?? 80;
   const defense = config?.defense ?? 65;
@@ -175,34 +168,34 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           preserveAspectRatio="none"
         />
 
-        {/* 4. Top Header Bar: Rarity Tag & Creature Name */}
+        {/* 4. Compact identity header above the artwork */}
         <rect
           x="182"
-          y="215"
+          y="68"
           width="660"
-          height="84"
-          rx="14"
-          fill="rgba(8, 7, 5, 0.88)"
+          height="70"
+          rx="12"
+          fill="rgba(8, 7, 5, 0.96)"
           stroke="#c8a96e"
           strokeWidth="2"
         />
         <text
           x="512"
-          y="244"
+          y="91"
           fontFamily="ui-monospace, monospace"
-          fontSize="20"
+          fontSize="18"
           fontWeight="900"
           fill="#fbbf24"
           textAnchor="middle"
-          letterSpacing="2"
+          letterSpacing="1.8"
         >
           {`[ ${rarity.toUpperCase()} · ${role.toUpperCase()} ]`}
         </text>
         <text
           x="512"
-          y="283"
+          y="122"
           fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize={name.length > 20 ? "30" : name.length > 15 ? "34" : "38"}
+          fontSize={name.length > 20 ? "28" : name.length > 15 ? "32" : "36"}
           fontWeight="900"
           fill="#ffffff"
           textAnchor="middle"
@@ -459,22 +452,6 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
             {summaryLine2}
           </text>
         ) : null}
-
-        {/* Onchain Specimen Watermark */}
-        <text
-          x="512"
-          y="1354"
-          fontFamily="ui-monospace, monospace"
-          fontSize="20"
-          fontWeight="900"
-          fill="#f3ba63"
-          textAnchor="middle"
-          letterSpacing="2"
-        >
-          {catalogueId
-            ? `✦ SPECIES #${catalogueId} · SOLANA DEVNET ONCHAIN ✦`
-            : "✦ WILDQUEST ONCHAIN SPECIMEN ✦"}
-        </text>
       </svg>
 
       {/* Floating Armed / Selected Indicator */}
