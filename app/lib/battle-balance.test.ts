@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BattleStats } from "./battle-engine";
+import type { BattleStats } from "./battle-types";
 import { simulateBalanceMatch, summarizeBalance } from "./battle-balance";
 
 const balanced: BattleStats = {

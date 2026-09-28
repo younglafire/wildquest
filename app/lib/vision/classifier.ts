@@ -4,7 +4,7 @@ import {
   pipeline,
   RawImage,
   type ImageClassificationOutput,
-  type ImageClassificationPipelineType,
+  type ImageClassificationPipeline,
 } from "@huggingface/transformers";
 import modelConfig from "@/models/Xenova/resnet-50/config.json";
 import { InvalidImageError, ModelUnavailableError } from "./errors";
@@ -24,9 +24,9 @@ env.localModelPath = path.join(process.cwd(), "models");
 env.allowLocalModels = true;
 env.allowRemoteModels = false;
 
-let classifierPromise: Promise<ImageClassificationPipelineType> | null = null;
+let classifierPromise: Promise<ImageClassificationPipeline> | null = null;
 
-function getClassifier(): Promise<ImageClassificationPipelineType> {
+function getClassifier(): Promise<ImageClassificationPipeline> {
   if (!classifierPromise) {
     classifierPromise = pipeline("image-classification", MODEL_ID, {
       dtype: "q8",

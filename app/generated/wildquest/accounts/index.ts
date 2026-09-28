@@ -6,11 +6,11 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./counter";
 export * from "./creature";
 export * from "./discovery";
 export * from "./gameConfig";
 export * from "./match";
+export * from "./matchResolverConfig";
 export * from "./player";
 export * from "./quest";
 export * from "./questCompletion";

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import useSWR from "swr";
 import {
   fetchMaybePlayer,
-  fetchMaybeQuest,
-  fetchMaybeQuestCompletion,
+  fetchAllMaybeQuest,
+  fetchAllMaybeQuestCompletion,
   findPlayerPda,
   findQuestCompletionPda,
   findQuestPda,
@@ -25,14 +25,42 @@ import {
   getCompletedQuestCount,
   QUEST_IDS,
 } from "../game";
-import { fetchMatches, getPlayerMatches } from "../matches";
+import { fetchPlayerMatches } from "../matches";
 import { useSolanaClient } from "../solana-client-context";
 import { useWallet } from "../wallet/context";
 
 const REFRESH_INTERVAL_MS = 30_000;
 const subscribeToHydration = () => () => undefined;
 
-export function useGameData() {
+export type GameDataOptions = {
+  catalogue?: boolean;
+  player?: boolean;
+  discoveries?: boolean;
+  creatures?: boolean;
+  quests?: boolean;
+  matches?: boolean;
+};
+
+const ALL_GAME_DATA: Required<GameDataOptions> = {
+  catalogue: true,
+  player: true,
+  discoveries: true,
+  creatures: true,
+  quests: true,
+  matches: true,
+};
+const NO_GAME_DATA: Required<GameDataOptions> = {
+  catalogue: false,
+  player: false,
+  discoveries: false,
+  creatures: false,
+  quests: false,
+  matches: false,
+};
+
+export function useGameData(options: GameDataOptions = ALL_GAME_DATA) {
+  const enabled =
+    options === ALL_GAME_DATA ? ALL_GAME_DATA : { ...NO_GAME_DATA, ...options };
   const client = useSolanaClient();
   const { cluster } = useCluster();
   const { wallet, status } = useWallet();
@@ -43,11 +71,13 @@ export function useGameData() {
     () => false,
   );
 
-  const catalogue = useSWR(["species-catalogue", cluster], fetchCatalogue, {
-    revalidateOnFocus: true,
-  });
+  const catalogue = useSWR(
+    enabled.catalogue ? ["species-catalogue", cluster] : null,
+    fetchCatalogue,
+    { revalidateOnFocus: true },
+  );
   const player = useSWR(
-    address ? (["player", cluster, address] as const) : null,
+    enabled.player && address ? (["player", cluster, address] as const) : null,
     async () => {
       const [playerAddress] = await findPlayerPda({ payer: address! });
       return fetchMaybePlayer(client.rpc, playerAddress, {
@@ -57,26 +87,28 @@ export function useGameData() {
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
   const discoveries = useSWR(
-    address ? (["player-discoveries", cluster, address] as const) : null,
+    enabled.discoveries && address
+      ? (["player-discoveries", cluster, address] as const)
+      : null,
     () => fetchPlayerDiscoveries(client.rpc, address!),
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
   const creatures = useSWR(
-    address ? (["owned-creatures", cluster, address] as const) : null,
+    enabled.creatures && address
+      ? (["owned-creatures", cluster, address] as const)
+      : null,
     () => fetchOwnedCreatures(client.rpc, address!),
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
   const quests = useSWR(
-    ["quests", cluster],
+    enabled.quests ? ["quests", cluster] : null,
     async () => {
-      const accounts = await Promise.all(
-        QUEST_IDS.map(async (questId) => {
-          const [questAddress] = await findQuestPda({ questId });
-          return fetchMaybeQuest(client.rpc, questAddress, {
-            commitment: "confirmed",
-          });
-        }),
+      const addresses = await Promise.all(
+        QUEST_IDS.map(async (questId) => (await findQuestPda({ questId }))[0]),
       );
+      const accounts = await fetchAllMaybeQuest(client.rpc, addresses, {
+        commitment: "confirmed",
+      });
       return accounts.filter((account) => account.exists);
     },
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
@@ -86,29 +118,36 @@ export function useGameData() {
       ? (["quest-completions", cluster, address] as const)
       : null,
     async () => {
-      const accounts = await Promise.all(
-        quests.data!.map(async (quest) => {
-          const [completionAddress] = await findQuestCompletionPda({
-            quest: quest.address,
-            payer: address!,
-          });
-          return fetchMaybeQuestCompletion(client.rpc, completionAddress, {
-            commitment: "confirmed",
-          });
-        }),
+      const addresses = await Promise.all(
+        quests.data!.map(
+          async (quest) =>
+            (
+              await findQuestCompletionPda({
+                quest: quest.address,
+                payer: address!,
+              })
+            )[0],
+        ),
+      );
+      const accounts = await fetchAllMaybeQuestCompletion(
+        client.rpc,
+        addresses,
+        { commitment: "confirmed" },
       );
       return accounts.filter((account) => account.exists);
     },
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
   const matches = useSWR(
-    address ? (["player-matches", cluster, address] as const) : null,
-    async () => getPlayerMatches(await fetchMatches(client.rpc), address!),
+    enabled.matches && address
+      ? (["player-matches", cluster, address] as const)
+      : null,
+    async () => fetchPlayerMatches(client.rpc, address!),
     { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
   );
 
   useEffect(() => {
-    if (!address) return;
+    if (!enabled.player || !address) return;
     const abortController = new AbortController();
 
     const subscribe = async () => {
@@ -128,7 +167,7 @@ export function useGameData() {
 
     void subscribe();
     return () => abortController.abort();
-  }, [address, client, player]);
+  }, [address, client, enabled.player, player]);
 
   const confirmed = hydrated ? loadConfirmedDiscovery() : null;
   const pending = !hydrated || !address ? null : loadPendingIdentification();
@@ -194,8 +233,20 @@ export function useGameData() {
     pending: pending?.wallet === address ? pending : null,
     isLoading:
       status === "connected" &&
-      (catalogue.isLoading || player.isLoading || creatures.isLoading),
-    error: catalogue.error ?? player.error ?? creatures.error,
+      ((enabled.catalogue && catalogue.isLoading) ||
+        (enabled.player && player.isLoading) ||
+        (enabled.discoveries && discoveries.isLoading) ||
+        (enabled.creatures && creatures.isLoading) ||
+        (enabled.quests && quests.isLoading) ||
+        (enabled.matches && matches.isLoading)),
+    error:
+      catalogue.error ??
+      player.error ??
+      discoveries.error ??
+      creatures.error ??
+      quests.error ??
+      questCompletions.error ??
+      matches.error,
     refresh,
   };
 }

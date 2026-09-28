@@ -107,6 +107,9 @@ function dependencies() {
     createPerceptualHash: vi.fn().mockResolvedValue(PERCEPTUAL_HASH),
     reserveDiscovery: vi.fn().mockResolvedValue({ duplicate: false }),
     createCaptureAuthorization: vi.fn().mockResolvedValue(CAPTURE_TRANSACTION),
+    checkRateLimit: vi
+      .fn()
+      .mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
   };
 }
 
@@ -115,6 +118,29 @@ async function responseBody(response: Response) {
 }
 
 describe("POST /api/identify", () => {
+  it("returns 429 before inference when the scan limit is exceeded", async () => {
+    const deps = dependencies();
+    deps.checkRateLimit.mockResolvedValue({
+      allowed: false,
+      retryAfterSeconds: 37,
+    });
+
+    const response = await createIdentifyHandler(deps)(
+      multipartRequest([imageFile()]),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("37");
+    expect(await responseBody(response)).toEqual({
+      error: {
+        code: "RATE_LIMITED",
+        message: "Too many scans. Wait before scanning again.",
+        retry_after_seconds: 37,
+      },
+    });
+    expect(deps.classify).not.toHaveBeenCalled();
+  });
+
   it("returns a strictly validated identification response", async () => {
     const deps = dependencies();
     const response = await createIdentifyHandler(deps)(
@@ -425,6 +451,7 @@ describe("POST /api/identify", () => {
       },
     });
     expect(deps.reserveDiscovery).toHaveBeenCalledOnce();
+    expect(deps.createCaptureAuthorization).not.toHaveBeenCalled();
   });
 
   it("fails closed when the duplicate reservation is unavailable", async () => {
@@ -446,7 +473,7 @@ describe("POST /api/identify", () => {
     });
   });
 
-  it("fails closed before duplicate reservation when capture authorization is unavailable", async () => {
+  it("reserves the image before requesting capture authorization", async () => {
     const deps = dependencies();
     deps.createCaptureAuthorization.mockRejectedValue(
       new CaptureAuthorizationUnavailableError(),
@@ -464,7 +491,10 @@ describe("POST /api/identify", () => {
           "Capture authorization is unavailable. Configure CAPTURE_AUTHORITY_SECRET_KEY_BASE64 or provide WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH (default: .wildquest-keys/capture-authority.json) using the shared Devnet capture authority keypair.",
       },
     });
-    expect(deps.reserveDiscovery).not.toHaveBeenCalled();
+    expect(deps.reserveDiscovery).toHaveBeenCalledOnce();
+    expect(deps.reserveDiscovery.mock.invocationCallOrder[0]).toBeLessThan(
+      deps.createCaptureAuthorization.mock.invocationCallOrder[0]!,
+    );
   });
 
   it("returns 400 before proof generation when quality analysis fails", async () => {

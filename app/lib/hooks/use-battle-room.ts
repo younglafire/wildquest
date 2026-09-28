@@ -11,6 +11,9 @@ import type { BattleAction } from "../simultaneous-battle";
 import type { WalletSession } from "../wallet/types";
 
 const DEFAULT_BATTLE_SERVER_URL = "ws://localhost:3001";
+const BATTLE_SERVER_URL =
+  process.env.NEXT_PUBLIC_BATTLE_SERVER_URL ??
+  (process.env.NODE_ENV === "production" ? null : DEFAULT_BATTLE_SERVER_URL);
 
 export function useBattleRoom(input: {
   matchAddress: Address;
@@ -20,26 +23,47 @@ export function useBattleRoom(input: {
   const [snapshot, setSnapshot] = useState<BattleRoomSnapshot | null>(null);
   const [status, setStatus] = useState<
     "connecting" | "reconnecting" | "watching" | "authenticated" | "unavailable"
-  >("connecting");
-  const [error, setError] = useState<string | null>(null);
+  >(BATTLE_SERVER_URL ? "connecting" : "unavailable");
+  const [error, setError] = useState<string | null>(
+    BATTLE_SERVER_URL ? null : "The live battle server is not configured.",
+  );
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BATTLE_SERVER_URL ?? DEFAULT_BATTLE_SERVER_URL;
-    const url = new URL(baseUrl);
+    if (!BATTLE_SERVER_URL) return;
+    const url = new URL(BATTLE_SERVER_URL);
     url.searchParams.set("match", input.matchAddress);
     const sessionKey = `wildquest:battle-session:${input.matchAddress}:${input.wallet?.account.address ?? "spectator"}`;
     let stopped = false;
     let retryable = true;
     let reconnectTimer: number | null = null;
+    let reconnectAttempt = 0;
 
     const connect = () => {
-      const socket = new WebSocket(url);
+      if (stopped || !retryable) return;
+      let socket: WebSocket;
+      try {
+        socket = new WebSocket(url);
+      } catch {
+        setError("The battle server URL is invalid.");
+        setStatus("unavailable");
+        return;
+      }
       socketRef.current = socket;
-      socket.onopen = () => setError(null);
+      socket.onopen = () => {
+        reconnectAttempt = 0;
+        setError(null);
+      };
       socket.onmessage = (event) => {
-        const message = JSON.parse(String(event.data)) as BattleServerMessage;
+        let message: BattleServerMessage;
+        try {
+          message = JSON.parse(String(event.data)) as BattleServerMessage;
+        } catch {
+          setError("The battle server returned an invalid message.");
+          retryable = false;
+          socket.close(1002, "Invalid server message");
+          return;
+        }
         if (message.type === "challenge") {
           if (!input.isParticipant || !input.wallet?.signMessage) {
             socket.send(JSON.stringify({ type: "watch" }));
@@ -60,6 +84,7 @@ export function useBattleRoom(input: {
           void input.wallet
             .signMessage(new TextEncoder().encode(value))
             .then((signature) => {
+              if (socket.readyState !== WebSocket.OPEN) return;
               let binary = "";
               for (const byte of signature) binary += String.fromCharCode(byte);
               socket.send(
@@ -96,8 +121,15 @@ export function useBattleRoom(input: {
       };
       socket.onclose = () => {
         if (stopped || !retryable) return;
+        reconnectAttempt += 1;
+        if (reconnectAttempt > 8) {
+          setError("The live battle server could not be reached. Try again.");
+          setStatus("unavailable");
+          return;
+        }
         setStatus("reconnecting");
-        reconnectTimer = window.setTimeout(connect, 1_000);
+        const delay = Math.min(15_000, 750 * 2 ** (reconnectAttempt - 1));
+        reconnectTimer = window.setTimeout(connect, delay);
       };
     };
     connect();

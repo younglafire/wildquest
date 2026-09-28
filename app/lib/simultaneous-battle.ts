@@ -1,4 +1,4 @@
-import type { BattleOutcome, BattleSide, BattleStats } from "./battle-engine";
+import type { BattleOutcome, BattleSide, BattleStats } from "./battle-types";
 
 export const TURN_CHOICE_DURATION_MS = 5_000;
 export const TURN_ANIMATION_DURATION_MS = 1_250;

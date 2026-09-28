@@ -11,7 +11,12 @@ import { buildQuestCompletionInstruction } from "../lib/quest-transaction";
 import { useWallet } from "../lib/wallet/context";
 
 export function QuestContent() {
-  const game = useGameData();
+  const game = useGameData({
+    player: true,
+    creatures: true,
+    quests: true,
+    matches: true,
+  });
   const { signer } = useWallet();
   const { getExplorerUrl } = useCluster();
   const { send, isSending } = useSendTransaction();

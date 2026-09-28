@@ -38,7 +38,7 @@ export function MatchDetail({ matchAddress }: { matchAddress: string }) {
     }
   }, [matchAddress]);
   const client = useSolanaClient();
-  const game = useGameData();
+  const game = useGameData({ catalogue: true });
   const { signer, wallet } = useWallet();
   const { cluster } = useCluster();
   const { send, isSending } = useSendTransaction();

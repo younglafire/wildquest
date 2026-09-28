@@ -1,6 +1,7 @@
 import {
   address,
   createNoopSigner,
+  getBase58Encoder,
   lamports,
   none,
   type Account,
@@ -10,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   MatchStatus,
   WILDQUEST_PROGRAM_ADDRESS,
+  getMatchEncoder,
   type Creature,
   type Match,
 } from "../generated/wildquest";
@@ -180,5 +182,22 @@ describe("Match transaction builders", () => {
       newest,
       oldest,
     ]);
+  });
+
+  it("keeps the memcmp offsets used by filtered Match queries", () => {
+    const open = openMatch(creatorTeam);
+    const openBytes = getMatchEncoder().encode(open.data);
+    expect(openBytes.slice(16, 48)).toEqual(getBase58Encoder().encode(owner));
+    expect(openBytes[48]).toBe(0);
+    expect(openBytes[253]).toBe(MatchStatus.Open);
+
+    open.data.opponent = { __option: "Some", value: opponent };
+    open.data.status = MatchStatus.Active;
+    const activeBytes = getMatchEncoder().encode(open.data);
+    expect(activeBytes[48]).toBe(1);
+    expect(activeBytes.slice(49, 81)).toEqual(
+      getBase58Encoder().encode(opponent),
+    );
+    expect(activeBytes[285]).toBe(MatchStatus.Active);
   });
 });

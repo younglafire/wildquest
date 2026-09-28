@@ -63,9 +63,8 @@ export default function Home() {
                 style={{ color: "#8a7a62" }}
               >
                 Step outside, hunt real animals with your phone camera, and
-                prove your finds with on-device AI vision.
+                identify supported wildlife with server-side AI vision.
               </p>
-
             </div>
 
             {/* Centerpiece Visual: Expedition Cards */}
@@ -80,7 +79,7 @@ export default function Home() {
                 <div className="flex items-center justify-center gap-2 text-[11px] font-mono text-muted">
                   <span>✓ Solana Devnet</span>
                   <span>·</span>
-                  <span>Zero real SOL spent</span>
+                  <span>Devnet SOL only</span>
                   <span>·</span>
                   <span>In-Memory Neural Scan</span>
                 </div>
@@ -175,15 +174,18 @@ export default function Home() {
                       className="group/sp relative inline-flex items-center gap-1.5 rounded-lg border border-[#c8a96e]/30 bg-black/50 px-2.5 py-1 text-xs text-[#f0e8d4] transition-all hover:border-emerald-500/50 hover:bg-emerald-950/30"
                     >
                       <span>{sp.icon}</span>
-                      <span className="font-bold text-[#c8a96e]">{sp.name}</span>
+                      <span className="font-bold text-[#c8a96e]">
+                        {sp.name}
+                      </span>
                     </div>
                   ))}
                 </div>
 
                 <p className="mt-2 text-xs sm:text-sm text-[#a89880]">
                   Locate all 5 target species to earn the{" "}
-                  <strong className="text-emerald-400">Founder Badge</strong> and{" "}
-                  <strong className="text-amber-400">+100 XP</strong> on Solana Devnet.
+                  <strong className="text-emerald-400">Founder Badge</strong>{" "}
+                  and <strong className="text-amber-400">+100 XP</strong> on
+                  Solana Devnet.
                 </p>
               </div>
 
@@ -279,7 +281,7 @@ export default function Home() {
               >
                 Your mobile phone is your neural scanner. Solana is your
                 immutable ledger. Begin tracking local wildlife, level up your
-                Explorer Passport, and mint your discoveries today.
+                Explorer Passport, and capture your first Creature today.
               </p>
 
               <div className="pt-4 flex justify-center">

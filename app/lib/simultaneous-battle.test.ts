@@ -7,7 +7,7 @@ import {
   resolveSimultaneousTurn,
   type BattleAction,
 } from "./simultaneous-battle";
-import type { BattleStats } from "./battle-engine";
+import type { BattleStats } from "./battle-types";
 
 const fighter = (hp = 100, attack = 60, defense = 50): BattleStats => ({
   hp,

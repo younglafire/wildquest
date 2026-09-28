@@ -38,7 +38,7 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from "@solana/kit";
-import { findGameConfigPda } from "../pdas";
+import { findMatchResolverConfigPda } from "../pdas";
 import { WILDQUEST_PROGRAM_ADDRESS } from "../programs";
 import { getAccountMetaFactory, type ResolvedAccount } from "../shared";
 
@@ -55,7 +55,7 @@ export function getResolveMatchDiscriminatorBytes() {
 export type ResolveMatchInstruction<
   TProgram extends string = typeof WILDQUEST_PROGRAM_ADDRESS,
   TAccountResolver extends string | AccountMeta<string> = string,
-  TAccountGameConfig extends string | AccountMeta<string> = string,
+  TAccountMatchResolverConfig extends string | AccountMeta<string> = string,
   TAccountCreator extends string | AccountMeta<string> = string,
   TAccountOpponent extends string | AccountMeta<string> = string,
   TAccountMatchAccount extends string | AccountMeta<string> = string,
@@ -68,9 +68,9 @@ export type ResolveMatchInstruction<
         ? ReadonlySignerAccount<TAccountResolver> &
             AccountSignerMeta<TAccountResolver>
         : TAccountResolver,
-      TAccountGameConfig extends string
-        ? ReadonlyAccount<TAccountGameConfig>
-        : TAccountGameConfig,
+      TAccountMatchResolverConfig extends string
+        ? ReadonlyAccount<TAccountMatchResolverConfig>
+        : TAccountMatchResolverConfig,
       TAccountCreator extends string
         ? WritableAccount<TAccountCreator>
         : TAccountCreator,
@@ -130,13 +130,13 @@ export function getResolveMatchInstructionDataCodec(): Codec<
 
 export type ResolveMatchAsyncInput<
   TAccountResolver extends string = string,
-  TAccountGameConfig extends string = string,
+  TAccountMatchResolverConfig extends string = string,
   TAccountCreator extends string = string,
   TAccountOpponent extends string = string,
   TAccountMatchAccount extends string = string,
 > = {
   resolver: TransactionSigner<TAccountResolver>;
-  gameConfig?: Address<TAccountGameConfig>;
+  matchResolverConfig?: Address<TAccountMatchResolverConfig>;
   creator: Address<TAccountCreator>;
   opponent: Address<TAccountOpponent>;
   matchAccount: Address<TAccountMatchAccount>;
@@ -147,7 +147,7 @@ export type ResolveMatchAsyncInput<
 
 export async function getResolveMatchInstructionAsync<
   TAccountResolver extends string,
-  TAccountGameConfig extends string,
+  TAccountMatchResolverConfig extends string,
   TAccountCreator extends string,
   TAccountOpponent extends string,
   TAccountMatchAccount extends string,
@@ -155,7 +155,7 @@ export async function getResolveMatchInstructionAsync<
 >(
   input: ResolveMatchAsyncInput<
     TAccountResolver,
-    TAccountGameConfig,
+    TAccountMatchResolverConfig,
     TAccountCreator,
     TAccountOpponent,
     TAccountMatchAccount
@@ -165,7 +165,7 @@ export async function getResolveMatchInstructionAsync<
   ResolveMatchInstruction<
     TProgramAddress,
     TAccountResolver,
-    TAccountGameConfig,
+    TAccountMatchResolverConfig,
     TAccountCreator,
     TAccountOpponent,
     TAccountMatchAccount
@@ -177,7 +177,10 @@ export async function getResolveMatchInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     resolver: { value: input.resolver ?? null, isWritable: false },
-    gameConfig: { value: input.gameConfig ?? null, isWritable: false },
+    matchResolverConfig: {
+      value: input.matchResolverConfig ?? null,
+      isWritable: false,
+    },
     creator: { value: input.creator ?? null, isWritable: true },
     opponent: { value: input.opponent ?? null, isWritable: true },
     matchAccount: { value: input.matchAccount ?? null, isWritable: true },
@@ -191,15 +194,15 @@ export async function getResolveMatchInstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
-  if (!accounts.gameConfig.value) {
-    accounts.gameConfig.value = await findGameConfigPda();
+  if (!accounts.matchResolverConfig.value) {
+    accounts.matchResolverConfig.value = await findMatchResolverConfigPda();
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.resolver),
-      getAccountMeta(accounts.gameConfig),
+      getAccountMeta(accounts.matchResolverConfig),
       getAccountMeta(accounts.creator),
       getAccountMeta(accounts.opponent),
       getAccountMeta(accounts.matchAccount),
@@ -211,7 +214,7 @@ export async function getResolveMatchInstructionAsync<
   } as ResolveMatchInstruction<
     TProgramAddress,
     TAccountResolver,
-    TAccountGameConfig,
+    TAccountMatchResolverConfig,
     TAccountCreator,
     TAccountOpponent,
     TAccountMatchAccount
@@ -220,13 +223,13 @@ export async function getResolveMatchInstructionAsync<
 
 export type ResolveMatchInput<
   TAccountResolver extends string = string,
-  TAccountGameConfig extends string = string,
+  TAccountMatchResolverConfig extends string = string,
   TAccountCreator extends string = string,
   TAccountOpponent extends string = string,
   TAccountMatchAccount extends string = string,
 > = {
   resolver: TransactionSigner<TAccountResolver>;
-  gameConfig: Address<TAccountGameConfig>;
+  matchResolverConfig: Address<TAccountMatchResolverConfig>;
   creator: Address<TAccountCreator>;
   opponent: Address<TAccountOpponent>;
   matchAccount: Address<TAccountMatchAccount>;
@@ -237,7 +240,7 @@ export type ResolveMatchInput<
 
 export function getResolveMatchInstruction<
   TAccountResolver extends string,
-  TAccountGameConfig extends string,
+  TAccountMatchResolverConfig extends string,
   TAccountCreator extends string,
   TAccountOpponent extends string,
   TAccountMatchAccount extends string,
@@ -245,7 +248,7 @@ export function getResolveMatchInstruction<
 >(
   input: ResolveMatchInput<
     TAccountResolver,
-    TAccountGameConfig,
+    TAccountMatchResolverConfig,
     TAccountCreator,
     TAccountOpponent,
     TAccountMatchAccount
@@ -254,7 +257,7 @@ export function getResolveMatchInstruction<
 ): ResolveMatchInstruction<
   TProgramAddress,
   TAccountResolver,
-  TAccountGameConfig,
+  TAccountMatchResolverConfig,
   TAccountCreator,
   TAccountOpponent,
   TAccountMatchAccount
@@ -265,7 +268,10 @@ export function getResolveMatchInstruction<
   // Original accounts.
   const originalAccounts = {
     resolver: { value: input.resolver ?? null, isWritable: false },
-    gameConfig: { value: input.gameConfig ?? null, isWritable: false },
+    matchResolverConfig: {
+      value: input.matchResolverConfig ?? null,
+      isWritable: false,
+    },
     creator: { value: input.creator ?? null, isWritable: true },
     opponent: { value: input.opponent ?? null, isWritable: true },
     matchAccount: { value: input.matchAccount ?? null, isWritable: true },
@@ -282,7 +288,7 @@ export function getResolveMatchInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.resolver),
-      getAccountMeta(accounts.gameConfig),
+      getAccountMeta(accounts.matchResolverConfig),
       getAccountMeta(accounts.creator),
       getAccountMeta(accounts.opponent),
       getAccountMeta(accounts.matchAccount),
@@ -294,7 +300,7 @@ export function getResolveMatchInstruction<
   } as ResolveMatchInstruction<
     TProgramAddress,
     TAccountResolver,
-    TAccountGameConfig,
+    TAccountMatchResolverConfig,
     TAccountCreator,
     TAccountOpponent,
     TAccountMatchAccount
@@ -308,7 +314,7 @@ export type ParsedResolveMatchInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     resolver: TAccountMetas[0];
-    gameConfig: TAccountMetas[1];
+    matchResolverConfig: TAccountMetas[1];
     creator: TAccountMetas[2];
     opponent: TAccountMetas[3];
     matchAccount: TAccountMetas[4];
@@ -338,7 +344,7 @@ export function parseResolveMatchInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       resolver: getNextAccount(),
-      gameConfig: getNextAccount(),
+      matchResolverConfig: getNextAccount(),
       creator: getNextAccount(),
       opponent: getNextAccount(),
       matchAccount: getNextAccount(),

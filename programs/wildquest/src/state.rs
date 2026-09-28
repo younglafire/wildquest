@@ -2,13 +2,6 @@ use anchor_lang::prelude::*;
 
 #[account]
 #[derive(InitSpace)]
-pub struct Counter {
-    pub count: u64,
-    pub authority: Pubkey,
-}
-
-#[account]
-#[derive(InitSpace)]
 pub struct Player {
     pub wallet: Pubkey,
     pub xp: u64,
@@ -59,6 +52,13 @@ pub struct GameConfig {
     pub balance_version: u16,
     pub rules_version: u16,
     pub stake_lamports: u64,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct MatchResolverConfig {
+    pub resolver: Pubkey,
     pub bump: u8,
 }
 

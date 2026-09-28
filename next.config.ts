@@ -44,12 +44,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/creatures/:rarity(common|uncommon|rare|epic|legend).png",
-        destination: "/cards/frames/:rarity.png",
+        destination: "/cards/frames/:rarity.webp",
       },
       // Creature artwork backwards compatibility
       {
         source: "/creatures/:file([a-z0-9_-]+).png",
-        destination: "/creatures/artwork/:file.png",
+        destination: "/creatures/artwork/:file.webp",
       },
       // Creature vector icons backwards compatibility
       {

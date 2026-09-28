@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { SpeciesConfig } from "../generated/wildquest";
 import type { BattleCreature } from "../lib/battle-creatures";
 import type { CatalogueSpecies } from "../lib/catalogue-client";
@@ -32,11 +32,11 @@ export type CreatureModelCardProps = {
 
 function getRarityTemplate(rarity?: string): string {
   const r = (rarity ?? "common").toLowerCase().trim();
-  if (r.includes("legend")) return "/cards/frames/legend.png";
-  if (r.includes("epic")) return "/cards/frames/epic.png";
-  if (r.includes("rare")) return "/cards/frames/rare.png";
-  if (r.includes("uncommon")) return "/cards/frames/uncommon.png";
-  return "/cards/frames/common.png";
+  if (r.includes("legend")) return "/cards/frames/legend.webp";
+  if (r.includes("epic")) return "/cards/frames/epic.webp";
+  if (r.includes("rare")) return "/cards/frames/rare.webp";
+  if (r.includes("uncommon")) return "/cards/frames/uncommon.webp";
+  return "/cards/frames/common.webp";
 }
 
 function splitSummary(summary: string): [string, string | null] {
@@ -57,7 +57,26 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
     disabledBadge,
     className = "",
     slotIndex,
+    compact = false,
   } = props;
+  const cardRef = useRef<HTMLElement>(null);
+  const [artworkVisible, setArtworkVisible] = useState(compact);
+
+  useEffect(() => {
+    if (artworkVisible) return;
+    const card = cardRef.current;
+    if (!card) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setArtworkVisible(true);
+        observer.disconnect();
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [artworkVisible]);
 
   const species =
     "creature" in props && props.creature
@@ -98,6 +117,7 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
 
   return (
     <article
+      ref={cardRef}
       className={`group relative aspect-[2/3] w-full select-none overflow-hidden rounded-2xl transition-all duration-200 ${
         disabled
           ? "cursor-not-allowed opacity-40 grayscale"
@@ -109,6 +129,8 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
       } ${className}`}
       style={{
         background: "#0c0a08",
+        contentVisibility: "auto",
+        containIntrinsicSize: "320px 480px",
       }}
     >
       {/* 2:3 Scalable Vector Card Canvas */}
@@ -134,7 +156,7 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
         {/* 2. Creature Artwork in Upper Window */}
         <g clipPath={`url(#${clipId})`}>
           <rect x="137" y="150" width="750" height="715" fill="#120e0a" />
-          {imageSrc ? (
+          {imageSrc && artworkVisible ? (
             <image
               href={imageSrc}
               x="137"
@@ -158,7 +180,7 @@ export function CreatureModelCard(props: CreatureModelCardProps) {
           )}
         </g>
 
-        {/* 3. Rarity Frame Overlay (common.png, rare.png, legend.png, etc.) */}
+        {/* 3. Optimized rarity frame overlay */}
         <image
           href={frameSrc}
           x="0"

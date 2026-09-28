@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-import { useCluster } from "./cluster-context";
 import { WalletButton } from "./wallet-button";
 
 const NAVIGATION = [
@@ -15,12 +13,7 @@ const NAVIGATION = [
 ] as const;
 
 export function AppHeader({ landing = false }: { landing?: boolean }) {
-  const { cluster, setCluster } = useCluster();
   const pathname = usePathname();
-
-  useEffect(() => {
-    if (cluster !== "devnet") setCluster("devnet");
-  }, [cluster, setCluster]);
 
   return (
     <header

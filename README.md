@@ -36,10 +36,11 @@ per catalogue ID, and ordered teams battle for a fixed Devnet SOL stake.
 - A successful identification permanently reserves its SHA-256 proof and
   perceptual hash before the user submits a Solana transaction. Use a fresh
   photo when retrying an abandoned capture.
-- The identify endpoint validates the wallet address but does not prove wallet
-  ownership. The public program also has no backend signature check, so a
-  direct caller can submit fabricated grade and proof values. Backend
-  attestation remains required before production use.
+- The identify endpoint rate-limits both IP and wallet buckets. A successful
+  capture transaction must carry the dedicated capture-authority signature;
+  the owner wallet adds its own signature before submission.
+- The battle resolver uses a different keypair and a separate
+  `MatchResolverConfig` PDA. Never reuse the admin, capture, or resolver key.
 
 ## Background
 
@@ -116,6 +117,10 @@ Creature authorization additionally requires a dedicated Devnet capture
 authority encoded as `CAPTURE_AUTHORITY_SECRET_KEY_BASE64`. Never reuse the
 program deployment authority for this server role. The checked-in
 `.env.example` contains names and placeholders only.
+
+The realtime battle service requires its own
+`MATCH_RESOLVER_SECRET_KEY_BASE64`, `SOLANA_RPC_URL`, Supabase service key, and
+an exact comma-separated `BATTLE_SERVER_ALLOWED_ORIGINS` allowlist.
 
 For local development, a teammate can instead receive the shared
 `.wildquest-keys/capture-authority.json` file through a secure channel. It is
@@ -218,13 +223,13 @@ numeric ID, which becomes the program's `u64` species ID.
 
 ## Onchain Accounts
 
-The program exposes the legacy Player, Discovery, and Quest handlers plus the
-battle-slice `initialize_game_config`, `initialize_species_config`,
+The program exposes the historical Player and Discovery readers, incremental
+Quest handlers, and the battle-slice `initialize_game_config`,
+`initialize_match_resolver_config`, `initialize_species_config`,
 `capture_creature`, `open_match`, `join_match`, `claim_match_payout`, and
 `cancel_match` handlers. `release_creature` lets an owner close one Creature
 account. The administrator-only `admin_close_match` and `admin_close_creature`
 handlers support a safe Devnet prototype reset without changing the program ID.
-The earlier Counter instructions remain as scaffold functionality.
 
 - **Player PDA** uses `["player", wallet]` and stores wallet, XP, level,
   discovery count, and badge count.
@@ -236,6 +241,8 @@ The earlier Counter instructions remain as scaffold functionality.
   prevents the same wallet from claiming one quest twice.
 - **GameConfig PDA** uses `["game_config"]` and stores the capture authority,
   balance version, rules version, and fixed stake.
+- **MatchResolverConfig PDA** uses `["match_resolver_config"]` and isolates the
+  battle result signer from the image capture signer.
 - **SpeciesConfig PDA** uses
   `["species_config", catalogue_id_le, balance_version_le]` and stores the
   static HP, Attack, Defense, Max Mana, action costs, Recharge gain, and
@@ -270,8 +277,9 @@ Use `npm run dev:web` only when the battle server is intentionally running in
 another terminal or environment.
 
 `NEXT_PUBLIC_BATTLE_SERVER_URL` defaults to `ws://localhost:3001`. Production
-must use a TLS WebSocket URL and run one sticky room owner per Match, or move the
-room state to a shared authoritative service before horizontal scaling.
+must use a TLS WebSocket URL. Room state and immutable turn-event replays are
+persisted in Supabase, so a restarted battle process can resume the original
+deadline and hidden choices instead of generating a new battle.
 
 Check the rules-version 2 roster before a demo or deployment:
 
@@ -436,8 +444,8 @@ npm run codama:js
 Do not accept generated program-address changes without checking the target
 cluster. Apply Supabase migrations before deploying a frontend that depends on
 new columns or database functions. Configure the required values from
-`.env.example` in the hosting provider. Keep both the Supabase key and capture
-authority keypair in a server-only secret store.
+`.env.example` in the hosting provider. Keep the Supabase key, capture
+authority, and Match resolver keypairs in a server-only secret store.
 
 After deploying the battle-slice program, initialize `GameConfig`, the 40
 `SpeciesConfig` accounts, and two funded demo-wallet rosters with:
@@ -445,6 +453,7 @@ After deploying the battle-slice program, initialize `GameConfig`, the 40
 ```sh
 WQ_ADMIN_KEYPAIR_PATH=/absolute/path/to/admin.json \
 WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH=/absolute/path/to/capture-authority.json \
+WQ_MATCH_RESOLVER_KEYPAIR_PATH=/absolute/path/to/match-resolver.json \
 WQ_DEMO_WALLET_A_KEYPAIR_PATH=/absolute/path/to/wallet-a.json \
 WQ_DEMO_WALLET_B_KEYPAIR_PATH=/absolute/path/to/wallet-b.json \
   npm run setup:pk-demo
@@ -484,6 +493,13 @@ authority. The connected owner wallet must add its signature before submission.
 Common failure codes include `LOW_CONFIDENCE`, `UNSUPPORTED_SPECIES`,
 `CAPTURE_INELIGIBLE`, `CAPTURE_AUTHORIZATION_UNAVAILABLE`, `DUPLICATE_IMAGE`,
 `INVALID_IMAGE`, and `DUPLICATE_CHECK_UNAVAILABLE`.
+
+### Battle replay
+
+`GET /api/battles/[matchAddress]/replay` returns the immutable simultaneous-turn
+event log. The client hashes the canonical payload and compares it with the
+Match account's onchain `result_hash` before displaying the replay or enabling
+a payout claim.
 
 ## Contributing
 

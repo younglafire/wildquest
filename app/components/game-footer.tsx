@@ -23,8 +23,8 @@ export function GameFooter() {
             </div>
             <p className="max-w-sm text-xs leading-relaxed text-muted">
               The truthful real-world wildlife RPG on Solana. Spot fauna in
-              nature, classify species on-device with zero cloud exposure, and
-              mint permanent Discovery accounts.
+              nature, classify supported species with server-side vision, and
+              create wallet-owned Creature accounts on Solana Devnet.
             </p>
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -99,8 +99,8 @@ export function GameFooter() {
             <ul className="space-y-2 text-muted">
               <li>Zero Cloud Photo Storage</li>
               <li>In-Memory Model Inference</li>
-              <li>Non-Custodial Wallet Login</li>
-              <li>Deterministic Grade XP</li>
+              <li>Wallet Standard Connection</li>
+              <li>Quest XP Verified Onchain</li>
             </ul>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { BattleRoom, WAITING_FOR_OPPONENT_TIMEOUT_MS } from "./battle-room";
-import type { BattleStats } from "./battle-engine";
+import type { BattleStats } from "./battle-types";
 
 const stats: BattleStats = {
   hp: 100,
@@ -108,6 +108,53 @@ describe("BattleRoom", () => {
     room.connect("opponent", 0);
     room.disconnect("creator");
     expect(room.connect("creator", 4_000).deadline).toBe(5_000);
+  });
+
+  it("restores hidden choices and the original deadline after a restart", () => {
+    const config = {
+      matchAddress: "match",
+      creatorStats: team,
+      opponentStats: team,
+    };
+    const room = new BattleRoom(config);
+    room.connect("creator", 0);
+    room.connect("opponent", 0);
+    room.submit("creator", "strike", 1, 1_000);
+
+    const restored = BattleRoom.restore(
+      config,
+      room.exportState(),
+      () => {},
+      2_000,
+    );
+    const snapshot = restored.snapshot();
+    expect(snapshot.creatorConnected).toBe(false);
+    expect(snapshot.opponentConnected).toBe(false);
+    expect(snapshot.creatorLocked).toBe(true);
+    expect(snapshot.deadline).toBe(5_000);
+    expect(snapshot.events).toHaveLength(0);
+
+    const resolved = restored.submit("opponent", "guard", 1, 2_100);
+    expect(resolved.events[0]?.creatorAction).toBe("strike");
+    expect(resolved.events[0]?.opponentAction).toBe("guard");
+  });
+
+  it("rejects stored state belonging to another Match", () => {
+    const room = new BattleRoom({
+      matchAddress: "match-a",
+      creatorStats: team,
+      opponentStats: team,
+    });
+    expect(() =>
+      BattleRoom.restore(
+        {
+          matchAddress: "match-b",
+          creatorStats: team,
+          opponentStats: team,
+        },
+        room.exportState(),
+      ),
+    ).toThrow("does not match");
   });
 
   it("retries a failed settlement without resolving the battle twice", async () => {

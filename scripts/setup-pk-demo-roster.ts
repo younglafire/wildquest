@@ -12,15 +12,18 @@ import { z } from "zod";
 import {
   fetchMaybeCreature,
   fetchMaybeGameConfig,
+  fetchMaybeMatchResolverConfig,
   fetchMaybeQuest,
   fetchMaybeSpeciesConfig,
   findCreaturePda,
   findGameConfigPda,
+  findMatchResolverConfigPda,
   findQuestPda,
   findSpeciesConfigPda,
   getActivateTurnCombatInstruction,
   getCaptureCreatureInstructionAsync,
   getInitializeGameConfigInstructionAsync,
+  getInitializeMatchResolverConfigInstructionAsync,
   getInitializeQuestInstructionAsync,
   getInitializeSpeciesConfigInstructionAsync,
 } from "../app/generated/wildquest";
@@ -153,6 +156,33 @@ async function ensureSpeciesConfigs(
   }
 }
 
+async function ensureMatchResolverConfig(
+  client: ReturnType<typeof createClient>,
+  admin: KeyPairSigner,
+  resolver: KeyPairSigner,
+) {
+  const [address] = await findMatchResolverConfigPda();
+  const existing = await fetchMaybeMatchResolverConfig(client.rpc, address, {
+    commitment: "confirmed",
+  });
+  if (existing.exists) {
+    if (existing.data.resolver !== resolver.address) {
+      throw new Error(
+        "MatchResolverConfig already exists with a different resolver.",
+      );
+    }
+    console.info(`MatchResolverConfig already exists: ${address}`);
+    return address;
+  }
+  const instruction = await getInitializeMatchResolverConfigInstructionAsync({
+    admin,
+    resolver: resolver.address,
+  });
+  const result = await client.sendTransaction([instruction]);
+  console.info(`Created MatchResolverConfig: ${result.context.signature}`);
+  return address;
+}
+
 async function ensureQuests(
   client: ReturnType<typeof createClient>,
   admin: KeyPairSigner,
@@ -247,7 +277,10 @@ async function ensureRoster(
 
 async function main() {
   const configsOnly = process.argv.includes("--configs-only");
-  const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? DEFAULT_RPC_URL;
+  const rpcUrl =
+    process.env.SOLANA_RPC_URL ??
+    process.env.NEXT_PUBLIC_RPC_URL ??
+    DEFAULT_RPC_URL;
   const admin = await loadSigner(
     "WQ_ADMIN_KEYPAIR_PATH",
     "/Users/doanbao/.config/solana/id.json",
@@ -256,9 +289,17 @@ async function main() {
     "WQ_CAPTURE_AUTHORITY_KEYPAIR_PATH",
     ".wildquest-keys/capture-authority.json",
   );
-  if (admin.address === captureAuthority.address) {
+  const matchResolver = await loadSigner(
+    "WQ_MATCH_RESOLVER_KEYPAIR_PATH",
+    ".wildquest-keys/match-resolver.json",
+  );
+  if (
+    admin.address === captureAuthority.address ||
+    admin.address === matchResolver.address ||
+    captureAuthority.address === matchResolver.address
+  ) {
     throw new Error(
-      "Use a dedicated capture authority; do not reuse the program admin keypair.",
+      "Admin, capture authority, and Match resolver must use three different keypairs.",
     );
   }
   const adminClient = createClient({ url: devnet(rpcUrl), payer: admin });
@@ -268,6 +309,7 @@ async function main() {
     admin,
     captureAuthority,
   );
+  await ensureMatchResolverConfig(adminClient, admin, matchResolver);
   await ensureSpeciesConfigs(adminClient, admin);
   await ensureQuests(adminClient, admin);
   if (gameConfig.needsActivation) {

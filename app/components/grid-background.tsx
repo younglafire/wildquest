@@ -26,6 +26,7 @@ export function GridBackground() {
     if (!ctx) return;
 
     let animationFrameId: number;
+    let running = false;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -95,6 +96,11 @@ export function GridBackground() {
     ).matches;
 
     const render = () => {
+      if (document.hidden) {
+        running = false;
+        return;
+      }
+      running = true;
       ctx.clearRect(0, 0, width, height);
 
       for (let i = 0; i < particles.length; i++) {
@@ -148,14 +154,19 @@ export function GridBackground() {
         ctx.restore();
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (!prefersReducedMotion) {
+        animationFrameId = requestAnimationFrame(render);
+      } else {
+        running = false;
+      }
     };
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (!document.hidden && !running) {
         animationFrameId = requestAnimationFrame(render);
       } else {
         cancelAnimationFrame(animationFrameId);
+        running = false;
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);

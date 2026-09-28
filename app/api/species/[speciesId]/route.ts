@@ -4,6 +4,9 @@ import { createSupabaseServerClient } from "@/app/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+const PUBLIC_CACHE_CONTROL =
+  "public, s-maxage=300, stale-while-revalidate=3600";
+
 type RouteContext = {
   params: Promise<{ speciesId: string }>;
 };
@@ -34,7 +37,10 @@ export async function GET(_request: Request, context: RouteContext) {
       );
     }
 
-    return NextResponse.json({ species: mapSpeciesRow(data) });
+    return NextResponse.json(
+      { species: mapSpeciesRow(data) },
+      { headers: { "Cache-Control": PUBLIC_CACHE_CONTROL } },
+    );
   } catch (error) {
     console.error("Species API configuration error:", error);
     return NextResponse.json(

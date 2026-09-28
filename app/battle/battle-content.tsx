@@ -26,6 +26,7 @@ import {
   hasCurrentBattleBalance,
   type BattleCreature,
 } from "../lib/battle-creatures";
+import { battleReplaySchema, verifyBattleReplay } from "../lib/battle-replay";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import {
@@ -33,7 +34,8 @@ import {
   buildClaimMatchPayoutInstruction,
   buildJoinMatchInstruction,
   buildOpenMatchInstruction,
-  fetchMatches,
+  fetchOpenMatches,
+  fetchPlayerMatches,
   getPlayerMatches,
   type GameMatch,
 } from "../lib/matches";
@@ -55,15 +57,25 @@ export function BattleContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const arenaRef = useRef<HTMLElement>(null);
-  const game = useGameData();
+  const game = useGameData({ catalogue: true, creatures: true });
   const client = useSolanaClient();
   const { signer } = useWallet();
   const { cluster } = useCluster();
   const { send, isSending } = useSendTransaction();
-  const matches = useSWR(["matches", cluster], () => fetchMatches(client.rpc), {
-    refreshInterval: 15_000,
-    revalidateOnFocus: true,
-  });
+  const matches = useSWR(
+    ["matches", cluster, signer?.address ?? "guest"],
+    async () => {
+      const [open, player] = await Promise.all([
+        fetchOpenMatches(client.rpc),
+        signer ? fetchPlayerMatches(client.rpc, signer.address) : [],
+      ]);
+      const unique = new Map<string, GameMatch>();
+      for (const match of [...open, ...player])
+        unique.set(match.address, match);
+      return [...unique.values()];
+    },
+    { refreshInterval: 15_000, revalidateOnFocus: true },
+  );
   const creatures = game.creatures.data ?? [];
   const battleCreatures = useSWR(
     creatures.length && game.catalogue.data
@@ -1153,7 +1165,7 @@ export function MatchResult({
   const details = useSWR(
     opponent ? ["match-replay", match.address, match.data.status] : null,
     async () => {
-      const [creator, opponentCards] = await Promise.all([
+      const [creator, opponentCards, replayResponse] = await Promise.all([
         fetchMatchBattleCreatures(
           client.rpc,
           match.data.creator,
@@ -1166,6 +1178,7 @@ export function MatchResult({
           match.data.opponentCreatures,
           catalogue,
         ),
+        fetch(`/api/battles/${match.address}/replay`, { cache: "no-store" }),
       ]);
       const cards = [...creator, ...opponentCards];
       if (
@@ -1177,7 +1190,22 @@ export function MatchResult({
       ) {
         throw new Error("This Match uses an unsupported battle rules version.");
       }
-      return { creator, opponent: opponentCards };
+      if (!replayResponse.ok) {
+        throw new Error("The recorded battle replay is unavailable.");
+      }
+      const replay = battleReplaySchema.parse(await replayResponse.json());
+      if (
+        replay.match_address !== match.address ||
+        replay.rules_version !== match.data.rulesVersion ||
+        replay.balance_version !== match.data.balanceVersion ||
+        !(await verifyBattleReplay(
+          replay,
+          Uint8Array.from(match.data.resultHash),
+        ))
+      ) {
+        throw new Error("The battle replay does not match its onchain hash.");
+      }
+      return { creator, opponent: opponentCards, replay };
     },
   );
   if (match.data.rulesVersion !== 2)
@@ -1348,6 +1376,7 @@ export function MatchResult({
       match={match}
       creatorTeam={details.data.creator}
       opponentTeam={details.data.opponent}
+      replay={details.data.replay}
       wallet={wallet}
       isSending={isSending}
       onClaim={onClaim}

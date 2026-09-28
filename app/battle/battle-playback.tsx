@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { unwrapOption, type Address } from "@solana/kit";
 import { MatchStatus } from "../generated/wildquest";
 import { CreatureCard } from "../components/creature-card";
-import { battleStats, type BattleCreature } from "../lib/battle-creatures";
-import { simulateBattle } from "../lib/battle-engine";
+import type { BattleCreature } from "../lib/battle-creatures";
+import type { BattleReplay } from "../lib/battle-replay";
 import { getBattleFrame } from "../lib/battle-timeline";
 import type { GameMatch } from "../lib/matches";
 
@@ -13,6 +13,7 @@ type Props = {
   match: GameMatch;
   creatorTeam: BattleCreature[];
   opponentTeam: BattleCreature[];
+  replay: BattleReplay;
   wallet: Address | null;
   isSending: boolean;
   onClaim: () => void;
@@ -22,29 +23,22 @@ export function BattlePlayback({
   match,
   creatorTeam,
   opponentTeam,
+  replay,
   wallet,
   isSending,
   onClaim,
 }: Props) {
-  const report = useMemo(
-    () =>
-      simulateBattle(
-        creatorTeam.map(battleStats),
-        opponentTeam.map(battleStats),
-      ),
-    [creatorTeam, opponentTeam],
-  );
   const settledAt = unwrapOption(match.data.settledAt);
   const [now, setNow] = useState(() => Date.now());
   const frame = useMemo(
     () =>
       settledAt === null
         ? { eventCount: 0, countdownSeconds: 0, finished: false }
-        : getBattleFrame(settledAt, report.events.length, now),
-    [now, report.events.length, settledAt],
+        : getBattleFrame(settledAt, replay.events.length, now),
+    [now, replay.events.length, settledAt],
   );
   const { eventCount, finished } = frame;
-  const current = report.events[Math.max(0, eventCount - 1)];
+  const current = replay.events[Math.max(0, eventCount - 1)];
 
   useEffect(() => {
     if (finished) return;
@@ -55,28 +49,20 @@ export function BattlePlayback({
   const health = useMemo(() => {
     const creator = creatorTeam.map((item) => ({ hp: item.config.data.hp }));
     const opponent = opponentTeam.map((item) => ({ hp: item.config.data.hp }));
-    for (const event of report.events.slice(0, eventCount)) {
-      const target = event.attackerSide === "creator" ? opponent : creator;
-      target[event.defenderSlot] = { hp: event.hpAfter };
+    for (const event of replay.events.slice(0, eventCount)) {
+      creator[event.creatorSlot] = { hp: event.creatorHpAfter };
+      opponent[event.opponentSlot] = { hp: event.opponentHpAfter };
     }
     return { creator, opponent };
-  }, [creatorTeam, eventCount, opponentTeam, report.events]);
+  }, [creatorTeam, eventCount, opponentTeam, replay.events]);
 
-  const creatorSlot = current
-    ? current.attackerSide === "creator"
-      ? current.attackerSlot
-      : current.defenderSlot
-    : 0;
-  const opponentSlot = current
-    ? current.attackerSide === "opponent"
-      ? current.attackerSlot
-      : current.defenderSlot
-    : 0;
+  const creatorSlot = current?.creatorSlot ?? 0;
+  const opponentSlot = current?.opponentSlot ?? 0;
   const winner = unwrapOption(match.data.winner);
   const replayWinner =
-    report.outcome === "creator"
+    replay.outcome === "creator"
       ? match.data.creator
-      : report.outcome === "opponent"
+      : replay.outcome === "opponent"
         ? unwrapOption(match.data.opponent)
         : null;
   const replayMatchesAccount = replayWinner === winner;
@@ -86,9 +72,9 @@ export function BattlePlayback({
     match.data.status === MatchStatus.Claimable &&
     winner === wallet;
   const outcome =
-    report.outcome === "tie"
+    replay.outcome === "tie"
       ? "Draw — both stakes refunded"
-      : report.outcome === "creator"
+      : replay.outcome === "creator"
         ? "Creator wins"
         : "Opponent wins";
 
@@ -112,7 +98,7 @@ export function BattlePlayback({
               ? `Battle starts in ${frame.countdownSeconds}s`
               : finished
                 ? outcome
-                : `Round ${current?.round ?? 1}`}
+                : `Turn ${current?.turn ?? 1}`}
           </h2>
         </div>
         <p
@@ -127,7 +113,7 @@ export function BattlePlayback({
         <Combatant
           creature={creatorTeam[creatorSlot]!}
           state={health.creator[creatorSlot]!}
-          attacking={current?.attackerSide === "creator" && !finished}
+          attacking={Boolean(current) && !finished}
           side="creator"
         />
         <div
@@ -139,7 +125,7 @@ export function BattlePlayback({
         <Combatant
           creature={opponentTeam[opponentSlot]!}
           state={health.opponent[opponentSlot]!}
-          attacking={current?.attackerSide === "opponent" && !finished}
+          attacking={Boolean(current) && !finished}
           side="opponent"
         />
       </div>
@@ -157,8 +143,8 @@ export function BattlePlayback({
           className="mt-3 text-center text-xs font-bold sm:text-sm"
           style={{ color: "#c8a96e", fontFamily: "var(--font-display)" }}
         >
-          {current.attackerSide === "creator" ? "Creator" : "Opponent"} dealt{" "}
-          {current.damage} damage ✦
+          Creator dealt {current.damageToOpponent} · Opponent dealt{" "}
+          {current.damageToCreator} damage ✦
         </p>
       )}
 

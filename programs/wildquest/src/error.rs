@@ -2,10 +2,6 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Only the counter authority can update this counter")]
-    Unauthorized,
-    #[msg("Counter has reached the maximum value")]
-    CounterOverflow,
     #[msg("Capture grade must be Bronze, Silver, or Gold")]
     InvalidCaptureGrade,
     #[msg("Species rarity must be between Common and Legendary")]
@@ -72,6 +68,8 @@ pub enum ErrorCode {
     MatchNotActive,
     #[msg("The configured authority did not sign this Match result")]
     MatchResolverMismatch,
+    #[msg("The Match resolver authority cannot be the default public key")]
+    InvalidMatchResolver,
     #[msg("The Match result hash cannot be all zeroes")]
     InvalidMatchResultHash,
     #[msg("The Match turn count is outside the supported range")]

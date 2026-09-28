@@ -1,9 +1,6 @@
 use anchor_lang::prelude::*;
 
 #[constant]
-pub const COUNTER_SEED: &[u8] = b"counter";
-
-#[constant]
 pub const PLAYER_SEED: &[u8] = b"player";
 
 #[constant]
@@ -17,6 +14,9 @@ pub const QUEST_COMPLETION_SEED: &[u8] = b"quest_completion";
 
 #[constant]
 pub const GAME_CONFIG_SEED: &[u8] = b"game_config";
+
+#[constant]
+pub const MATCH_RESOLVER_CONFIG_SEED: &[u8] = b"match_resolver_config";
 
 #[constant]
 pub const SPECIES_CONFIG_SEED: &[u8] = b"species_config";
@@ -97,12 +97,6 @@ pub const BATTLE_STATS: [[u16; 9]; 40] = [
     [70, 76, 28, 6, 2, 2, 3, 39, 5],
     [90, 60, 44, 6, 2, 2, 3, 40, 4],
 ];
-
-#[constant]
-pub const HELLO_WORLD_LAMPORTS: u64 = 1;
-
-#[constant]
-pub const MAX_COUNT: u64 = 10;
 
 #[constant]
 pub const STARTING_LEVEL: u64 = 1;

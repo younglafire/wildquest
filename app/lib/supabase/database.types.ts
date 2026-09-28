@@ -14,6 +14,63 @@ export type Database = {
   };
   public: {
     Tables: {
+      battle_replays: {
+        Row: {
+          balance_version: number;
+          events: Json;
+          match_address: string;
+          outcome: string;
+          result_hash: string;
+          rules_version: number;
+          settled_at: string;
+          turn_count: number;
+        };
+        Insert: {
+          balance_version: number;
+          events: Json;
+          match_address: string;
+          outcome: string;
+          result_hash: string;
+          rules_version: number;
+          settled_at?: string;
+          turn_count: number;
+        };
+        Update: {
+          balance_version?: number;
+          events?: Json;
+          match_address?: string;
+          outcome?: string;
+          result_hash?: string;
+          rules_version?: number;
+          settled_at?: string;
+          turn_count?: number;
+        };
+        Relationships: [];
+      };
+      battle_room_states: {
+        Row: {
+          expires_at: string;
+          match_address: string;
+          sequence: number;
+          state: Json;
+          updated_at: string;
+        };
+        Insert: {
+          expires_at: string;
+          match_address: string;
+          sequence: number;
+          state: Json;
+          updated_at?: string;
+        };
+        Update: {
+          expires_at?: string;
+          match_address?: string;
+          sequence?: number;
+          state?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       discovery_cache: {
         Row: {
           discovered_at: string | null;
@@ -130,6 +187,17 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      consume_api_rate_limit: {
+        Args: {
+          p_bucket_hash: string;
+          p_limit: number;
+          p_window_seconds: number;
+        };
+        Returns: Array<{
+          allowed: boolean;
+          retry_after_seconds: number;
+        }>;
+      };
       reserve_discovery_image: {
         Args: {
           p_grade: number;
@@ -144,6 +212,15 @@ export type Database = {
           accepted: boolean;
           distance: number | null;
         }>;
+      };
+      save_battle_room_state: {
+        Args: {
+          p_expires_at: string;
+          p_match_address: string;
+          p_sequence: number;
+          p_state: Json;
+        };
+        Returns: undefined;
       };
     };
     Enums: {

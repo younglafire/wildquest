@@ -217,15 +217,47 @@ export function getMatchFilters() {
   ] as const;
 }
 
-export async function fetchMatches(
+const MATCH_CREATOR_OFFSET = 16n;
+const MATCH_OPPONENT_OFFSET = 49n;
+const OPEN_MATCH_STATUS_OFFSET = 253n;
+
+function addressFilter(offset: bigint, value: Address) {
+  return {
+    memcmp: {
+      offset,
+      bytes: value as Base58EncodedBytes,
+      encoding: "base58" as const,
+    },
+  } as const;
+}
+
+function statusFilter(offset: bigint, status: MatchStatus) {
+  return {
+    memcmp: {
+      offset,
+      bytes: getBase58Decoder().decode(
+        new Uint8Array([status]),
+      ) as Base58EncodedBytes,
+      encoding: "base58" as const,
+    },
+  } as const;
+}
+
+type MatchFilter =
+  | ReturnType<typeof getMatchFilters>[number]
+  | ReturnType<typeof addressFilter>
+  | ReturnType<typeof statusFilter>;
+
+async function fetchMatchesWithFilters(
   rpc: SolanaClient["rpc"],
+  filters: readonly MatchFilter[],
 ): Promise<Array<GameMatch>> {
   const accounts = await rpc
     .getProgramAccounts(WILDQUEST_PROGRAM_ADDRESS, {
       commitment: "confirmed",
       encoding: "base64",
       withContext: false,
-      filters: getMatchFilters(),
+      filters,
     })
     .send();
   return accounts.flatMap(({ pubkey, account }) => {
@@ -236,6 +268,41 @@ export async function fetchMatches(
       return [];
     }
   });
+}
+
+export async function fetchMatches(
+  rpc: SolanaClient["rpc"],
+): Promise<Array<GameMatch>> {
+  return fetchMatchesWithFilters(rpc, getMatchFilters());
+}
+
+export async function fetchOpenMatches(
+  rpc: SolanaClient["rpc"],
+): Promise<Array<GameMatch>> {
+  return fetchMatchesWithFilters(rpc, [
+    ...getMatchFilters(),
+    statusFilter(OPEN_MATCH_STATUS_OFFSET, MatchStatus.Open),
+  ]);
+}
+
+export async function fetchPlayerMatches(
+  rpc: SolanaClient["rpc"],
+  wallet: Address,
+): Promise<Array<GameMatch>> {
+  const [created, joined] = await Promise.all([
+    fetchMatchesWithFilters(rpc, [
+      ...getMatchFilters(),
+      addressFilter(MATCH_CREATOR_OFFSET, wallet),
+    ]),
+    fetchMatchesWithFilters(rpc, [
+      ...getMatchFilters(),
+      addressFilter(MATCH_OPPONENT_OFFSET, wallet),
+    ]),
+  ]);
+  const matches = new Map<string, GameMatch>();
+  for (const match of [...created, ...joined])
+    matches.set(match.address, match);
+  return getPlayerMatches([...matches.values()], wallet);
 }
 
 export function getPlayerMatches(

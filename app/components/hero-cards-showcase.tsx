@@ -62,7 +62,7 @@ const COLLECTION_CARDS: ShowcaseCard[] = [
       scientificName: "Canis lupus familiaris",
       rarity: "Common",
       battleRole: "Support",
-      imageUrl: "/creatures/artwork/golden_retriever.png",
+      imageUrl: "/creatures/artwork/golden_retriever.webp",
       cardSummary:
         "Loyal companion with keen olfactory tracking and high endurance.",
     }),
@@ -89,7 +89,7 @@ const COLLECTION_CARDS: ShowcaseCard[] = [
       scientificName: "Hydrophis platurus",
       rarity: "Rare",
       battleRole: "Striker",
-      imageUrl: "/creatures/artwork/sea_snake.png",
+      imageUrl: "/creatures/artwork/sea_snake.webp",
       cardSummary:
         "Venomous pelagic predator adept at swift underwater strikes.",
     }),
@@ -116,7 +116,7 @@ const COLLECTION_CARDS: ShowcaseCard[] = [
       scientificName: "Psittacus erithacus",
       rarity: "Uncommon",
       battleRole: "Controller",
-      imageUrl: "/creatures/artwork/african_grey_parrot.png",
+      imageUrl: "/creatures/artwork/african_grey_parrot.webp",
       cardSummary:
         "Highly intelligent psittacine with mimicry tactics and aerial perception.",
     }),
@@ -143,7 +143,7 @@ const COLLECTION_CARDS: ShowcaseCard[] = [
       scientificName: "Hyla arborea",
       rarity: "Common",
       battleRole: "Skirmisher",
-      imageUrl: "/creatures/artwork/tree_frog.png",
+      imageUrl: "/creatures/artwork/tree_frog.webp",
       cardSummary:
         "Arboreal hopper using high agility and evasive leaps in combat.",
     }),
@@ -170,7 +170,7 @@ const COLLECTION_CARDS: ShowcaseCard[] = [
       scientificName: "Danaus plexippus",
       rarity: "Common",
       battleRole: "Striker",
-      imageUrl: "/creatures/artwork/monarch_butterfly.png",
+      imageUrl: "/creatures/artwork/monarch_butterfly.webp",
       cardSummary:
         "Airborne navigator utilizing bright aposematic defense in battle.",
     }),
@@ -296,7 +296,8 @@ export function HeroCardsShowcase() {
       </div>
 
       <p className="mt-4 text-[10.5px] font-mono text-[#8a7a62] text-center tracking-wider select-none">
-        AUTHENTIC ONCHAIN CREATURE CARDS · CLICK BACKGROUND CARDS TO SHUFFLE IN 3D
+        AUTHENTIC ONCHAIN CREATURE CARDS · CLICK BACKGROUND CARDS TO SHUFFLE IN
+        3D
       </p>
     </div>
   );

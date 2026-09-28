@@ -46,11 +46,17 @@ type IdentifyDependencies = {
     catalogueId: string;
     proofHash: string;
   }) => Promise<CaptureTransaction>;
+  checkRateLimit: (
+    request: Request,
+    wallet: string,
+  ) => Promise<{ allowed: boolean; retryAfterSeconds: number }>;
 };
 
 type ErrorCode =
   | "INVALID_MULTIPART"
   | "IMAGE_REQUIRED"
+  | "RATE_LIMITED"
+  | "RATE_LIMIT_UNAVAILABLE"
   | "INVALID_WALLET"
   | "INVALID_IMAGE"
   | "IMAGE_TOO_LARGE"
@@ -159,6 +165,32 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
     }
     const wallet = wallets[0];
 
+    try {
+      const rateLimit = await dependencies.checkRateLimit(request, wallet);
+      if (!rateLimit.allowed) {
+        return Response.json(
+          {
+            error: {
+              code: "RATE_LIMITED",
+              message: "Too many scans. Wait before scanning again.",
+              retry_after_seconds: rateLimit.retryAfterSeconds,
+            },
+          },
+          {
+            status: 429,
+            headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+          },
+        );
+      }
+    } catch (error) {
+      console.error("Identify rate limit failed:", error);
+      return errorResponse(
+        "RATE_LIMIT_UNAVAILABLE",
+        "Scanning is temporarily unavailable.",
+        503,
+      );
+    }
+
     const uploadValidation = validateImageUpload(image);
     if (!uploadValidation.valid && uploadValidation.code === "EMPTY_IMAGE") {
       return errorResponse("INVALID_IMAGE", "The image file is empty.", 400);
@@ -235,23 +267,13 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
         quality,
         proofHash,
       );
-      const captureTransaction = await dependencies.createCaptureAuthorization({
-        owner: wallet,
-        catalogueId: identification.catalogue_id,
-        proofHash: identification.proof_hash,
-      });
-      const response = identifySuccessSchema.parse({
-        identification,
-        capture_transaction: captureTransaction,
-      });
-
       const perceptualHash = await dependencies.createPerceptualHash(image);
       const reservation = await dependencies.reserveDiscovery({
         wallet,
-        catalogueId: response.identification.catalogue_id,
-        gradeCode: response.identification.grade_code,
-        rarity: response.identification.rarity,
-        proofHash: response.identification.proof_hash,
+        catalogueId: identification.catalogue_id,
+        gradeCode: identification.grade_code,
+        rarity: identification.rarity,
+        proofHash: identification.proof_hash,
         perceptualHash,
       });
 
@@ -267,6 +289,16 @@ export function createIdentifyHandler(dependencies: IdentifyDependencies) {
           { status: 409 },
         );
       }
+
+      const captureTransaction = await dependencies.createCaptureAuthorization({
+        owner: wallet,
+        catalogueId: identification.catalogue_id,
+        proofHash: identification.proof_hash,
+      });
+      const response = identifySuccessSchema.parse({
+        identification,
+        capture_transaction: captureTransaction,
+      });
 
       return Response.json(response);
     } catch (error) {

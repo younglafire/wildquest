@@ -1,4 +1,4 @@
-import type { BattleStats } from "./battle-engine";
+import type { BattleStats } from "./battle-types";
 import {
   canUseAction,
   createSimultaneousBattle,

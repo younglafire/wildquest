@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { creatureAbility } from "../lib/creature-abilities";
 import { playChimeSound } from "../lib/sfx";
@@ -228,7 +228,7 @@ export function CreatureHologramStage({
   const prevMouseRef = useRef({ x: 0, y: 0 });
   const rotationVelocityRef = useRef({ x: 0, y: 0 });
 
-  const auraPalette = getRarityAuraPalette(rarity);
+  const auraPalette = useMemo(() => getRarityAuraPalette(rarity), [rarity]);
 
   useEffect(() => {
     const canvasMount = canvasMountRef.current;
@@ -254,7 +254,14 @@ export function CreatureHologramStage({
       powerPreference: "high-performance",
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const deviceMemory = (navigator as Navigator & { deviceMemory?: number })
+      .deviceMemory;
+    const constrainedDevice =
+      navigator.hardwareConcurrency <= 4 ||
+      (deviceMemory !== undefined && deviceMemory <= 4) ||
+      window.matchMedia("(max-width: 640px)").matches;
+    const pixelRatioCap = constrainedDevice || compact ? 1 : 1.5;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioCap));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     canvasMount.replaceChildren(renderer.domElement);
@@ -368,7 +375,7 @@ export function CreatureHologramStage({
       }
 
       // =========================================================================
-      // 3. MASTER RARITY TEMPLATE OVERLAY (common.png, rare.png, legend.png, etc.)
+      // 3. MASTER RARITY TEMPLATE OVERLAY
       // (Upper window is transparent, revealing creature photo through the frame)
       // =========================================================================
       if (frameElem) {
@@ -577,24 +584,24 @@ export function CreatureHologramStage({
       img.src = imageUrl;
     }
 
-    // Load Rarity-themed Card Base Template (/cards/frames/common.png, rare.png, legend.png, etc.)
+    // Load the optimized rarity-themed card frame.
     const frameImage = new Image();
     frameImage.onload = () => {
       frameImg = frameImage;
       renderFrontCard();
     };
     frameImage.onerror = () => {
-      // Fallback to common.png if specific rarity template is missing
-      if (!frameImage.src.endsWith("/cards/frames/common.png")) {
-        frameImage.src = "/cards/frames/common.png";
+      // Fall back to the common frame if a rarity-specific frame is missing.
+      if (!frameImage.src.endsWith("/cards/frames/common.webp")) {
+        frameImage.src = "/cards/frames/common.webp";
       }
     };
     const getRarityTemplateSrc = (r: string) => {
       const lower = (r || "common").toLowerCase();
       if (lower === "legendary" || lower === "legend") {
-        return "/cards/frames/legend.png";
+        return "/cards/frames/legend.webp";
       }
-      return `/cards/frames/${lower}.png`;
+      return `/cards/frames/${lower}.webp`;
     };
     frameImage.src = getRarityTemplateSrc(rarity);
 
@@ -746,12 +753,22 @@ export function CreatureHologramStage({
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
     window.addEventListener("touchend", handlePointerUp);
 
-    // --- 9. Animation Loop (Smooth Continuous 360 Rotation) ---
+    // --- 9. Animation loop — only while visible and motion is allowed. ---
     let animationFrameId: number;
     const startTime = performance.now();
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    let pageVisible = !document.hidden;
+    let inViewport = true;
+    let running = false;
 
     const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
+      if (!pageVisible || !inViewport || reducedMotion) {
+        running = false;
+        return;
+      }
+      running = true;
       const elapsedTime = (performance.now() - startTime) / 1000;
 
       // Continuous 360-degree rotation (smooth & majestic)
@@ -768,9 +785,27 @@ export function CreatureHologramStage({
       cardMesh.position.y = 0.06 + Math.sin(elapsedTime * 2.0) * 0.03;
 
       renderer.render(scene, camera);
+      animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    const startAnimation = () => {
+      if (running || !pageVisible || !inViewport || reducedMotion) return;
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    const handleVisibility = () => {
+      pageVisible = !document.hidden;
+      if (pageVisible) startAnimation();
+      else cancelAnimationFrame(animationFrameId);
+    };
+    const viewportObserver = new IntersectionObserver(([entry]) => {
+      inViewport = entry?.isIntersecting ?? false;
+      if (inViewport) startAnimation();
+      else cancelAnimationFrame(animationFrameId);
+    });
+    viewportObserver.observe(canvasMount);
+    document.addEventListener("visibilitychange", handleVisibility);
+    renderer.render(scene, camera);
+    startAnimation();
 
     // Sound chime
     playChimeSound();
@@ -792,6 +827,8 @@ export function CreatureHologramStage({
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
+      viewportObserver.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibility);
 
       canvasMount.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("mousemove", handlePointerMove);

@@ -17,7 +17,11 @@ export function SpeciesDetail({ speciesId }: { speciesId: string }) {
   const species = useSWR(["catalogue-species", speciesId], () =>
     fetchCatalogueSpecies(speciesId),
   );
-  const game = useGameData();
+  const game = useGameData({
+    catalogue: true,
+    discoveries: true,
+    creatures: true,
+  });
   const client = useSolanaClient();
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const speciesConfig = useSWR(

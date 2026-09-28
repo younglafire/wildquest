@@ -1,4 +1,4 @@
-import type { BattleOutcome, BattleSide, BattleStats } from "./battle-engine";
+import type { BattleOutcome, BattleSide, BattleStats } from "./battle-types";
 import {
   MAX_CONSECUTIVE_MISSED_TURNS,
   TURN_ANIMATION_DURATION_MS,
@@ -40,6 +40,24 @@ export type BattleRoomConfig = {
   opponentStats: readonly BattleStats[];
 };
 
+export type BattleRoomState = {
+  version: 1;
+  matchAddress: string;
+  sequence: number;
+  phase: BattleRoomPhase;
+  connectionDeadline: number | null;
+  turnStartsAt: number | null;
+  deadline: number | null;
+  choices: Partial<Record<BattleSide, BattleAction>>;
+  missedTurns: Record<BattleSide, number>;
+  battle: SimultaneousBattleState;
+  events: Array<TurnEvent>;
+  finishNotified: boolean;
+  settlementStatus: BattleRoomSnapshot["settlementStatus"];
+  settlementError: string | null;
+  nextSettlementAttemptAt: number | null;
+};
+
 type FinishHandler = (
   outcome: BattleOutcome,
   turnCount: number,
@@ -77,6 +95,40 @@ export class BattleRoom {
       config.opponentStats,
     );
     this.#finishHandler = finishHandler;
+  }
+
+  static restore(
+    config: BattleRoomConfig,
+    state: BattleRoomState,
+    finishHandler: FinishHandler = () => {},
+    now = Date.now(),
+  ) {
+    if (state.version !== 1 || state.matchAddress !== config.matchAddress) {
+      throw new Error("Stored battle room state does not match this Match.");
+    }
+    const room = new BattleRoom(config, finishHandler);
+    room.#battle = structuredClone(state.battle);
+    room.#events = structuredClone(state.events);
+    room.#sequence = state.sequence;
+    room.#phase = state.phase;
+    room.#connectionDeadline = state.connectionDeadline;
+    room.#turnStartsAt = state.turnStartsAt;
+    room.#deadline = state.deadline;
+    room.#choices = structuredClone(state.choices);
+    room.#missedTurns = structuredClone(state.missedTurns);
+    room.#finishNotified = state.finishNotified;
+    room.#settlementStatus =
+      state.settlementStatus === "pending" ? "failed" : state.settlementStatus;
+    room.#settlementError =
+      state.settlementStatus === "pending"
+        ? "Settlement was interrupted and will be retried."
+        : state.settlementError;
+    room.#nextSettlementAttemptAt =
+      state.settlementStatus === "pending"
+        ? now
+        : state.nextSettlementAttemptAt;
+    room.#connected = { creator: false, opponent: false };
+    return room;
   }
 
   connect(side: BattleSide, now = Date.now()) {
@@ -166,6 +218,26 @@ export class BattleRoom {
       events: this.#events,
       settlementStatus: this.#settlementStatus,
       settlementError: this.#settlementError,
+    });
+  }
+
+  exportState(): BattleRoomState {
+    return structuredClone({
+      version: 1,
+      matchAddress: this.#matchAddress,
+      sequence: this.#sequence,
+      phase: this.#phase,
+      connectionDeadline: this.#connectionDeadline,
+      turnStartsAt: this.#turnStartsAt,
+      deadline: this.#deadline,
+      choices: this.#choices,
+      missedTurns: this.#missedTurns,
+      battle: this.#battle,
+      events: this.#events,
+      finishNotified: this.#finishNotified,
+      settlementStatus: this.#settlementStatus,
+      settlementError: this.#settlementError,
+      nextSettlementAttemptAt: this.#nextSettlementAttemptAt,
     });
   }
 

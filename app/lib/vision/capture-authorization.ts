@@ -16,7 +16,7 @@ import {
   getCaptureCreatureInstructionAsync,
   WILDQUEST_PROGRAM_ADDRESS,
 } from "@/app/generated/wildquest";
-import { createSolanaClient } from "@/app/lib/solana-client";
+import { createSolanaServerClient } from "@/app/lib/solana-server";
 import { CaptureAuthorizationUnavailableError } from "./errors";
 import type { CaptureTransaction } from "./schema";
 
@@ -74,7 +74,7 @@ export async function createCaptureAuthorization(input: {
       catalogueId,
       proofHash,
     });
-    const client = createSolanaClient("devnet");
+    const client = createSolanaServerClient();
     const { value: lifetime } = await client.rpc
       .getLatestBlockhash({ commitment: "confirmed" })
       .send();

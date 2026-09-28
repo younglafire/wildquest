@@ -25,9 +25,8 @@ import {
   parseClaimMatchPayoutInstruction,
   parseCompleteQuestInstruction,
   parseDiscoverSpeciesInstruction,
-  parseIncrementInstruction,
   parseInitializeGameConfigInstruction,
-  parseInitializeInstruction,
+  parseInitializeMatchResolverConfigInstruction,
   parseInitializePlayerInstruction,
   parseInitializeQuestInstruction,
   parseInitializeSpeciesConfigInstruction,
@@ -45,9 +44,8 @@ import {
   type ParsedClaimMatchPayoutInstruction,
   type ParsedCompleteQuestInstruction,
   type ParsedDiscoverSpeciesInstruction,
-  type ParsedIncrementInstruction,
   type ParsedInitializeGameConfigInstruction,
-  type ParsedInitializeInstruction,
+  type ParsedInitializeMatchResolverConfigInstruction,
   type ParsedInitializePlayerInstruction,
   type ParsedInitializeQuestInstruction,
   type ParsedInitializeSpeciesConfigInstruction,
@@ -63,11 +61,11 @@ export const WILDQUEST_PROGRAM_ADDRESS =
   "3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF" as Address<"3WwKscJzw5CapS5Y1Pq2ebjdGxfCEcVs6Z6dJNuxVzqF">;
 
 export enum WildquestAccount {
-  Counter,
   Creature,
   Discovery,
   GameConfig,
   Match,
+  MatchResolverConfig,
   Player,
   Quest,
   QuestCompletion,
@@ -78,17 +76,6 @@ export function identifyWildquestAccount(
   account: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): WildquestAccount {
   const data = "data" in account ? account.data : account;
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([255, 176, 4, 245, 188, 253, 124, 25]),
-      ),
-      0,
-    )
-  ) {
-    return WildquestAccount.Counter;
-  }
   if (
     containsBytes(
       data,
@@ -132,6 +119,17 @@ export function identifyWildquestAccount(
     )
   ) {
     return WildquestAccount.Match;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([21, 124, 85, 85, 59, 141, 140, 151]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestAccount.MatchResolverConfig;
   }
   if (
     containsBytes(
@@ -191,9 +189,8 @@ export enum WildquestInstruction {
   ClaimMatchPayout,
   CompleteQuest,
   DiscoverSpecies,
-  Increment,
-  Initialize,
   InitializeGameConfig,
+  InitializeMatchResolverConfig,
   InitializePlayer,
   InitializeQuest,
   InitializeSpeciesConfig,
@@ -301,34 +298,23 @@ export function identifyWildquestInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([11, 18, 104, 9, 104, 174, 59, 33]),
-      ),
-      0,
-    )
-  ) {
-    return WildquestInstruction.Increment;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([175, 175, 109, 31, 13, 152, 155, 237]),
-      ),
-      0,
-    )
-  ) {
-    return WildquestInstruction.Initialize;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([45, 61, 80, 55, 152, 63, 158, 47]),
       ),
       0,
     )
   ) {
     return WildquestInstruction.InitializeGameConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([41, 218, 121, 139, 166, 151, 38, 40]),
+      ),
+      0,
+    )
+  ) {
+    return WildquestInstruction.InitializeMatchResolverConfig;
   }
   if (
     containsBytes(
@@ -462,14 +448,11 @@ export type ParsedWildquestInstruction<
       instructionType: WildquestInstruction.DiscoverSpecies;
     } & ParsedDiscoverSpeciesInstruction<TProgram>)
   | ({
-      instructionType: WildquestInstruction.Increment;
-    } & ParsedIncrementInstruction<TProgram>)
-  | ({
-      instructionType: WildquestInstruction.Initialize;
-    } & ParsedInitializeInstruction<TProgram>)
-  | ({
       instructionType: WildquestInstruction.InitializeGameConfig;
     } & ParsedInitializeGameConfigInstruction<TProgram>)
+  | ({
+      instructionType: WildquestInstruction.InitializeMatchResolverConfig;
+    } & ParsedInitializeMatchResolverConfigInstruction<TProgram>)
   | ({
       instructionType: WildquestInstruction.InitializePlayer;
     } & ParsedInitializePlayerInstruction<TProgram>)
@@ -559,25 +542,18 @@ export function parseWildquestInstruction<TProgram extends string>(
         ...parseDiscoverSpeciesInstruction(instruction),
       };
     }
-    case WildquestInstruction.Increment: {
-      assertIsInstructionWithAccounts(instruction);
-      return {
-        instructionType: WildquestInstruction.Increment,
-        ...parseIncrementInstruction(instruction),
-      };
-    }
-    case WildquestInstruction.Initialize: {
-      assertIsInstructionWithAccounts(instruction);
-      return {
-        instructionType: WildquestInstruction.Initialize,
-        ...parseInitializeInstruction(instruction),
-      };
-    }
     case WildquestInstruction.InitializeGameConfig: {
       assertIsInstructionWithAccounts(instruction);
       return {
         instructionType: WildquestInstruction.InitializeGameConfig,
         ...parseInitializeGameConfigInstruction(instruction),
+      };
+    }
+    case WildquestInstruction.InitializeMatchResolverConfig: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: WildquestInstruction.InitializeMatchResolverConfig,
+        ...parseInitializeMatchResolverConfigInstruction(instruction),
       };
     }
     case WildquestInstruction.InitializePlayer: {

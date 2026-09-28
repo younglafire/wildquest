@@ -16,7 +16,12 @@ export function ConfirmationContent() {
   const searchParams = useSearchParams();
   const client = useSolanaClient();
   const { cluster, getExplorerUrl } = useCluster();
-  const game = useGameData();
+  const game = useGameData({
+    player: true,
+    creatures: true,
+    quests: true,
+    matches: true,
+  });
   const transactionSignature = parseTransactionSignature(
     searchParams.get("signature"),
   );

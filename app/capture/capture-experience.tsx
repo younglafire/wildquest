@@ -34,7 +34,7 @@ import { CaptureForm } from "./capture-form";
 export function CaptureExperience() {
   const { wallet, status } = useWallet();
   const router = useRouter();
-  const game = useGameData();
+  const game = useGameData({ creatures: true });
   const client = useSolanaClient();
   const {
     submit,

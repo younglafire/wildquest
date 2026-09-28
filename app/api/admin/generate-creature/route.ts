@@ -7,7 +7,7 @@ import {
   verifyGenerateChallenge,
 } from "@/app/lib/admin/generate-auth";
 import { generateSignedRequestSchema } from "@/app/lib/admin/generate-schema";
-import { createSolanaClient } from "@/app/lib/solana-client";
+import { createSolanaServerClient } from "@/app/lib/solana-server";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server";
 import {
   fetchMaybeCreature,
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const client = createSolanaClient("devnet");
+    const client = createSolanaServerClient();
     if (
       (await client.rpc.getGenesisHash().send()) !==
       "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"

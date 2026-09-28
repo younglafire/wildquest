@@ -1,17 +1,20 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{GAME_CONFIG_SEED, MATCH_SEED, MAX_MATCH_TURNS},
+    constants::{MATCH_RESOLVER_CONFIG_SEED, MATCH_SEED, MAX_MATCH_TURNS},
     error::ErrorCode,
-    state::{GameConfig, Match, MatchStatus},
+    state::{Match, MatchResolverConfig, MatchStatus},
 };
 
 #[derive(Accounts)]
 pub struct ResolveMatchAccountConstraints<'info> {
     pub resolver: Signer<'info>,
 
-    #[account(seeds = [GAME_CONFIG_SEED], bump = game_config.bump)]
-    pub game_config: Account<'info, GameConfig>,
+    #[account(
+        seeds = [MATCH_RESOLVER_CONFIG_SEED],
+        bump = match_resolver_config.bump
+    )]
+    pub match_resolver_config: Account<'info, MatchResolverConfig>,
 
     #[account(mut, address = match_account.creator)]
     pub creator: SystemAccount<'info>,
@@ -35,7 +38,7 @@ pub fn handle_resolve_match(
 ) -> Result<()> {
     require_keys_eq!(
         context.accounts.resolver.key(),
-        context.accounts.game_config.capture_authority,
+        context.accounts.match_resolver_config.resolver,
         ErrorCode::MatchResolverMismatch
     );
     let match_account = &context.accounts.match_account;

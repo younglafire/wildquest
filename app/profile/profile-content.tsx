@@ -11,7 +11,11 @@ import { lamportsToSolString } from "../lib/lamports";
 import { useWallet } from "../lib/wallet/context";
 
 export function ProfileContent() {
-  const game = useGameData();
+  const game = useGameData({
+    player: true,
+    creatures: true,
+    quests: true,
+  });
   const { disconnect } = useWallet();
   const { cluster, getExplorerUrl } = useCluster();
   const balance = useBalance(game.address);

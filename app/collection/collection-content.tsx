@@ -17,7 +17,7 @@ import {
 } from "../lib/creatures";
 import { useGameData } from "../lib/hooks/use-game-data";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
-import { fetchMatches } from "../lib/matches";
+import { fetchPlayerMatches } from "../lib/matches";
 import { useSolanaClient } from "../lib/solana-client-context";
 import type { Rarity } from "../lib/species";
 import { useWallet } from "../lib/wallet/context";
@@ -36,9 +36,10 @@ const RARITY_ORDER: Record<Rarity, number> = {
   Epic: 3,
   Legendary: 4,
 };
+const INITIAL_CARD_COUNT = 20;
 
 export function CollectionContent() {
-  const game = useGameData();
+  const game = useGameData({ catalogue: true, creatures: true });
   const client = useSolanaClient();
   const { cluster } = useCluster();
   const { signer, wallet } = useWallet();
@@ -52,6 +53,7 @@ export function CollectionContent() {
     useState<OwnedCreature | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_CARD_COUNT);
   const generationInFlight = useRef(false);
   const generationAccess = useSWR(
     game.address && cluster === "devnet"
@@ -63,10 +65,11 @@ export function CollectionContent() {
     game.catalogue.data ? (["battle-catalogue", cluster] as const) : null,
     () => fetchBattleCatalogue(client.rpc, game.catalogue.data ?? []),
   );
-  const matches = useSWR(["matches", cluster], () => fetchMatches(client.rpc), {
-    refreshInterval: 15_000,
-    revalidateOnFocus: true,
-  });
+  const matches = useSWR(
+    signer ? (["player-matches", cluster, signer.address] as const) : null,
+    () => fetchPlayerMatches(client.rpc, signer!.address),
+    { refreshInterval: 15_000, revalidateOnFocus: true },
+  );
   const ownedByCatalogueId = useMemo(() => {
     const map = new Map<string, OwnedCreature>();
     for (const creature of game.creatures.data ?? []) {
@@ -110,6 +113,7 @@ export function CollectionContent() {
       return left.species.name.localeCompare(right.species.name);
     });
   }, [battleCatalogue.data, filter, ownedByCatalogueId, rarity, sort]);
+  const visibleCards = cards.slice(0, visibleCardCount);
 
   const releaseCreature = async () => {
     if (!signer || !releaseCandidate) return;
@@ -271,7 +275,10 @@ export function CollectionContent() {
               key={option}
               type="button"
               aria-pressed={filter === option}
-              onClick={() => setFilter(option)}
+              onClick={() => {
+                setFilter(option);
+                setVisibleCardCount(INITIAL_CARD_COUNT);
+              }}
               className="min-h-10 shrink-0 rounded-xl px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-200 active:scale-95"
               style={{
                 fontFamily: "var(--font-display)",
@@ -308,9 +315,10 @@ export function CollectionContent() {
             Rarity
             <select
               value={rarity}
-              onChange={(event) =>
-                setRarity(event.target.value as Rarity | "All")
-              }
+              onChange={(event) => {
+                setRarity(event.target.value as Rarity | "All");
+                setVisibleCardCount(INITIAL_CARD_COUNT);
+              }}
               className="mt-1 block min-h-10 w-full rounded-xl px-3 text-xs sm:text-sm font-semibold transition-colors"
               style={{
                 background: "rgba(14, 12, 8, 0.95)",
@@ -337,9 +345,10 @@ export function CollectionContent() {
             Sort
             <select
               value={sort}
-              onChange={(event) =>
-                setSort(event.target.value as (typeof SORTS)[number])
-              }
+              onChange={(event) => {
+                setSort(event.target.value as (typeof SORTS)[number]);
+                setVisibleCardCount(INITIAL_CARD_COUNT);
+              }}
               className="mt-1 block min-h-10 w-full rounded-xl px-3 text-xs sm:text-sm font-semibold transition-colors"
               style={{
                 background: "rgba(14, 12, 8, 0.95)",
@@ -400,112 +409,133 @@ export function CollectionContent() {
           No Creature cards match these filters.
         </p>
       ) : (
-        <section
-          aria-label="Creature collection"
-          className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-        >
-          {cards.map(({ species, config }) => {
-            const owned = ownedByCatalogueId.get(String(species.id));
-            const battleCreature: BattleCreature | null = owned
-              ? { creature: owned, species, config }
-              : null;
-            const locked = owned
-              ? lockedCreatureAddresses.has(owned.address)
-              : false;
-            const needsUpgrade = owned
-              ? owned.data.balanceVersion !== config.data.balanceVersion
-              : false;
-            return (
-              <div key={String(species.id)} className="flex flex-col">
-                <Link
-                  href={`/collection/${species.speciesId}`}
-                  className="group block flex-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a96e]"
-                  style={{ outline: "none" }}
-                  aria-label={`View ${species.name} details`}
-                >
-                  {battleCreature ? (
-                    <CreatureModelCard
-                      creature={battleCreature}
-                      disabledBadge={locked ? "IN MATCH" : null}
-                    />
-                  ) : (
-                    <CreatureModelCard
-                      species={species}
-                      stats={config.data}
-                      disabled
-                      disabledBadge="UNDISCOVERED"
-                    />
-                  )}
-                </Link>
-                {owned && needsUpgrade ? (
-                  <button
-                    type="button"
-                    disabled={isSending}
-                    onClick={() => void upgradeCreature(owned, config)}
-                    className="mt-2 min-h-10 w-full rounded-xl px-2 text-[10px] font-black uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px] transition-all active:scale-95"
-                    style={{
-                      border: "1px solid rgba(200,169,110,0.6)",
-                      color: "#100e09",
-                      background: "linear-gradient(135deg, #d8bd82, #a9834d)",
-                      fontFamily: "var(--font-display)",
-                      boxShadow: "0 4px 12px rgba(200,169,110,0.25)",
-                    }}
+        <div className="mt-6">
+          <section
+            aria-label="Creature collection"
+            className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          >
+            {visibleCards.map(({ species, config }) => {
+              const owned = ownedByCatalogueId.get(String(species.id));
+              const battleCreature: BattleCreature | null = owned
+                ? { creature: owned, species, config }
+                : null;
+              const locked = owned
+                ? lockedCreatureAddresses.has(owned.address)
+                : false;
+              const needsUpgrade = owned
+                ? owned.data.balanceVersion !== config.data.balanceVersion
+                : false;
+              return (
+                <div key={String(species.id)} className="flex flex-col">
+                  <Link
+                    href={`/collection/${species.speciesId}`}
+                    className="group block flex-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a96e]"
+                    style={{ outline: "none" }}
+                    aria-label={`View ${species.name} details`}
                   >
-                    {isSending ? "Waiting for wallet…" : "✦ Upgrade for battle"}
-                  </button>
-                ) : owned ? (
-                  <button
-                    type="button"
-                    disabled={isSending || locked}
-                    onClick={() => {
-                      setReleaseCandidate(owned);
-                    }}
-                    className="mt-2 min-h-10 w-full rounded-xl px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px] transition-all active:scale-95"
-                    style={{
-                      border: "1px solid rgba(192,57,43,0.4)",
-                      color: "#f8c8c4",
-                      background: "rgba(192,57,43,0.12)",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
-                    {locked ? "Locked in Match" : "Release card"}
-                  </button>
-                ) : (
-                  <div className="mt-2 grid grid-cols-2 gap-1.5">
-                    <Link
-                      href="/capture"
-                      className="flex min-h-10 items-center justify-center rounded-xl px-1 text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 sm:text-[11px]"
-                      style={{
-                        border: "1px solid rgba(200, 169, 110, 0.35)",
-                        color: "#c8a96e",
-                        fontFamily: "var(--font-display)",
-                        background: "rgba(200,169,110,0.08)",
-                      }}
-                    >
-                      Capture ✦
-                    </Link>
+                    {battleCreature ? (
+                      <CreatureModelCard
+                        creature={battleCreature}
+                        disabledBadge={locked ? "IN MATCH" : null}
+                      />
+                    ) : (
+                      <CreatureModelCard
+                        species={species}
+                        stats={config.data}
+                        disabled
+                        disabledBadge="UNDISCOVERED"
+                      />
+                    )}
+                  </Link>
+                  {owned && needsUpgrade ? (
                     <button
                       type="button"
-                      disabled={isGenerating || generatingId !== null}
-                      onClick={() => void generateAnimal(String(species.id))}
-                      className="min-h-10 rounded-xl px-1 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 sm:text-[11px] transition-all active:scale-95"
+                      disabled={isSending}
+                      onClick={() => void upgradeCreature(owned, config)}
+                      className="mt-2 min-h-10 w-full rounded-xl px-2 text-[10px] font-black uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px] transition-all active:scale-95"
                       style={{
-                        border: "1px solid rgba(200,169,110,0.3)",
-                        color: "#c8a96e",
-                        background: "rgba(200,169,110,0.06)",
+                        border: "1px solid rgba(200,169,110,0.6)",
+                        color: "#100e09",
+                        background: "linear-gradient(135deg, #d8bd82, #a9834d)",
+                        fontFamily: "var(--font-display)",
+                        boxShadow: "0 4px 12px rgba(200,169,110,0.25)",
+                      }}
+                    >
+                      {isSending
+                        ? "Waiting for wallet…"
+                        : "✦ Upgrade for battle"}
+                    </button>
+                  ) : owned ? (
+                    <button
+                      type="button"
+                      disabled={isSending || locked}
+                      onClick={() => {
+                        setReleaseCandidate(owned);
+                      }}
+                      className="mt-2 min-h-10 w-full rounded-xl px-2 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px] transition-all active:scale-95"
+                      style={{
+                        border: "1px solid rgba(192,57,43,0.4)",
+                        color: "#f8c8c4",
+                        background: "rgba(192,57,43,0.12)",
                         fontFamily: "var(--font-display)",
                       }}
                     >
-                      {generatingId === String(species.id)
-                        ? "Generating…"
-                        : "Devnet"}
+                      {locked ? "Locked in Match" : "Release card"}
                     </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </section>
+                  ) : (
+                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                      <Link
+                        href="/capture"
+                        className="flex min-h-10 items-center justify-center rounded-xl px-1 text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 sm:text-[11px]"
+                        style={{
+                          border: "1px solid rgba(200, 169, 110, 0.35)",
+                          color: "#c8a96e",
+                          fontFamily: "var(--font-display)",
+                          background: "rgba(200,169,110,0.08)",
+                        }}
+                      >
+                        Capture ✦
+                      </Link>
+                      <button
+                        type="button"
+                        disabled={isGenerating || generatingId !== null}
+                        onClick={() => void generateAnimal(String(species.id))}
+                        className="min-h-10 rounded-xl px-1 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 sm:text-[11px] transition-all active:scale-95"
+                        style={{
+                          border: "1px solid rgba(200,169,110,0.3)",
+                          color: "#c8a96e",
+                          background: "rgba(200,169,110,0.06)",
+                          fontFamily: "var(--font-display)",
+                        }}
+                      >
+                        {generatingId === String(species.id)
+                          ? "Generating…"
+                          : "Devnet"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </section>
+          {visibleCardCount < cards.length ? (
+            <button
+              type="button"
+              onClick={() =>
+                setVisibleCardCount((count) =>
+                  Math.min(count + INITIAL_CARD_COUNT, cards.length),
+                )
+              }
+              className="mx-auto mt-6 flex min-h-12 items-center justify-center rounded-xl px-8 text-xs font-black uppercase tracking-[0.16em] text-[#17140f] transition active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, #d8bd82, #a9834d)",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              Show more creatures ({cards.length - visibleCardCount})
+            </button>
+          ) : null}
+        </div>
       )}
 
       {releaseCandidate && (

@@ -29,14 +29,6 @@ pub mod wildquest {
         handle_upgrade_creature_balance(context)
     }
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        crate::instructions::initialize::handle_initialize(ctx)
-    }
-
-    pub fn increment(ctx: Context<Increment>) -> Result<()> {
-        crate::instructions::increment::handle_increment(ctx)
-    }
-
     pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
         crate::instructions::initialize_player::handle_initialize_player(ctx)
     }
@@ -74,6 +66,16 @@ pub mod wildquest {
         crate::instructions::initialize_game_config::handle_initialize_game_config(
             context,
             capture_authority,
+        )
+    }
+
+    pub fn initialize_match_resolver_config(
+        context: Context<InitializeMatchResolverConfigAccountConstraints>,
+        resolver: Pubkey,
+    ) -> Result<()> {
+        crate::instructions::initialize_match_resolver_config::handle_initialize_match_resolver_config(
+            context,
+            resolver,
         )
     }
 
