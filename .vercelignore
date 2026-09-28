@@ -1,8 +1,8 @@
-.wildquest-keys/
-docs/
-outputs/
-programs/
-scripts/
-supabase/
-target/
+/.wildquest-keys/
+/docs/
+/outputs/
+/programs/
+/scripts/
+/supabase/
+/target/
 *.xlsx
