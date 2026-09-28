@@ -43,7 +43,7 @@ export default function Home() {
               <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/ui/logo.png"
+                  src="/ui/logo.webp"
                   alt="WildQuest"
                   className="h-auto w-full max-w-[340px] sm:max-w-[500px] md:max-w-[640px] lg:max-w-[780px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
                 />

@@ -28,7 +28,7 @@ export function AppHeader({ landing = false }: { landing?: boolean }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/ui/logo.png"
+          src="/ui/logo.webp"
           alt="WildQuest"
           className="h-11 sm:h-14 md:h-16 lg:h-20 w-auto max-w-[155px] sm:max-w-[210px] md:max-w-[270px] lg:max-w-[340px] object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]"
         />
