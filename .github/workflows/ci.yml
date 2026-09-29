@@ -34,7 +34,16 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
+      # setup-all skips each CLI when its version input is empty. Pin the same
+      # versions used by this repository so program builds are reproducible.
       - uses: solana-foundation/github-actions/setup-all@v0.2.15
+        with:
+          solana_version: "3.1.10"
+          anchor_version: "1.1.2"
+      - name: Verify program build tools
+        run: |
+          solana --version
+          anchor --version
       - run: npm ci
       - run: npm run anchor-build
       - run: npm run codama:js
