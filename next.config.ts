@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/identify": [
       "./models/Xenova/resnet-50/**/*",
-      // onnxruntime-node selects its native binding dynamically. Next.js cannot
-      // trace the companion shared libraries that Vercel's Linux runtime needs.
-      "./node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**/*",
+      // onnxruntime-node selects its native binding dynamically and changes the
+      // N-API directory between releases, so trace every Linux x64 binding.
+      "./node_modules/onnxruntime-node/bin/*/linux/x64/**/*",
     ],
   },
   outputFileTracingExcludes: {
