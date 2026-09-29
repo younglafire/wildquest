@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
     "/api/identify": [
       "./models/Xenova/resnet-50/**/*",
       // onnxruntime-node selects its native binding dynamically and changes the
-      // N-API directory between releases, so trace every Linux x64 binding.
+      // N-API directory between releases. Vercel also needs the external
+      // package entry point, loader, and Linux x64 binding in the function.
+      "./node_modules/onnxruntime-node/package.json",
+      "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/bin/*/linux/x64/**/*",
     ],
   },
