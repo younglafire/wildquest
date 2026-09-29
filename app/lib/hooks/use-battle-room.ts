@@ -22,12 +22,22 @@ export function useBattleRoom(input: {
 }) {
   const [snapshot, setSnapshot] = useState<BattleRoomSnapshot | null>(null);
   const [status, setStatus] = useState<
-    "connecting" | "reconnecting" | "watching" | "authenticated" | "unavailable"
+    | "connecting"
+    | "reconnecting"
+    | "watching"
+    | "awaiting-authentication"
+    | "authenticating"
+    | "authenticated"
+    | "unavailable"
   >(BATTLE_SERVER_URL ? "connecting" : "unavailable");
   const [error, setError] = useState<string | null>(
     BATTLE_SERVER_URL ? null : "The live battle server is not configured.",
   );
   const socketRef = useRef<WebSocket | null>(null);
+  const challengeRef = useRef<{ nonce: string; socket: WebSocket } | null>(
+    null,
+  );
+  const authenticationPendingRef = useRef(false);
 
   useEffect(() => {
     if (!BATTLE_SERVER_URL) return;
@@ -72,34 +82,15 @@ export function useBattleRoom(input: {
           }
           const token = sessionStorage.getItem(sessionKey);
           if (token) {
+            challengeRef.current = null;
             socket.send(JSON.stringify({ type: "resume", token }));
             return;
           }
-          const wallet = input.wallet.account.address;
-          const value = battleAuthenticationMessage(
-            input.matchAddress,
-            wallet,
-            message.nonce,
-          );
-          void input.wallet
-            .signMessage(new TextEncoder().encode(value))
-            .then((signature) => {
-              if (socket.readyState !== WebSocket.OPEN) return;
-              let binary = "";
-              for (const byte of signature) binary += String.fromCharCode(byte);
-              socket.send(
-                JSON.stringify({
-                  type: "authenticate",
-                  wallet,
-                  signature: btoa(binary),
-                }),
-              );
-            })
-            .catch(() => {
-              setError("Wallet message signing was rejected.");
-              setStatus("unavailable");
-            });
+          challengeRef.current = { nonce: message.nonce, socket };
+          socket.send(JSON.stringify({ type: "watch" }));
+          setStatus("awaiting-authentication");
         } else if (message.type === "authenticated") {
+          challengeRef.current = null;
           sessionStorage.setItem(sessionKey, message.token);
           setStatus("authenticated");
         } else if (message.type === "snapshot") {
@@ -120,6 +111,9 @@ export function useBattleRoom(input: {
         setError("The live battle server is unavailable. Reconnecting…");
       };
       socket.onclose = () => {
+        if (challengeRef.current?.socket === socket) {
+          challengeRef.current = null;
+        }
         if (stopped || !retryable) return;
         reconnectAttempt += 1;
         if (reconnectAttempt > 8) {
@@ -141,6 +135,54 @@ export function useBattleRoom(input: {
     };
   }, [input.isParticipant, input.matchAddress, input.wallet]);
 
+  const authenticate = useCallback(async () => {
+    const challenge = challengeRef.current;
+    const wallet = input.wallet;
+    if (
+      !challenge ||
+      !wallet?.signMessage ||
+      challenge.socket.readyState !== WebSocket.OPEN ||
+      authenticationPendingRef.current
+    ) {
+      return;
+    }
+
+    authenticationPendingRef.current = true;
+    setError(null);
+    setStatus("authenticating");
+    try {
+      const value = battleAuthenticationMessage(
+        input.matchAddress,
+        wallet.account.address,
+        challenge.nonce,
+      );
+      const signature = await wallet.signMessage(
+        new TextEncoder().encode(value),
+      );
+      if (challenge.socket.readyState !== WebSocket.OPEN) {
+        throw new Error("The battle connection closed before authentication.");
+      }
+      let binary = "";
+      for (const byte of signature) binary += String.fromCharCode(byte);
+      challenge.socket.send(
+        JSON.stringify({
+          type: "authenticate",
+          wallet: wallet.account.address,
+          signature: btoa(binary),
+        }),
+      );
+    } catch (thrownObject) {
+      setError(
+        thrownObject instanceof Error && thrownObject.message
+          ? thrownObject.message
+          : "Wallet verification was rejected.",
+      );
+      setStatus("awaiting-authentication");
+    } finally {
+      authenticationPendingRef.current = false;
+    }
+  }, [input.matchAddress, input.wallet]);
+
   const choose = useCallback(
     (action: BattleAction) => {
       const socket = socketRef.current;
@@ -159,5 +201,5 @@ export function useBattleRoom(input: {
     [snapshot, status],
   );
 
-  return { snapshot, status, error, choose };
+  return { snapshot, status, error, authenticate, choose };
 }

@@ -9,15 +9,25 @@ import type { BattleCreature } from "../../lib/battle-creatures";
 import { LiveBattlefield } from "./live-battlefield";
 
 const mocks = vi.hoisted(() => ({
+  authenticate: vi.fn(),
   choose: vi.fn(),
   snapshot: null as BattleRoomSnapshot | null,
+  status: "authenticated" as
+    | "connecting"
+    | "reconnecting"
+    | "watching"
+    | "awaiting-authentication"
+    | "authenticating"
+    | "authenticated"
+    | "unavailable",
 }));
 
 vi.mock("../../lib/hooks/use-battle-room", () => ({
   useBattleRoom: () => ({
     snapshot: mocks.snapshot,
-    status: "authenticated",
+    status: mocks.status,
     error: null,
+    authenticate: mocks.authenticate,
     choose: mocks.choose,
   }),
 }));
@@ -84,7 +94,9 @@ function renderBattlefield(playerSide: "creator" | "opponent" | null) {
 
 afterEach(() => {
   cleanup();
+  mocks.authenticate.mockReset();
   mocks.choose.mockReset();
+  mocks.status = "authenticated";
 });
 
 describe("LiveBattlefield", () => {
@@ -120,6 +132,17 @@ describe("LiveBattlefield", () => {
     renderBattlefield(null);
     expect(screen.getByText(/Spectator mode/)).toBeVisible();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("requires a player click before opening wallet verification", () => {
+    mocks.snapshot = snapshot();
+    mocks.status = "awaiting-authentication";
+    renderBattlefield("creator");
+
+    expect(mocks.authenticate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Verify wallet" }));
+    expect(mocks.authenticate).toHaveBeenCalledOnce();
+    expect(screen.getByText(/does not send a transaction/i)).toBeVisible();
   });
 
   it("communicates a knockout without requiring motion", () => {

@@ -31,7 +31,7 @@ export function LiveBattlefield({
   isSending: boolean;
   onRefund: () => void;
 }) {
-  const { snapshot, status, error, choose } = useBattleRoom({
+  const { snapshot, status, error, authenticate, choose } = useBattleRoom({
     matchAddress,
     wallet,
     isParticipant,
@@ -225,6 +225,40 @@ export function LiveBattlefield({
           />
         </div>
       </div>
+
+      {playerSide &&
+        (status === "awaiting-authentication" ||
+          status === "authenticating") && (
+          <div
+            className="mt-6 rounded-2xl border border-[#c8a96e]/50 bg-[#211a0e] p-4 shadow-[0_0_24px_rgba(200,169,110,0.12)] sm:flex sm:items-center sm:justify-between sm:gap-5"
+            role="status"
+          >
+            <div>
+              <p className="text-sm font-black text-[#f0e8d4]">
+                Verify your wallet to play
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[#a99575]">
+                Sign one login message to control your team. This does not send
+                a transaction or spend SOL.
+              </p>
+              {error && (
+                <p className="mt-2 text-xs font-semibold text-red-300">
+                  {error}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => void authenticate()}
+              disabled={status === "authenticating"}
+              className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#c8a96e]/60 bg-[#c8a96e] px-5 py-3 text-xs font-black uppercase tracking-wider text-[#100e09] transition hover:bg-[#ddc080] disabled:cursor-wait disabled:opacity-60 sm:mt-0 sm:w-auto sm:shrink-0"
+            >
+              {status === "authenticating"
+                ? "Waiting for wallet…"
+                : "Verify wallet"}
+            </button>
+          </div>
+        )}
 
       {/* 3. TACTICAL ACTION TRAY (4 BUTTONS) */}
       {playerSide && (
