@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       "./node_modules/onnxruntime-node/package.json",
       "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/bin/*/linux/x64/**/*",
+      // Transformers loads the CommonJS ONNX API from the external package at
+      // runtime. Turbopack only traces its ESM files unless both builds are
+      // included, which makes the deployed function fail before the route runs.
+      "./node_modules/onnxruntime-common/package.json",
+      "./node_modules/onnxruntime-common/dist/**/*",
     ],
   },
   outputFileTracingExcludes: {
